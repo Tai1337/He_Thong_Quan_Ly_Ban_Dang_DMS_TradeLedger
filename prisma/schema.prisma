@@ -1,0 +1,708 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ENUMS
+enum WarehouseType {
+  SALES
+  HOLDING
+  VANSALE
+  DELIVERY
+}
+
+enum StockStatus {
+  GOOD
+  DEFECTIVE
+  EXPIRED
+}
+
+enum TxnDirection {
+  IN
+  OUT
+}
+
+enum OrderType {
+  IMMEDIATE
+  LATER
+}
+
+enum SalesOrderStatus {
+  PENDING
+  SUBMITTED
+  ALLOCATED
+  SHIPPED
+  DELIVERED
+  INVOICED
+  PAID
+  CANCELLED
+}
+
+enum POStatus {
+  WAITING_RECEIVE
+  PARTIALLY_RECEIVED
+  COMPLETED
+  CANCELLED
+}
+
+enum TripStatus {
+  WAITING_CONFIRM
+  WAITING_SHIP
+  SHIPPING
+  COMPLETED
+  CLOSED
+  CANCELLED
+}
+
+enum AdjustmentType {
+  IMPORT
+  EXPORT
+  STATUS_CHANGE
+  SKU_CHANGE
+}
+
+enum DocStatus {
+  DRAFT
+  WAITING_APPROVAL
+  APPROVED
+  COMPLETED
+  REJECTED
+  CANCELLED
+}
+
+enum PORStatus {
+  DRAFT
+  WAITING_APPROVAL
+  WAITING_PRICE
+  CONFIRMED
+  SO_CREATED
+  COMPLETED
+  REJECTED
+}
+
+enum TransferType {
+  VANSALE_TRANSFER
+  INTERNAL_LOCATION
+  INTERNAL_WAREHOUSE
+  EXTERNAL_NPP
+}
+
+enum CountType {
+  MONTHLY
+  BY_SKU
+}
+
+enum PPOStatus {
+  PROPOSED
+  NPP_CONFIRMED
+  ASM_CONFIRMED
+  PO_CREATED
+  CANCELLED
+}
+
+// [Cải tiến #4] Enum thay thế reference_type VARCHAR tự do
+enum InventoryReferenceType {
+  SALES_ORDER
+  PURCHASE_ORDER
+  STOCK_TRANSFER
+  INVENTORY_ADJUSTMENT
+  INVENTORY_COUNT
+  PURCHASE_RETURN
+  MANUAL
+}
+
+// [Cải tiến #3] Enums cho module Hoá đơn & Thanh toán
+enum InvoiceStatus {
+  UNPAID
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CHECK
+}
+
+// MODELS
+
+model Role {
+  id         BigInt   @id @default(autoincrement())
+  code       String   @unique @db.VarChar(30)
+  name       String   @db.VarChar(100)
+  createdAt  DateTime @default(now()) @map("created_at")
+  
+  users      User[]
+
+  @@map("roles")
+}
+
+model Distributor {
+  id         BigInt   @id @default(autoincrement())
+  code       String   @unique @db.VarChar(20)
+  name       String   @db.VarChar(200)
+  address    String?  @db.VarChar(255)
+  phone      String?  @db.VarChar(20)
+  status     Boolean  @default(true)
+  channel    String?  @db.VarChar(50)
+  region     String?  @db.VarChar(50)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  users                   User[]
+  warehouses              Warehouse[]
+  retailers               Retailer[]
+  salesOrders             SalesOrder[]
+  purchaseOrders          PurchaseOrder[]
+  deliveryTrips           DeliveryTrip[]
+  inventoryAdjustments    InventoryAdjustment[]
+  purchaseReturns         PurchaseReturn[]
+  transfersFrom           StockTransfer[] @relation("TransferFromDistributor")
+  transfersTo             StockTransfer[] @relation("TransferToDistributor")
+  inventoryCounts         InventoryCount[]
+  purchasePlanOrders      PurchasePlanOrder[]
+  invoices                Invoice[]
+  promotions              Promotion[]
+
+  @@map("distributors")
+}
+
+model User {
+  id            BigInt       @id @default(autoincrement())
+  distributorId BigInt?      @map("distributor_id")
+  roleId        BigInt       @map("role_id")
+  username      String       @unique @db.VarChar(50)
+  passwordHash  String       @db.VarChar(255) @map("password_hash")
+  fullName      String       @db.VarChar(150) @map("full_name")
+  phone         String?      @db.VarChar(20)
+  email         String?      @db.VarChar(255)
+  status        Boolean      @default(true)
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  distributor             Distributor? @relation(fields: [distributorId], references: [id])
+  role                    Role         @relation(fields: [roleId], references: [id])
+  
+  inventoryTransactions   InventoryTransaction[]
+  salesOrdersCreated      SalesOrder[]
+  deliveryTrips           DeliveryTrip[]
+  adjustmentsCreated      InventoryAdjustment[]
+  statusHistories         OrderStatusHistory[]
+
+  @@map("users")
+}
+
+model ProductCategory {
+  id        BigInt   @id @default(autoincrement())
+  name      String   @db.VarChar(150)
+  parentId  BigInt?  @map("parent_id")
+
+  parent    ProductCategory?  @relation("CategoryToCategory", fields: [parentId], references: [id])
+  children  ProductCategory[] @relation("CategoryToCategory")
+  products  Product[]
+
+  @@map("product_categories")
+}
+
+model Product {
+  id          BigInt   @id @default(autoincrement())
+  sku         String   @unique @db.VarChar(30)
+  name        String   @db.VarChar(200)
+  categoryId  BigInt?  @map("category_id")
+  unit        String   @default("THÙNG") @db.VarChar(20)
+  retailUnit  String?  @db.VarChar(20) @map("retail_unit")
+  productType String?  @db.VarChar(50) @map("product_type")
+  stdSku      String?  @db.VarChar(30) @map("std_sku")
+  stdSkuName  String?  @db.VarChar(200) @map("std_sku_name")
+  groupStdSku String?  @db.VarChar(100) @map("group_std_sku")
+  conversionRate Int   @default(1) @map("conversion_rate")
+  basePrice   Decimal  @default(0) @db.Decimal(14, 2) @map("base_price")
+  status      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  category                  ProductCategory? @relation(fields: [categoryId], references: [id])
+  stockLots                 StockLot[]
+  salesOrderItems           SalesOrderItem[]
+  purchaseOrderItems        PurchaseOrderItem[]
+  purchaseReturnItems       PurchaseReturnItem[]
+  stockTransferItems        StockTransferItem[]
+  adjustmentItemsNewProduct InventoryAdjustmentItem[] @relation("AdjustmentNewProduct")
+  purchasePlanOrderItems    PurchasePlanOrderItem[]
+  promotions                PromotionProduct[]
+
+  @@map("products")
+}
+
+model Supplier {
+  id        BigInt   @id @default(autoincrement())
+  code      String   @unique @db.VarChar(20)
+  name      String   @db.VarChar(200)
+  address   String?  @db.VarChar(255)
+  phone     String?  @db.VarChar(20)
+  status    Boolean  @default(true)
+
+  purchaseReturns PurchaseReturn[]
+  // [Cải tiến #2] relation ngược từ Supplier → PurchaseOrder
+  purchaseOrders  PurchaseOrder[]
+
+  @@map("suppliers")
+}
+
+model Retailer {
+  id            BigInt   @id @default(autoincrement())
+  distributorId BigInt   @map("distributor_id")
+  code          String   @db.VarChar(20)
+  name          String   @db.VarChar(200)
+  address       String?  @db.VarChar(255)
+  phone         String?  @db.VarChar(20)
+  status        Boolean  @default(true)
+  // [Cải tiến #6] Toạ độ địa lý để tối ưu tuyến giao hàng
+  latitude      Decimal? @db.Decimal(10, 7)
+  longitude     Decimal? @db.Decimal(10, 7)
+
+  distributor   Distributor @relation(fields: [distributorId], references: [id])
+  salesOrders   SalesOrder[]
+
+  @@unique([distributorId, code])
+  @@map("retailers")
+}
+
+model Warehouse {
+  id            BigInt        @id @default(autoincrement())
+  distributorId BigInt        @map("distributor_id")
+  code          String        @db.VarChar(30)
+  name          String        @db.VarChar(150)
+  type          WarehouseType @default(SALES)
+  category      String?       @db.VarChar(50) // Net / Food
+  status        Boolean       @default(true)
+
+  distributor           Distributor @relation(fields: [distributorId], references: [id])
+  stockLots             StockLot[]
+  inventoryTransactions InventoryTransaction[]
+  salesOrders           SalesOrder[]
+  purchaseOrders        PurchaseOrder[]
+  deliveryTrips         DeliveryTrip[]
+  inventoryAdjustments  InventoryAdjustment[]
+  purchaseReturns       PurchaseReturn[]
+  transfersFrom         StockTransfer[] @relation("TransferFromWarehouse")
+  transfersTo           StockTransfer[] @relation("TransferToWarehouse")
+  inventoryCounts       InventoryCount[]
+
+  latitude              Decimal? @db.Decimal(10, 7)
+  longitude             Decimal? @db.Decimal(10, 7)
+
+  @@unique([distributorId, code])
+  @@map("warehouses")
+}
+
+model StockLot {
+  id              BigInt      @id @default(autoincrement())
+  productId       BigInt      @map("product_id")
+  warehouseId     BigInt      @map("warehouse_id")
+  lotNumber       String      @db.VarChar(50) @map("lot_number")
+  manufactureDate DateTime?   @db.Date @map("manufacture_date")
+  expiryDate      DateTime?   @db.Date @map("expiry_date")
+  status          StockStatus @default(GOOD)
+  locationCode    String?     @db.VarChar(50) @map("location_code")
+  locationName    String?     @db.VarChar(150) @map("location_name")
+
+  product       Product     @relation(fields: [productId], references: [id])
+  warehouse     Warehouse   @relation(fields: [warehouseId], references: [id])
+  stockBalance  StockBalance?
+  
+  inventoryTransactions InventoryTransaction[]
+  adjustmentItems       InventoryAdjustmentItem[]
+  inventoryCountItems   InventoryCountItem[]
+
+  // [Cải tiến #5] Bỏ status khỏi UNIQUE key - đổi trạng thái bằng UPDATE thay vì tạo dòng mới
+  @@unique([productId, warehouseId, lotNumber])
+  @@map("stock_lots")
+}
+
+// [Cải tiến #4] Đổi reference_type từ VARCHAR tự do sang Enum an toàn
+model InventoryTransaction {
+  id              BigInt                  @id @default(autoincrement())
+  transactionCode String                  @unique @db.VarChar(30) @map("transaction_code")
+  direction       TxnDirection
+  lotId           BigInt                  @map("lot_id")
+  warehouseId     BigInt                  @map("warehouse_id")
+  quantity        Decimal                 @db.Decimal(14, 2)
+  unitPrice       Decimal                 @default(0) @db.Decimal(14, 2) @map("unit_price")
+  referenceType   InventoryReferenceType  @map("reference_type")
+  referenceId     BigInt                  @map("reference_id")
+  createdById     BigInt?                 @map("created_by")
+  createdAt       DateTime                @default(now()) @map("created_at")
+
+  stockLot      StockLot   @relation(fields: [lotId], references: [id])
+  warehouse     Warehouse  @relation(fields: [warehouseId], references: [id])
+  createdBy     User?      @relation(fields: [createdById], references: [id])
+
+  @@index([lotId])
+  @@index([referenceType, referenceId])
+  @@index([createdAt])
+  @@map("inventory_transactions")
+}
+
+// [Cải tiến #1] Tách tồn kho thành 2 cột để tránh race condition (oversell)
+model StockBalance {
+  lotId              BigInt   @id @map("lot_id")
+  quantityOnHand     Decimal  @default(0) @db.Decimal(14, 2) @map("quantity_on_hand")   // Tổng tồn thực tế
+  quantityReserved   Decimal  @default(0) @db.Decimal(14, 2) @map("quantity_reserved")  // Đang giữ chỗ (ALLOCATED chưa SHIPPED)
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  // quantityAvailable = quantityOnHand - quantityReserved (tính trong app)
+  stockLot  StockLot @relation(fields: [lotId], references: [id])
+
+  @@map("stock_balances")
+}
+
+model SalesOrder {
+  id              BigInt           @id @default(autoincrement())
+  orderCode       String           @unique @db.VarChar(30) @map("order_code")
+  distributorId   BigInt           @map("distributor_id")
+  retailerId      BigInt           @map("retailer_id")
+  warehouseId     BigInt           @map("warehouse_id")
+  orderType       OrderType        @default(LATER) @map("order_type")
+  status          SalesOrderStatus @default(PENDING)
+  deliveryTripId  BigInt?          @map("delivery_trip_id")
+  createdById     BigInt?          @map("created_by")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  distributor     Distributor      @relation(fields: [distributorId], references: [id])
+  retailer        Retailer         @relation(fields: [retailerId], references: [id])
+  warehouse       Warehouse        @relation(fields: [warehouseId], references: [id])
+  deliveryTrip    DeliveryTrip?    @relation(fields: [deliveryTripId], references: [id])
+  createdBy       User?            @relation(fields: [createdById], references: [id])
+
+  items           SalesOrderItem[]
+  statusHistory   OrderStatusHistory[]
+  invoice         Invoice?           // 1 SO chỉ có tối đa 1 hoá đơn
+
+  @@index([distributorId, status])
+  @@map("sales_orders")
+}
+
+model SalesOrderItem {
+  id              BigInt     @id @default(autoincrement())
+  salesOrderId    BigInt     @map("sales_order_id")
+  productId       BigInt     @map("product_id")
+  quantity        Decimal    @db.Decimal(14, 2)
+  unitPrice       Decimal    @db.Decimal(14, 2) @map("unit_price")
+  isPromotion     Boolean    @default(false) @map("is_promotion")
+
+  salesOrder      SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  product         Product    @relation(fields: [productId], references: [id])
+
+  @@unique([salesOrderId, productId])
+  @@map("sales_order_items")
+}
+
+model OrderStatusHistory {
+  id              BigInt           @id @default(autoincrement())
+  salesOrderId    BigInt           @map("sales_order_id")
+  fromStatus      SalesOrderStatus? @map("from_status")
+  toStatus        SalesOrderStatus @map("to_status")
+  changedById     BigInt?          @map("changed_by")
+  changedAt       DateTime         @default(now()) @map("changed_at")
+
+  salesOrder      SalesOrder       @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  changedBy       User?            @relation(fields: [changedById], references: [id])
+
+  @@map("order_status_history")
+}
+
+// [Cải tiến #2] Thêm supplier_id để biết đơn mua từ NCC nào
+model PurchaseOrder {
+  id            BigInt    @id @default(autoincrement())
+  poCode        String    @unique @db.VarChar(30) @map("po_code")
+  distributorId BigInt    @map("distributor_id")
+  warehouseId   BigInt    @map("warehouse_id")
+  supplierId    BigInt?   @map("supplier_id")  // nullable để tương thích dữ liệu cũ
+  status        POStatus  @default(WAITING_RECEIVE)
+  expectedDate  DateTime? @db.Date @map("expected_date")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  distributor   Distributor @relation(fields: [distributorId], references: [id])
+  warehouse     Warehouse   @relation(fields: [warehouseId], references: [id])
+  supplier      Supplier?   @relation(fields: [supplierId], references: [id])
+  
+  items         PurchaseOrderItem[]
+
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id                BigInt        @id @default(autoincrement())
+  purchaseOrderId   BigInt        @map("purchase_order_id")
+  productId         BigInt        @map("product_id")
+  quantity          Decimal       @db.Decimal(14, 2)
+  unitPrice         Decimal       @db.Decimal(14, 2) @map("unit_price")
+
+  purchaseOrder     PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  product           Product       @relation(fields: [productId], references: [id])
+
+  @@unique([purchaseOrderId, productId])
+  @@map("purchase_order_items")
+}
+
+model DeliveryTrip {
+  id            BigInt      @id @default(autoincrement())
+  tripCode      String      @unique @db.VarChar(30) @map("trip_code")
+  distributorId BigInt      @map("distributor_id")
+  warehouseId   BigInt      @map("warehouse_id")
+  driverId      BigInt?     @map("driver_id")
+  status        TripStatus  @default(WAITING_CONFIRM)
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  distributor   Distributor @relation(fields: [distributorId], references: [id])
+  warehouse     Warehouse   @relation(fields: [warehouseId], references: [id])
+  driver        User?       @relation(fields: [driverId], references: [id])
+  
+  salesOrders   SalesOrder[]
+
+  @@map("delivery_trips")
+}
+
+model InventoryAdjustment {
+  id             BigInt         @id @default(autoincrement())
+  adjustmentCode String         @unique @db.VarChar(30) @map("adjustment_code")
+  distributorId  BigInt         @map("distributor_id")
+  warehouseId    BigInt         @map("warehouse_id")
+  adjustmentType AdjustmentType @map("adjustment_type")
+  status         DocStatus      @default(DRAFT)
+  reason         String?        @db.VarChar(255)
+  createdById    BigInt?        @map("created_by")
+  createdAt      DateTime       @default(now()) @map("created_at")
+
+  distributor    Distributor    @relation(fields: [distributorId], references: [id])
+  warehouse      Warehouse      @relation(fields: [warehouseId], references: [id])
+  createdBy      User?          @relation(fields: [createdById], references: [id])
+
+  items          InventoryAdjustmentItem[]
+
+  @@map("inventory_adjustments")
+}
+
+model InventoryAdjustmentItem {
+  id            BigInt         @id @default(autoincrement())
+  adjustmentId  BigInt         @map("adjustment_id")
+  lotId         BigInt         @map("lot_id")
+  quantity      Decimal        @db.Decimal(14, 2)
+  fromStatus    StockStatus?   @map("from_status")
+  toStatus      StockStatus?   @map("to_status")
+  newProductId  BigInt?        @map("new_product_id")
+
+  adjustment    InventoryAdjustment @relation(fields: [adjustmentId], references: [id], onDelete: Cascade)
+  stockLot      StockLot       @relation(fields: [lotId], references: [id])
+  newProduct    Product?       @relation("AdjustmentNewProduct", fields: [newProductId], references: [id])
+
+  @@map("inventory_adjustment_items")
+}
+
+model PurchaseReturn {
+  id            BigInt      @id @default(autoincrement())
+  porCode       String      @unique @db.VarChar(30) @map("por_code")
+  distributorId BigInt      @map("distributor_id")
+  supplierId    BigInt      @map("supplier_id")
+  warehouseId   BigInt      @map("warehouse_id")
+  status        PORStatus   @default(DRAFT)
+  expectedDate  DateTime?   @db.Date @map("expected_date")
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  distributor   Distributor @relation(fields: [distributorId], references: [id])
+  supplier      Supplier    @relation(fields: [supplierId], references: [id])
+  warehouse     Warehouse   @relation(fields: [warehouseId], references: [id])
+  
+  items         PurchaseReturnItem[]
+
+  @@map("purchase_returns")
+}
+
+model PurchaseReturnItem {
+  id               BigInt         @id @default(autoincrement())
+  purchaseReturnId BigInt         @map("purchase_return_id")
+  productId        BigInt         @map("product_id")
+  quantity         Decimal        @db.Decimal(14, 2)
+  confirmedPrice   Decimal?       @db.Decimal(14, 2) @map("confirmed_price")
+
+  purchaseReturn   PurchaseReturn @relation(fields: [purchaseReturnId], references: [id], onDelete: Cascade)
+  product          Product        @relation(fields: [productId], references: [id])
+
+  @@map("purchase_return_items")
+}
+
+model StockTransfer {
+  id                  BigInt        @id @default(autoincrement())
+  transferCode        String        @unique @db.VarChar(30) @map("transfer_code")
+  transferType        TransferType  @map("transfer_type")
+  fromDistributorId   BigInt        @map("from_distributor_id")
+  toDistributorId     BigInt        @map("to_distributor_id")
+  fromWarehouseId     BigInt        @map("from_warehouse_id")
+  toWarehouseId       BigInt        @map("to_warehouse_id")
+  status              DocStatus     @default(DRAFT)
+  createdAt           DateTime      @default(now()) @map("created_at")
+
+  fromDistributor     Distributor   @relation("TransferFromDistributor", fields: [fromDistributorId], references: [id])
+  toDistributor       Distributor   @relation("TransferToDistributor", fields: [toDistributorId], references: [id])
+  fromWarehouse       Warehouse     @relation("TransferFromWarehouse", fields: [fromWarehouseId], references: [id])
+  toWarehouse         Warehouse     @relation("TransferToWarehouse", fields: [toWarehouseId], references: [id])
+
+  items               StockTransferItem[]
+
+  @@map("stock_transfers")
+}
+
+model StockTransferItem {
+  id            BigInt        @id @default(autoincrement())
+  transferId    BigInt        @map("transfer_id")
+  productId     BigInt        @map("product_id")
+  quantity      Decimal       @db.Decimal(14, 2)
+
+  transfer      StockTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  product       Product       @relation(fields: [productId], references: [id])
+
+  @@map("stock_transfer_items")
+}
+
+model InventoryCount {
+  id            BigInt      @id @default(autoincrement())
+  countCode     String      @unique @db.VarChar(30) @map("count_code")
+  distributorId BigInt      @map("distributor_id")
+  warehouseId   BigInt      @map("warehouse_id")
+  countType     CountType   @default(MONTHLY) @map("count_type")
+  status        DocStatus   @default(DRAFT)
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  distributor   Distributor @relation(fields: [distributorId], references: [id])
+  warehouse     Warehouse   @relation(fields: [warehouseId], references: [id])
+
+  items         InventoryCountItem[]
+
+  @@map("inventory_counts")
+}
+
+model InventoryCountItem {
+  id             BigInt         @id @default(autoincrement())
+  countId        BigInt         @map("count_id")
+  lotId          BigInt         @map("lot_id")
+  systemQuantity Decimal        @default(0) @db.Decimal(14, 2) @map("system_quantity")
+  actualQuantity Decimal?       @db.Decimal(14, 2) @map("actual_quantity")
+  variance       Decimal?       @db.Decimal(14, 2) 
+
+  inventoryCount InventoryCount @relation(fields: [countId], references: [id], onDelete: Cascade)
+  stockLot       StockLot       @relation(fields: [lotId], references: [id])
+
+  @@map("inventory_count_items")
+}
+
+model PurchasePlanOrder {
+  id              BigInt      @id @default(autoincrement())
+  ppoCode         String      @unique @db.VarChar(30) @map("ppo_code")
+  distributorId   BigInt      @map("distributor_id")
+  status          PPOStatus   @default(PROPOSED)
+  proposedAt      DateTime    @default(now()) @map("proposed_at")
+  nppConfirmedAt  DateTime?   @map("npp_confirmed_at")
+  asmConfirmedAt  DateTime?   @map("asm_confirmed_at")
+  expireAt        DateTime    @map("expire_at")
+
+  distributor     Distributor @relation(fields: [distributorId], references: [id])
+  
+  items           PurchasePlanOrderItem[]
+
+  @@map("purchase_plan_orders")
+}
+
+model PurchasePlanOrderItem {
+  id               BigInt            @id @default(autoincrement())
+  ppoId            BigInt            @map("ppo_id")
+  productId        BigInt            @map("product_id")
+  proposedQuantity Decimal           @db.Decimal(14, 2) @map("proposed_quantity")
+  adjustedQuantity Decimal?          @db.Decimal(14, 2) @map("adjusted_quantity")
+
+  ppo              PurchasePlanOrder @relation(fields: [ppoId], references: [id], onDelete: Cascade)
+  product          Product           @relation(fields: [productId], references: [id])
+
+  @@map("purchase_plan_order_items")
+}
+
+// ============================================================
+// [Cải tiến #3] MODULE HOÁ ĐƠN & THANH TOÁN (Invoice / AR)
+// ============================================================
+
+model Invoice {
+  id             BigInt        @id @default(autoincrement())
+  invoiceCode    String        @unique @db.VarChar(30) @map("invoice_code")
+  salesOrderId   BigInt        @unique @map("sales_order_id")   // 1 SO → 1 Invoice
+  distributorId  BigInt        @map("distributor_id")
+  invoiceDate    DateTime      @db.Date @map("invoice_date")
+  dueDate        DateTime      @db.Date @map("due_date")        // Hạn công nợ
+  subtotal       Decimal       @db.Decimal(14, 2)
+  vatRate        Decimal       @default(0.1) @db.Decimal(5, 4) @map("vat_rate")
+  vatAmount      Decimal       @db.Decimal(14, 2) @map("vat_amount")
+  totalAmount    Decimal       @db.Decimal(14, 2) @map("total_amount")
+  paidAmount     Decimal       @default(0) @db.Decimal(14, 2) @map("paid_amount")
+  status         InvoiceStatus @default(UNPAID)
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  salesOrder     SalesOrder    @relation(fields: [salesOrderId], references: [id])
+  distributor    Distributor   @relation(fields: [distributorId], references: [id])
+  payments       Payment[]
+
+  @@index([distributorId, status])
+  @@map("invoices")
+}
+
+model Payment {
+  id            BigInt        @id @default(autoincrement())
+  invoiceId     BigInt        @map("invoice_id")
+  amount        Decimal       @db.Decimal(14, 2)
+  paymentMethod PaymentMethod @map("payment_method")
+  paymentDate   DateTime      @db.Date @map("payment_date")
+  note          String?       @db.VarChar(255)
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  invoice       Invoice       @relation(fields: [invoiceId], references: [id])
+
+  @@map("payments")
+}
+
+// ============================================================
+// [Cải tiến #7] MODULE KHUYẾN MÃI / CHIẾT KHẤU
+// ============================================================
+
+model Promotion {
+  id              BigInt    @id @default(autoincrement())
+  distributorId   BigInt    @map("distributor_id")
+  name            String    @db.VarChar(200)
+  discountPercent Decimal   @db.Decimal(5, 2) @map("discount_percent")
+  startDate       DateTime  @db.Date @map("start_date")
+  endDate         DateTime  @db.Date @map("end_date")
+  status          Boolean   @default(true)
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  distributor     Distributor      @relation(fields: [distributorId], references: [id])
+  products        PromotionProduct[]
+
+  @@map("promotions")
+}
+
+model PromotionProduct {
+  promotionId BigInt    @map("promotion_id")
+  productId   BigInt    @map("product_id")
+
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  product     Product   @relation(fields: [productId], references: [id])
+
+  @@id([promotionId, productId])
+  @@map("promotion_products")
+}

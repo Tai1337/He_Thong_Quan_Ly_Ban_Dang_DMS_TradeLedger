@@ -1,0 +1,37 @@
+export const rpt083Config = {
+  templateFile: 'template_rpt083.xlsx',
+  dataStartRow: 5, // Dòng 5 trong excel (index 4)
+  columns: [
+    { header: "Mã nhà phân phối", key: "distCode" },
+    { header: "Nhà phân phối", key: "distName" },
+    { header: "Kênh phân phối", key: "channel" },
+    { header: "Mã kho NPP", key: "warehouseCode" },
+    { header: "Kho NPP", key: "warehouseName" },
+    { header: "Vùng", key: "region" },
+    { header: "Trạng thái tồn kho", key: "status" },
+    { header: "Mã SP", key: "sku" },
+    { header: "Tên sản phẩm", key: "productName" },
+    { header: "Số lô", key: "lotNumber" },
+    { header: "Ngày sản xuất", key: "mfgDate" },
+    { header: "Hạn sử dụng", key: "expDate" },
+    { header: "ĐVT chẵn", key: "unitBig" },
+    { header: "ĐVT lẻ", key: "unitSmall" },
+    { header: "Loại Sản phẩm", key: "productType" },
+    { header: "Sub Division", key: "subDivision" },
+    { header: "Mã Standard SKU", key: "stdSku" },
+    { header: "Tên Standard SKU", key: "stdSkuName" },
+    { header: "Group STD SKU", key: "groupStdSku" },
+    { header: "Tình trạng bán", key: "saleStatus" },
+    { header: "Đơn giá", key: "price" },
+    { header: "Quy cách đóng gói", key: "conversionRate" },
+    { header: "SL Chẵn", key: "qtyBig" },
+    { header: "SL lẻ", key: "qtySmall" },
+    { header: "Tổng SL lẻ", key: "totalSmallQty" },
+    { header: "Thành tiền", key: "amount" },
+    { header: "Loại vị trí kho", key: "locationType" },
+    { header: "Mã vị trí kho", key: "locationCode" },
+    { header: "Vị trí kho", key: "locationName" },
+    { header: "Người cập nhật", key: "updatedBy" },
+    { header: "Ngày cập nhật", key: "updatedAt" }
+  ]
+};
