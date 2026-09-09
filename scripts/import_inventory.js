@@ -13,7 +13,7 @@ const parseDate = (dateStr) => {
 };
 
 async function main() {
-  const filePath = 'c:\\Users\\nguye\\Downloads\\Quanlychitieu\\BaoCaoTonKhoNPP_20260813145648.xlsx';
+  const filePath = './BaoCaoTonKhoNPP_20260813145648.xlsx';
   console.log('Reading Excel file:', filePath);
   
   const workbook = xlsx.readFile(filePath);

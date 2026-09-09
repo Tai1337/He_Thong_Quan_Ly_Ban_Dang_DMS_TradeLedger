@@ -7,6 +7,7 @@ import { setupAuthRoutes } from './routes/authRoutes.js';
 import salesOrderRoutes from './routes/salesOrderRoutes.js';
 import inventoryRoutes from './routes/inventoryRoutes.js';
 import masterDataRoutes from './routes/masterDataRoutes.js';
+import reportRoutes from './routes/reportRoutes.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -29,6 +30,7 @@ setupSocket(io);
 app.use('/api', setupAuthRoutes(io));
 app.use('/api', salesOrderRoutes);
 app.use('/api', inventoryRoutes);
+app.use('/api/reports', reportRoutes);
 app.use('/api/master', masterDataRoutes);
 
 const PORT = process.env.PORT || 3001;

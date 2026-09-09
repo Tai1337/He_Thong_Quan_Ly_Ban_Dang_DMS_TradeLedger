@@ -218,3 +218,215 @@
   color: #1e293b;
   font-weight: 500;
 }
+
+.card-subtitle-small {
+  margin: 4px 0 0 0;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.dashboard-card-link {
+  text-decoration: none;
+}
+
+/* HIGHLIGHT SECTION FOR SALES */
+.highlight-section {
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.section-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.highlight-title {
+  color: #0f172a;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+
+.section-description {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.section-view-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #1a73e8;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: #eff6ff;
+  transition: all 0.2s;
+}
+
+.section-view-all:hover {
+  background: #dbeafe;
+}
+
+/* SALES FEATURES GRID */
+.sales-features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.sales-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+.sales-card:hover {
+  transform: translateY(-3px);
+  background: #ffffff;
+  box-shadow: 0 10px 20px -3px rgba(0, 0, 0, 0.08);
+}
+
+.sales-card-primary:hover {
+  border-color: #3b82f6;
+}
+
+.sales-card-action:hover {
+  border-color: #10b981;
+}
+
+.sales-card-warning:hover {
+  border-color: #f59e0b;
+}
+
+.sales-card-info:hover {
+  border-color: #8b5cf6;
+}
+
+.sales-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.sales-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bg-blue {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.bg-emerald {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.bg-amber {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.bg-purple {
+  background: #f5f3ff;
+  color: #7c3aed;
+}
+
+.badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 12px;
+}
+
+.badge-primary {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.badge-emerald {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badge-amber {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-purple {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.sales-card-title {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.sales-card-desc {
+  margin: 0 0 16px 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #64748b;
+  flex: 1;
+}
+
+.sales-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px dashed #e2e8f0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a73e8;
+}
+
+.footer-action-text.text-emerald {
+  color: #059669;
+}
+
+.footer-action-text.text-amber {
+  color: #d97706;
+}
+
+.footer-action-text.text-purple {
+  color: #7c3aed;
+}
+
+.text-blue {
+  color: #2563eb;
+}
+
+.text-green {
+  color: #10b981;
+}
+
+.text-amber {
+  color: #f59e0b;
+}

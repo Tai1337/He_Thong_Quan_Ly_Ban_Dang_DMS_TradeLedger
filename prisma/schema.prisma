@@ -319,6 +319,7 @@ model StockLot {
   inventoryTransactions InventoryTransaction[]
   adjustmentItems       InventoryAdjustmentItem[]
   inventoryCountItems   InventoryCountItem[]
+  orderItemAllocations  SalesOrderItemAllocation[]
 
   // [Cải tiến #5] Bỏ status khỏi UNIQUE key - đổi trạng thái bằng UPDATE thay vì tạo dòng mới
   @@unique([productId, warehouseId, lotNumber])
@@ -399,9 +400,23 @@ model SalesOrderItem {
 
   salesOrder      SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
   product         Product    @relation(fields: [productId], references: [id])
+  allocations     SalesOrderItemAllocation[]
 
   @@unique([salesOrderId, productId])
   @@map("sales_order_items")
+}
+
+model SalesOrderItemAllocation {
+  id               BigInt         @id @default(autoincrement())
+  salesOrderItemId BigInt         @map("sales_order_item_id")
+  lotId            BigInt         @map("lot_id")
+  quantity         Decimal        @db.Decimal(14, 2)
+  createdAt        DateTime       @default(now()) @map("created_at")
+
+  salesOrderItem   SalesOrderItem @relation(fields: [salesOrderItemId], references: [id], onDelete: Cascade)
+  stockLot         StockLot       @relation(fields: [lotId], references: [id])
+
+  @@map("sales_order_item_allocations")
 }
 
 model OrderStatusHistory {
@@ -411,6 +426,8 @@ model OrderStatusHistory {
   toStatus        SalesOrderStatus @map("to_status")
   changedById     BigInt?          @map("changed_by")
   changedAt       DateTime         @default(now()) @map("changed_at")
+  reason          String?          @db.VarChar(255)
+  notes           String?          @db.Text
 
   salesOrder      SalesOrder       @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
   changedBy       User?            @relation(fields: [changedById], references: [id])

@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Search, Bell, Settings, User, LogOut } from 'lucide-react';
 import './Layout.css';
 
 const Header = ({ user, onLogout }) => {
+  const location = useLocation();
   return (
     <header className="app-header">
       <div className="header-left">
@@ -30,14 +31,25 @@ const Header = ({ user, onLogout }) => {
           </div>
           
           <div className="nav-item">
-            <div className="nav-link">
-              Bán hàng | Quản lý
-            </div>
+            <Link 
+              to="/sales/sales-orders" 
+              className={`nav-link ${location.pathname.startsWith('/sales') ? 'active' : ''}`}
+            >
+              Bán hàng | Quản lý SO
+            </Link>
             <div className="nav-dropdown">
-              <Link to="/sales/sales-orders" className="dropdown-item">Quản lý SO</Link>
-              <Link to="#" className="dropdown-item">Quản lý PPO</Link>
-              <Link to="#" className="dropdown-item">Danh sách PO NPP</Link>
-              <Link to="#" className="dropdown-item">Quản lý đặt hàng</Link>
+              <Link to="/sales/sales-orders" className="dropdown-item">
+                <strong>Quản lý Đơn hàng bán (SO)</strong>
+              </Link>
+              <Link to="/sales/sales-orders?create=true" className="dropdown-item">
+                + Lập đơn bán hàng mới (BH_BM1)
+              </Link>
+              <Link to="/sales/sales-orders?rpt005=true" className="dropdown-item">
+                Kiểm tra thiếu tồn kho (RPT005)
+              </Link>
+              <Link to="/reports/rpt057" className="dropdown-item">
+                Báo cáo doanh số & sản lượng (RPT057)
+              </Link>
             </div>
           </div>
 
