@@ -1,0 +1,57 @@
+.reason-modal-container {
+  background: #ffffff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.reason-icon-cancel {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.reason-icon-close {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.btn-danger-confirm {
+  padding: 8px 18px;
+  border: none;
+  background: #ef4444;
+  color: #ffffff;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 0.88rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+}
+
+.btn-danger-confirm:hover {
+  background: #dc2626;
+}
+
+.btn-warning-confirm {
+  padding: 8px 18px;
+  border: none;
+  background: #d97706;
+  color: #ffffff;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 0.88rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+}
+
+.btn-warning-confirm:hover {
+  background: #b45309;
+}
