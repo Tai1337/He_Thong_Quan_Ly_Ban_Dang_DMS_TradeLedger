@@ -4,8 +4,10 @@ import {
   getPpoByIdService,
   updatePpoQuantityService,
   approvePpoBatchService,
-  rejectPpoService
+  rejectPpoService,
+  getPpoWindowStatus
 } from '../services/ppoService.js';
+import { execute11AmClosingService } from '../services/ppoAutoClosingService.js';
 import { findPpoSummary } from '../repositories/ppoRepository.js';
 
 export const generatePpo = async (req, res) => {
@@ -95,3 +97,25 @@ export const rejectPpo = async (req, res) => {
     res.status(400).json({ error: error.message || 'Lỗi khi từ chối đề xuất' });
   }
 };
+
+export const getPpoDailyWindowStatus = async (req, res) => {
+  try {
+    const status = getPpoWindowStatus();
+    res.json(status);
+  } catch (error) {
+    console.error('getPpoDailyWindowStatus error:', error);
+    res.status(500).json({ error: 'Lỗi khi kiểm tra khung giờ PPO' });
+  }
+};
+
+export const execute11AmClosing = async (req, res) => {
+  try {
+    const { distributorId = 1, userId } = req.body;
+    const result = await execute11AmClosingService({ distributorId, userId });
+    res.json(result);
+  } catch (error) {
+    console.error('execute11AmClosing error:', error);
+    res.status(500).json({ error: error.message || 'Lỗi khi thực thi chốt đơn lúc 11:00' });
+  }
+};
+

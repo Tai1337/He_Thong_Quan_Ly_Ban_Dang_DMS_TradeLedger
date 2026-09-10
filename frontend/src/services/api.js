@@ -467,3 +467,66 @@ export const rejectPpo = async (id, payload) => {
   return data;
 };
 
+export const getPpoWindowStatus = async () => {
+  const response = await fetch(`${API_URL}/ppo/window-status`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi kiểm tra khung giờ PPO');
+  }
+  return data;
+};
+
+export const execute11AmClosing = async (distributorId = 1) => {
+  const response = await fetch(`${API_URL}/ppo/execute-closing`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ distributorId })
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi thực thi chốt đơn lúc 11:00');
+  }
+  return data;
+};
+
+// --- NHẬP KHO ĐẶT HÀNG THEO CHUYẾN XE (INBOUND GOODS RECEIVING) ---
+
+export const getInboundDeliveryTrips = async (filters = {}) => {
+  const cleanFilters = {};
+  Object.keys(filters).forEach(k => {
+    if (filters[k] !== undefined && filters[k] !== null && filters[k] !== '') {
+      cleanFilters[k] = filters[k];
+    }
+  });
+
+  const queryParams = new URLSearchParams(cleanFilters).toString();
+  const response = await fetch(`${API_URL}/purchase/receiving/trips?${queryParams}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi tải danh sách chuyến xe hàng về');
+  }
+  return data;
+};
+
+export const getInboundTripDetail = async (tripId, distributorId = 1) => {
+  const response = await fetch(`${API_URL}/purchase/receiving/trips/${tripId}?distributorId=${distributorId}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi tải chi tiết chuyến xe');
+  }
+  return data;
+};
+
+export const receiveTripGoods = async (tripId, payload) => {
+  const response = await fetch(`${API_URL}/purchase/receiving/trips/${tripId}/receive`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi thực hiện nhập kho');
+  }
+  return data;
+};
+

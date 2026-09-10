@@ -254,8 +254,45 @@ await prisma.$transaction([
 | Cập nhật | PUT | `/api/sales-orders/:id` |
 | Cập nhật trạng thái | PATCH | `/api/sales-orders/:id/status` |
 | Xóa mềm | DELETE | `/api/sales-orders/:id` |
+| Trạng thái khung giờ PPO (09:00 - 11:00) | GET | `/api/ppo/window-status` |
+| Chốt PPO tự động / mô phỏng 11:00 | POST | `/api/ppo/execute-closing` |
+| Danh sách chuyến xe hàng về (D+3) | GET | `/api/purchase/receiving/trips` |
+| Chi tiết chuyến xe hàng về | GET | `/api/purchase/receiving/trips/:tripId` |
+| Nhập kho thực tế chuyến xe | POST | `/api/purchase/receiving/trips/:tripId/receive` |
+
+---
+
+## Chuẩn Kiến Trúc Phân Tầng 3-Tier (Clean Architecture)
+
+Để đảm bảo tuân thủ nghiêm ngặt nguyên tắc SOLID và Design Patterns, mọi tính năng backend PHẢI tuân thủ luồng:
+
+```
+[HTTP Request] 
+      ↓
+[Routes]         → server/routes/{entity}Routes.js
+      ↓
+[Controller]     → server/controllers/{entity}Controller.js (Parse req, Guard clauses, Gọi Service, Format res)
+      ↓
+[Service Layer]  → server/services/{entity}Service.js (Nghiệp vụ, Transaction, Rule checking)
+      ↓
+[Repository]     → server/repositories/{entity}Repository.js (Prisma queries, Data Isolation theo distributorId)
+      ↓
+[Database MySQL]
+```
+
+### Phía Frontend:
+```
+[React Page / View Component] (Chỉ hiển thị UI & kích hoạt action)
+      ↓
+[Custom Hook]    → src/hooks/use{Entity}.js (Quản lý state, loading, error, refetch)
+      ↓
+[API Service]    → src/services/api.js (fetch HTTP sang Backend)
+```
 
 ### Quy tắc đặt tên file
-- Controller: `camelCase` + `Controller.js` (VD: `salesOrderController.js`)
-- Routes: `camelCase` + `Routes.js` (VD: `salesOrderRoutes.js`)
-- Function trong controller: `động từ` + `tên đối tượng` (VD: `getOrders`, `createOrder`, `updateOrderStatus`)
+- Controller: `camelCase` + `Controller.js` (VD: `salesOrderController.js`, `purchaseReceivingController.js`)
+- Routes: `camelCase` + `Routes.js` (VD: `salesOrderRoutes.js`, `purchaseReceivingRoutes.js`)
+- Services: `camelCase` + `Service.js` (VD: `salesOrderService.js`, `purchaseReceivingService.js`)
+- Repositories: `camelCase` + `Repository.js` (VD: `salesOrderRepository.js`, `purchaseReceivingRepository.js`)
+- Frontend Hooks: `use` + `PascalCase.js` (VD: `useSalesOrders.js`, `useInboundDeliveryTrips.js`)
+

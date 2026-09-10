@@ -113,7 +113,25 @@ export const getPpoByIdService = async (id, distributorId = 1) => {
 };
 
 /**
+ * Lấy trạng thái khung giờ duyệt PPO (09:00 - 11:00)
+ */
+export const getPpoWindowStatus = () => {
+  const now = new Date();
+  const currentHour = now.getHours();
+  // Khung giờ duyệt của kế toán là từ 09:00 đến 11:00
+  const isWindowActive = currentHour >= 9 && currentHour < 11;
+  return {
+    isWindowActive,
+    windowStart: '09:00',
+    windowEnd: '11:00',
+    serverTime: now.toISOString(),
+    displayTime: now.toTimeString().slice(0, 5)
+  };
+};
+
+/**
  * Service chỉnh sửa số lượng đặt chốt (override finalQty)
+ * Quy tắc: Kế toán chỉ có thể GIẢM số lượng (finalQty <= suggestedQty), không được tăng.
  */
 export const updatePpoQuantityService = async (id, { distributorId = 1, finalQty }) => {
   const qty = parseFloat(finalQty);
@@ -132,6 +150,11 @@ export const updatePpoQuantityService = async (id, { distributorId = 1, finalQty
 
   if (ppo.status === 'APPROVED') {
     throw new Error('Đề xuất này đã được duyệt tạo PO, không thể sửa số lượng');
+  }
+
+  const suggestedQtyNum = Number(ppo.suggestedQty);
+  if (qty > suggestedQtyNum) {
+    throw new Error(`Số lượng đặt (${qty}) không được vượt quá số lượng AI đề xuất (${suggestedQtyNum}). Kế toán chỉ có thể giảm số lượng!`);
   }
 
   const updated = await prisma.ppoSuggestion.update({

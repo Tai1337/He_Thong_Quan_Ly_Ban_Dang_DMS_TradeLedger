@@ -15,17 +15,21 @@ import {
   Calculator,
   ExternalLink,
   Layers,
-  ArrowRight
+  ArrowRight,
+  Truck
 } from 'lucide-react';
 import { usePpoSuggestions } from '../../../hooks/usePpoSuggestions';
 import { 
   getSuppliers, 
   generatePpoSuggestions, 
   updatePpoQuantity, 
-  approvePpoBatch 
+  approvePpoBatch,
+  getPpoWindowStatus,
+  execute11AmClosing
 } from '../../../services/api';
 import PpoDetailModal from './PpoDetailModal';
 import PpoRejectModal from './PpoRejectModal';
+import PpoClosingResultModal from './PpoClosingResultModal';
 import './PpoList.css';
 
 const STATUS_TAGS = [
@@ -56,13 +60,21 @@ const PpoList = () => {
   // Modals state
   const [selectedPpoDetail, setSelectedPpoDetail] = useState(null);
   const [selectedPpoReject, setSelectedPpoReject] = useState(null);
+  const [closingResult, setClosingResult] = useState(null);
+  const [closing, setClosing] = useState(false);
+  const [windowStatus, setWindowStatus] = useState(null);
 
   // Hook fetching PPO
   const { items, summary, total, loading, refetch } = usePpoSuggestions(filters);
 
-  // Load suppliers
+  // Load suppliers and window status
   useEffect(() => {
     getSuppliers().then(setSuppliers).catch(console.error);
+    getPpoWindowStatus().then(setWindowStatus).catch(console.error);
+    const interval = setInterval(() => {
+      getPpoWindowStatus().then(setWindowStatus).catch(() => {});
+    }, 60000);
+    return () => clearInterval(interval);
   }, []);
 
   // Handle select all
@@ -136,15 +148,39 @@ const PpoList = () => {
   };
 
   // Sửa số lượng chốt (finalQty)
-  const handleFinalQtyBlur = async (id, currentVal, origVal) => {
+  // Quy tắc: Kế toán chỉ có thể giảm số lượng (finalQty <= suggestedQty)
+  const handleFinalQtyBlur = async (id, currentVal, origVal, suggestedQty) => {
     const qty = parseFloat(currentVal);
     if (isNaN(qty) || qty <= 0 || qty === origVal) return;
+
+    if (qty > suggestedQty) {
+      alert(`Số lượng đặt (${qty}) không được lớn hơn số lượng AI đề xuất (${suggestedQty}).\nKế toán chỉ có thể giảm số lượng!`);
+      refetch();
+      return;
+    }
 
     try {
       await updatePpoQuantity(id, { distributorId: 1, finalQty: qty });
       refetch();
     } catch (err) {
       alert(err.message || 'Lỗi khi cập nhật số lượng');
+      refetch();
+    }
+  };
+
+  // Kích hoạt Chốt đơn 11:00 (Mô phỏng)
+  const handleExecute11AmClosing = async () => {
+    if (!window.confirm('Xác nhận kích hoạt quy trình CHỐT ĐƠN 11:00?\n\nHệ thống sẽ:\n1. Tự động duyệt toàn bộ đề xuất PPO đang chờ.\n2. Phân nhóm theo NCC, sinh đồng thời Đơn mua (PO) và Đơn bán (SO).\n3. Gán vào Chuyến xe giao hàng INBOUND (D+3).\n4. Chuyển thông tin tới phân hệ Nhập kho đặt hàng.')) return;
+
+    setClosing(true);
+    try {
+      const res = await execute11AmClosing(1);
+      setClosingResult(res);
+      refetch();
+    } catch (err) {
+      alert(err.message || 'Lỗi khi chốt đơn 11:00');
+    } finally {
+      setClosing(false);
     }
   };
 
@@ -176,12 +212,23 @@ const PpoList = () => {
         <div className="po-header-actions">
           <button 
             type="button" 
+            className="btn-closing-11am"
+            onClick={handleExecute11AmClosing}
+            disabled={closing}
+            title="Đúng 11:00 hệ thống tự động chốt PPO, sinh PO & SO và gán Chuyến xe D+3"
+          >
+            <Clock size={16} />
+            <span>{closing ? 'Đang chốt đơn & tạo chuyến xe...' : '⏰ Chốt đơn 11:00 (Mô phỏng)'}</span>
+          </button>
+
+          <button 
+            type="button" 
             className="btn-ai-generate"
             onClick={handleRunAiAnalysis}
             disabled={generating}
           >
             <Sparkles size={16} />
-            <span>{generating ? 'Đang phân tích ROP...' : '🤖 Chạy Đề xuất AI / Phân tích ROP'}</span>
+            <span>{generating ? 'Đang phân tích ROP...' : '🤖 Chạy Đề xuất AI'}</span>
           </button>
 
           {selectedIds.length > 0 && (
@@ -192,9 +239,31 @@ const PpoList = () => {
               disabled={approving}
             >
               <CheckCheck size={18} />
-              <span>{approving ? 'Đang tạo PO...' : `Duyệt ${selectedIds.length} dòng đã chọn ➔ Tạo PO Nháp`}</span>
+              <span>{approving ? 'Đang tạo PO...' : `Duyệt ${selectedIds.length} dòng đã chọn`}</span>
             </button>
           )}
+        </div>
+      </div>
+
+      {/* 1.1 Khung giờ duyệt Banner */}
+      <div className="ppo-window-banner">
+        <div className="window-banner-left">
+          <div className="window-badge-icon">
+            <Clock size={20} />
+          </div>
+          <div>
+            <strong>Khung giờ kế toán duyệt đơn: 09:00 - 11:00 hàng ngày</strong>
+            <p>Quy tắc: Kế toán chỉ được phép <u>GIẢM</u> số lượng so với đề xuất AI. Đúng 11:00, hệ thống tự động chốt PPO, sinh đơn PO & SO và gán Chuyến xe giao đến kho NPP (D+3).</p>
+          </div>
+        </div>
+        <div className="window-banner-right">
+          <span className="server-time-badge">
+            Giờ hệ thống: <strong>{windowStatus?.displayTime || '09:00'}</strong>
+          </span>
+          <Link to="/purchase/receiving" className="btn-link-receiving">
+            <Truck size={15} />
+            <span>Nhập kho đặt hàng (D+3)</span>
+          </Link>
         </div>
       </div>
 
@@ -433,8 +502,11 @@ const PpoList = () => {
                           type="number"
                           className="input-final-qty"
                           defaultValue={item.finalQty}
-                          disabled={isApproved}
-                          onBlur={(e) => handleFinalQtyBlur(item.id, e.target.value, item.finalQty)}
+                          min={1}
+                          max={item.suggestedQty}
+                          disabled={isApproved || isRejected}
+                          title={`Kế toán chỉ có thể giảm số lượng (Tối đa: ${item.suggestedQty})`}
+                          onBlur={(e) => handleFinalQtyBlur(item.id, e.target.value, item.finalQty, item.suggestedQty)}
                         />
                       </td>
 
@@ -585,6 +657,13 @@ const PpoList = () => {
           onSuccess={() => {
             refetch();
           }}
+        />
+      )}
+
+      {closingResult && (
+        <PpoClosingResultModal
+          result={closingResult}
+          onClose={() => setClosingResult(null)}
         />
       )}
     </div>

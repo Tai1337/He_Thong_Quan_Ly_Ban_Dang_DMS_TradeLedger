@@ -6,11 +6,15 @@ import {
   getPpoById,
   updatePpoQuantity,
   approvePpoBatch,
-  rejectPpo
+  rejectPpo,
+  getPpoDailyWindowStatus,
+  execute11AmClosing
 } from '../controllers/ppoController.js';
 
 const router = express.Router();
 
+router.get('/ppo/window-status', getPpoDailyWindowStatus);
+router.post('/ppo/execute-closing', execute11AmClosing);
 router.post('/ppo/generate', generatePpo);
 router.get('/ppo', getPpoSuggestions);
 router.get('/ppo/summary', getPpoSummary);

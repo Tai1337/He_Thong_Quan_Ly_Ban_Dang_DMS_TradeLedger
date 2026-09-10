@@ -21,5 +21,6 @@ dist-ssr
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?
 scratch/
+__pycache__/
+*.pyc

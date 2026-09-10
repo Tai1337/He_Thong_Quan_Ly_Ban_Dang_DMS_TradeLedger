@@ -1,0 +1,240 @@
+/* ==========================================================================
+   Profit & Loss Statement (Image 1 Style)
+   ========================================================================== */
+
+.pnl-statement-page {
+  padding: 24px 32px 60px 32px;
+  background-color: #ffffff;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+/* 1. Header Toolbar */
+.pnl-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.pnl-page-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.pnl-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pnl-select-btn {
+  background-color: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: #374151;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.pnl-select-btn:hover {
+  background-color: #e5e7eb;
+}
+
+.pnl-icon-btn {
+  background-color: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pnl-icon-btn:hover {
+  background-color: #e5e7eb;
+  color: #111827;
+}
+
+/* 2. Filter Rows */
+.pnl-filters-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.pnl-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pnl-filter-input {
+  background-color: #f3f4f6;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: #374151;
+  outline: none;
+  width: 140px;
+  transition: all 0.15s ease;
+}
+
+.pnl-filter-input:focus {
+  background-color: #ffffff;
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.12);
+}
+
+.pnl-filter-input.select {
+  cursor: pointer;
+}
+
+.pnl-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: #374151;
+  cursor: pointer;
+  user-select: none;
+}
+
+.pnl-checkbox-row {
+  margin-top: 4px;
+}
+
+/* 3. KPI Equation Cards */
+.pnl-kpi-equation-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  padding: 24px 20px;
+  margin-bottom: 28px;
+  background-color: #ffffff;
+}
+
+.pnl-kpi-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.pnl-kpi-label {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.pnl-kpi-val {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.pnl-kpi-val.success {
+  color: #10b981;
+}
+
+.pnl-operator-box {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background-color: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+/* 4. Chart Card */
+.pnl-chart-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px 20px 10px 10px;
+  margin-bottom: 30px;
+  background-color: #ffffff;
+}
+
+/* 5. Tree Table */
+.pnl-tree-table-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #ffffff;
+}
+
+.pnl-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.pnl-data-table thead th {
+  background-color: #f9fafb;
+  padding: 10px 16px;
+  font-weight: 600;
+  color: #4b5563;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 12.5px;
+}
+
+.pnl-data-table tbody td {
+  padding: 11px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #374151;
+  transition: background-color 0.15s ease;
+}
+
+.tree-row {
+  cursor: pointer;
+}
+
+.tree-row:hover td {
+  background-color: #f9fafb;
+}
+
+.tree-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.row-num {
+  color: #9ca3af;
+  font-size: 11px;
+  width: 14px;
+}
+
+.tree-cell.indent-1 {
+  padding-left: 24px;
+}
+
+.tree-cell.indent-2 {
+  padding-left: 44px;
+}
+
+.tree-total-row td {
+  background-color: #fafbfc;
+  padding: 12px 16px;
+  border-top: 1px solid #e5e7eb;
+}

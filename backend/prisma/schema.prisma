@@ -257,6 +257,7 @@ model Supplier {
   // [Cải tiến #2] relation ngược từ Supplier → PurchaseOrder
   purchaseOrders  PurchaseOrder[]
   ppoSuggestions  PpoSuggestion[]
+  deliveryTrips   DeliveryTrip[]
 
   @@map("suppliers")
 }
@@ -393,6 +394,7 @@ model SalesOrder {
   items           SalesOrderItem[]
   statusHistory   OrderStatusHistory[]
   invoice         Invoice?           // 1 SO chỉ có tối đa 1 hoá đơn
+  purchaseOrder   PurchaseOrder?     @relation("PoSoRelation")
 
   @@index([distributorId, status])
   @@map("sales_orders")
@@ -455,6 +457,8 @@ model PurchaseOrder {
   notes         String?   @db.Text
   cancelReason  String?   @db.VarChar(255) @map("cancel_reason")
   closeReason   String?   @db.VarChar(255) @map("close_reason")
+  deliveryTripId BigInt?  @map("delivery_trip_id")
+  salesOrderId   BigInt?  @unique @map("sales_order_id")
   createdById   BigInt?   @map("created_by")
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
@@ -462,6 +466,8 @@ model PurchaseOrder {
   distributor   Distributor @relation(fields: [distributorId], references: [id])
   warehouse     Warehouse   @relation(fields: [warehouseId], references: [id])
   supplier      Supplier?   @relation(fields: [supplierId], references: [id])
+  deliveryTrip  DeliveryTrip? @relation(fields: [deliveryTripId], references: [id])
+  salesOrder    SalesOrder?   @relation("PoSoRelation", fields: [salesOrderId], references: [id])
   createdBy     User?       @relation(fields: [createdById], references: [id])
   
   items         PurchaseOrderItem[]
@@ -502,20 +508,25 @@ model PurchaseOrderStatusHistory {
 }
 
 model DeliveryTrip {
-  id            BigInt      @id @default(autoincrement())
-  tripCode      String      @unique @db.VarChar(30) @map("trip_code")
-  distributorId BigInt      @map("distributor_id")
-  warehouseId   BigInt      @map("warehouse_id")
-  driverId      BigInt?     @map("driver_id")
-  status        TripStatus  @default(WAITING_CONFIRM)
-  createdAt     DateTime    @default(now()) @map("created_at")
-  updatedAt     DateTime    @updatedAt @map("updated_at")
+  id                   BigInt      @id @default(autoincrement())
+  tripCode             String      @unique @db.VarChar(30) @map("trip_code")
+  tripType             String      @default("OUTBOUND") @db.VarChar(20) @map("trip_type") // INBOUND: Hàng NCC về NPP, OUTBOUND: NPP giao Đại lý
+  distributorId        BigInt      @map("distributor_id")
+  warehouseId          BigInt      @map("warehouse_id")
+  driverId             BigInt?     @map("driver_id")
+  supplierId           BigInt?     @map("supplier_id")
+  expectedDeliveryDate DateTime?   @db.Date @map("expected_delivery_date")
+  status               TripStatus  @default(WAITING_CONFIRM)
+  createdAt            DateTime    @default(now()) @map("created_at")
+  updatedAt            DateTime    @updatedAt @map("updated_at")
 
-  distributor   Distributor @relation(fields: [distributorId], references: [id])
-  warehouse     Warehouse   @relation(fields: [warehouseId], references: [id])
-  driver        User?       @relation(fields: [driverId], references: [id])
+  distributor    Distributor @relation(fields: [distributorId], references: [id])
+  warehouse      Warehouse   @relation(fields: [warehouseId], references: [id])
+  driver         User?       @relation(fields: [driverId], references: [id])
+  supplier       Supplier?   @relation(fields: [supplierId], references: [id])
   
-  salesOrders   SalesOrder[]
+  salesOrders    SalesOrder[]
+  purchaseOrders PurchaseOrder[]
 
   @@map("delivery_trips")
 }

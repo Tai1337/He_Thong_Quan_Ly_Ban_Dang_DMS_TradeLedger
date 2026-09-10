@@ -10,6 +10,10 @@ import SalesOrderDetail from './pages/Sales/SalesOrderList/SalesOrderDetail';
 import PurchaseOrderList from './pages/Purchase/PurchaseOrderList/PurchaseOrderList';
 import PurchaseOrderDetail from './pages/Purchase/PurchaseOrderDetail/PurchaseOrderDetail';
 import PpoList from './pages/Purchase/PPO/PpoList';
+import PurchaseReceivingList from './pages/Purchase/PurchaseReceiving/PurchaseReceivingList';
+import ProfitLossStatement from './pages/Accounting/ProfitLossStatement/ProfitLossStatement';
+import JobCardCalendar from './pages/Operations/JobCardCalendar/JobCardCalendar';
+import TaskGantt from './pages/Operations/TaskGantt/TaskGantt';
 import Layout from './components/Layout/Layout';
 import './index.css';
 
@@ -125,6 +129,18 @@ function App() {
           } 
         />
         <Route 
+          path="/purchase/receiving" 
+          element={
+            user ? (
+              <Layout user={user} onLogout={handleLogout}>
+                <PurchaseReceivingList />
+              </Layout>
+            ) : (
+              <Navigate to="/login" />
+            )
+          } 
+        />
+        <Route 
           path="/reports/rpt057" 
           element={
             user ? (
@@ -142,6 +158,42 @@ function App() {
             user ? (
               <Layout user={user} onLogout={handleLogout}>
                 <RPT083 user={user} />
+              </Layout>
+            ) : (
+              <Navigate to="/login" />
+            )
+          } 
+        />
+        <Route 
+          path="/reports/profit-and-loss" 
+          element={
+            user ? (
+              <Layout user={user} onLogout={handleLogout}>
+                <ProfitLossStatement />
+              </Layout>
+            ) : (
+              <Navigate to="/login" />
+            )
+          } 
+        />
+        <Route 
+          path="/operations/calendar" 
+          element={
+            user ? (
+              <Layout user={user} onLogout={handleLogout}>
+                <JobCardCalendar />
+              </Layout>
+            ) : (
+              <Navigate to="/login" />
+            )
+          } 
+        />
+        <Route 
+          path="/operations/gantt" 
+          element={
+            user ? (
+              <Layout user={user} onLogout={handleLogout}>
+                <TaskGantt />
               </Layout>
             ) : (
               <Navigate to="/login" />

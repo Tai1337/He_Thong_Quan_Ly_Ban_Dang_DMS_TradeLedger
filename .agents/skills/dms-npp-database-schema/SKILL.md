@@ -183,17 +183,42 @@ Database: MySQL, db name: `dms_npp`
 
 ---
 
-## Nhóm 4: Mua hàng (Purchase)
+## Nhóm 4: Mua hàng (Purchase) & Đề xuất PPO
+
+### `ppo_suggestions` – Đề xuất mua hàng tự động (ROP Engine & Khung giờ 9h-11h)
+| Cột | Kiểu | Ghi chú |
+|-----|------|---------|
+| id | BigInt PK | Auto increment |
+| distributor_id | BigInt FK | → distributors.id |
+| product_id | BigInt FK | → products.id |
+| supplier_id | BigInt? FK | → suppliers.id |
+| warehouse_id | BigInt? FK | → warehouses.id |
+| avg_daily_demand | Decimal(14,2) | Nhu cầu trung bình ngày |
+| lead_time_days | Int | Thời gian giao hàng (ngày) |
+| safety_stock | Decimal(14,2) | Tồn kho an toàn |
+| reorder_point | Decimal(14,2) | Điểm đặt hàng lại (ROP) |
+| quantity_available_snapshot | Decimal(14,2) | Tồn khả dụng tại thời điểm tính |
+| suggested_qty | Decimal(14,2) | Số lượng đề xuất ban đầu |
+| final_qty | Decimal(14,2)? | Số lượng kế toán duyệt (QUY TẮC: $\le$ suggested_qty) |
+| priority | String | HIGH, MEDIUM, LOW |
+| reason | String? | Lý do đề xuất |
+| status | PPOSuggestionStatus | NEW, VIEWED, APPROVED, REJECTED |
+| purchase_order_id | BigInt? FK | → purchase_orders.id (gắn khi chốt 11:00) |
+| reviewed_by_id | BigInt? FK | → users.id |
+| reviewed_at | DateTime? | |
+| generated_at | DateTime | Mặc định 09:00 hàng ngày |
 
 ### `purchase_orders` – Lệnh mua hàng (PO)
 | Cột | Kiểu | Ghi chú |
 |-----|------|---------|
 | id | BigInt PK | |
-| po_code | VarChar(30) UNIQUE | |
-| distributor_id | BigInt FK | |
-| warehouse_id | BigInt FK | |
-| supplier_id | BigInt? FK | **[Cải tiến]** → suppliers.id – biết đơn mua từ NCC nào |
-| status | POStatus | WAITING_RECEIVE → COMPLETED |
+| po_code | VarChar(30) UNIQUE | Định dạng PO-YYYYMMDD-XXXX |
+| distributor_id | BigInt FK | → distributors.id |
+| warehouse_id | BigInt FK | → warehouses.id |
+| supplier_id | BigInt? FK | → suppliers.id – Nhà cung cấp của đơn |
+| delivery_trip_id | BigInt? FK | **[Cải tiến]** → delivery_trips.id – Chuyến xe vận chuyển hàng về |
+| sales_order_id | BigInt? FK | **[Cải tiến]** → sales_orders.id – Đơn bán đối ứng từ NCC sang NPP |
+| status | POStatus | WAITING_RECEIVE, PARTIALLY_RECEIVED, COMPLETED, CANCELLED |
 | expected_date | Date? | |
 | created_at / updated_at | DateTime | |
 
@@ -201,10 +226,11 @@ Database: MySQL, db name: `dms_npp`
 | Cột | Kiểu | Ghi chú |
 |-----|------|---------|
 | id | BigInt PK | |
-| purchase_order_id | BigInt FK | Cascade |
-| product_id | BigInt FK | |
-| quantity | Decimal(14,2) | |
-| unit_price | Decimal(14,2) | |
+| purchase_order_id | BigInt FK | Cascade → purchase_orders.id |
+| product_id | BigInt FK | → products.id |
+| quantity | Decimal(14,2) | Số lượng đặt mua |
+| quantity_received | Decimal(14,2) | **[Cải tiến]** Số lượng thực nhận tích lũy tại kho |
+| unit_price | Decimal(14,2) | Đơn giá |
 
 ### `purchase_returns` – Trả hàng nhà cung cấp (POR)
 | Cột | Kiểu | Ghi chú |
@@ -225,40 +251,32 @@ Database: MySQL, db name: `dms_npp`
 | quantity | Decimal(14,2) | |
 | confirmed_price | Decimal(14,2)? | |
 
-### `purchase_plan_orders` – Đề nghị đặt hàng (PPO)
+### `purchase_plan_orders` – Đề nghị đặt hàng cũ (Legacy)
 | Cột | Kiểu | Ghi chú |
 |-----|------|---------|
 | id | BigInt PK | |
 | ppo_code | VarChar(30) UNIQUE | |
 | distributor_id | BigInt FK | |
 | status | PPOStatus | PROPOSED → PO_CREATED |
-| proposed_at | DateTime | |
-| npp_confirmed_at | DateTime? | |
-| asm_confirmed_at | DateTime? | |
-| expire_at | DateTime | |
-
-### `purchase_plan_order_items` – Chi tiết PPO
-| Cột | Kiểu | Ghi chú |
-|-----|------|---------|
-| id | BigInt PK | |
-| ppo_id | BigInt FK | Cascade |
-| product_id | BigInt FK | |
-| proposed_quantity | Decimal(14,2) | |
-| adjusted_quantity | Decimal(14,2)? | ASM có thể điều chỉnh |
 
 ---
 
 ## Nhóm 5: Vận chuyển & Điều phối kho
 
-### `delivery_trips` – Chuyến giao hàng
+### `delivery_trips` – Chuyến giao nhận hàng (Inbound & Outbound)
 | Cột | Kiểu | Ghi chú |
 |-----|------|---------|
 | id | BigInt PK | |
-| trip_code | VarChar(30) UNIQUE | |
-| distributor_id / warehouse_id | BigInt FK | |
+| trip_code | VarChar(30) UNIQUE | Định dạng TRIP-IN-... hoặc TRIP-OUT-... |
+| trip_type | TripType | **[Cải tiến]** INBOUND (NCC về NPP), OUTBOUND (NPP đi Đại lý) |
+| distributor_id | BigInt FK | → distributors.id |
+| warehouse_id | BigInt FK | → warehouses.id |
+| supplier_id | BigInt? FK | **[Cải tiến]** → suppliers.id (dành cho chuyến INBOUND) |
 | driver_id | BigInt? FK | → users.id |
-| status | TripStatus | WAITING_CONFIRM → CLOSED |
+| expected_delivery_date | DateTime? | **[Cải tiến]** Ngày dự kiến giao hàng đến NPP ($D+3$) |
+| status | TripStatus | WAITING_CONFIRM, ASSIGNED, SHIPPING, DELIVERED, COMPLETED, CLOSED |
 | created_at / updated_at | DateTime | |
+| Quan hệ | purchaseOrders | 1 Chuyến xe INBOUND chứa 1 hoặc nhiều PurchaseOrder |
 
 ### `stock_transfers` – Điều phối tồn kho
 | Cột | Kiểu | Ghi chú |

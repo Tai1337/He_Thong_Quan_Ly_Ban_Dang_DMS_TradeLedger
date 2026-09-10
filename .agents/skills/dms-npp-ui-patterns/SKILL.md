@@ -33,6 +33,47 @@ description: >
 
 ---
 
+## Tiêu chuẩn Thiết kế Nâng cao (Tích hợp UI/UX Pro Max)
+
+Dự án áp dụng bộ tiêu chuẩn thiết kế từ **UI/UX Pro Max Skill** dành riêng cho hệ thống **Enterprise B2B Supply Chain & Inventory Dashboard**:
+
+### 1. Hệ thống Design Tokens (Định nghĩa tại `src/index.css`):
+- **Brand & Base:**
+  - Nền toàn trang: `--bg-color: #f8fafc;` (Clean Slate 50)
+  - Vùng thẻ / Bảng: `--card-bg: #ffffff;` với viền `--border-color: #e2e8f0;`
+  - Văn bản chính: `--text-primary: #0f172a;` (Slate 900, tương phản cực cao $\ge 7:1$)
+  - Nút chính (CTA): `--primary-color: #1a73e8;` hover `--primary-hover: #1557b0;`
+- **Màu trạng thái ngữ nghĩa (Semantic Feedback):**
+  - Thành công (Đã duyệt / Hoàn tất): Text `--color-success: #16a34a;`, Nền badge `--color-success-bg: #f0fdf4;`, Viền `--color-success-border: #bbf7d0;`
+  - Cảnh báo (Đến hạn D+3 / Chờ duyệt): Text `--color-warning: #d97706;`, Nền badge `--color-warning-bg: #fffbeb;`, Viền `--color-warning-border: #fde68a;`
+  - Nguy hiểm (Hủy / Lỗi / Quá hạn): Text `--color-danger: #dc2626;`, Nền badge `--color-danger-bg: #fef2f2;`, Viền `--color-danger-border: #fecaca;`
+  - Thông tin (Mới / Đang giao): Text `--color-info: #0284c7;`, Nền badge `--color-info-bg: #f0f9ff;`, Viền `--color-info-border: #bae6fd;`
+
+### 2. Danh sách kiểm tra chất lượng trước khi bàn giao (Pre-Delivery QA Checklist):
+- [ ] **100% SVG Icons:** Sử dụng `lucide-react` (kích thước đồng nhất 16px - 20px). **TUYỆT ĐỐI KHÔNG dùng emoji làm icon**.
+- [ ] **Cursor Pointer:** Đảm bảo `cursor: pointer` trên tất cả nút bấm, thẻ có thể click, checkbox và liên kết.
+- [ ] **Chuyển động mượt (Micro-transitions):** Thêm transition từ `150ms - 250ms cubic-bezier(0.4, 0, 0.2, 1)` cho các hiệu ứng hover, focus, đóng/mở modal.
+- [ ] **Độ tương phản (Contrast Ratio):** Văn bản trên nền luôn đạt tối thiểu `4.5:1` (chuẩn WCAG AA). Không để chữ xám mờ trên nền xám nhạt.
+- [ ] **Hiển thị Responsive:** Đảm bảo trang hiển thị tốt từ Laptop (1024px, 1280px) đến Desktop màn rộng (1440px+).
+- [ ] **Data Dense Table:** Bảng dữ liệu có header cố định, hỗ trợ phân trang hoặc cuộn dọc mượt mà.
+
+### 3. Anti-Patterns BẮT BUỘC TRÁNH:
+- ❌ Không dùng gradient tím/hồng màu mè "kiểu AI" trong phần mềm quản trị doanh nghiệp.
+- ❌ Không để nút bấm không có trạng thái hover / focus / active.
+- ❌ Không dùng chiều rộng cố định (Fixed px width) gây tràn ngang màn hình (horizontal scroll).
+
+### 4. Công cụ tra cứu Design Intelligence:
+Để tìm kiếm các bảng màu, phong cách, và quy tắc UX chuyên sâu cho màn hình mới, chạy lệnh:
+```bash
+# Tra cứu phong cách hoặc bảng màu
+python3 .agents/skills/ui-ux-pro-max/scripts/search.py "<từ khóa>" --domain <style|color|ux|typography>
+
+# Tạo trọn gói Design System cho một chủ đề/ngành
+python3 .agents/skills/ui-ux-pro-max/scripts/search.py "<chủ đề>" --design-system
+```
+
+---
+
 ## Cấu trúc trang chuẩn
 
 ```
@@ -43,37 +84,19 @@ src/pages/TenTrang/
 
 ---
 
-## Mẫu Trang danh sách (List Page)
+## Mẫu Trang danh sách chuẩn (List Page with Custom Hook Pattern)
+
+Theo quy tắc DMS-NPP, **TUYỆT ĐỐI KHÔNG** viết logic `fetch()` hoặc quản lý `loading/error` lặp lại trực tiếp trong Component. Phải tách ra Custom Hook trong `src/hooks/use{Entity}.js`:
 
 ```jsx
 // src/pages/SalesOrders/SalesOrders.jsx
-import { useState, useEffect } from 'react';
-import { getSalesOrders } from '../../services/api';
+import { useState } from 'react';
+import { useSalesOrders } from '../../hooks/useSalesOrders';
 import './SalesOrders.css';
 
 const SalesOrders = () => {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-
-  useEffect(() => {
-    fetchOrders();
-  }, [page]);
-
-  const fetchOrders = async () => {
-    setLoading(true);
-    try {
-      const result = await getSalesOrders({ page, limit: 20 });
-      setOrders(result.data);
-      setTotal(result.total);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [filters, setFilters] = useState({ page: 1, limit: 20 });
+  const { orders, total, loading, error, refetch } = useSalesOrders(filters);
 
   if (loading) return <div className="page-loading">Đang tải...</div>;
   if (error) return <div className="page-error">{error}</div>;

@@ -1,54 +1,79 @@
-import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Search, Bell, Settings, User, LogOut } from 'lucide-react';
+import { 
+  Search, 
+  Bell, 
+  Settings, 
+  User, 
+  LogOut, 
+  Layers, 
+  TrendingUp, 
+  ShoppingCart, 
+  Box, 
+  Sparkles, 
+  Truck, 
+  FileText, 
+  PlusCircle, 
+  BarChart3, 
+  SlidersHorizontal, 
+  CheckSquare,
+  HelpCircle,
+  Home
+} from 'lucide-react';
 import './Layout.css';
 
 const Header = ({ user, onLogout }) => {
   const location = useLocation();
+
+  const isHomeActive = location.pathname === '/';
+  const isSalesActive = location.pathname.startsWith('/sales') || location.pathname.startsWith('/reports');
+  const isPurchaseActive = location.pathname.startsWith('/purchase');
+  const isInventoryActive = location.pathname.startsWith('/inventory');
+
   return (
     <header className="app-header">
       <div className="header-left">
-        <div className="header-logo">
-          <div className="header-logo-icon">i</div>
-          <span>iTHAN</span>
-        </div>
+        <Link to="/" className="header-logo">
+          <div className="header-logo-icon">
+            <Layers size={18} />
+          </div>
+          <div className="header-logo-text">
+            <span className="brand-name">DMS-NPP</span>
+            <span className="brand-sub">TradeLedger</span>
+          </div>
+        </Link>
         
         <nav className="header-nav">
           <div className="nav-item">
-            <Link to="/" className="nav-link active">
-              Trang chủ | Công việc
+            <Link to="/" className={`nav-link ${isHomeActive ? 'active' : ''}`}>
+              <Home size={15} />
+              <span>Trang chủ</span>
             </Link>
-          </div>
-          
-          <div className="nav-item">
-            <div className="nav-link">
-              Yêu cầu | Hỗ trợ
-            </div>
-            <div className="nav-dropdown">
-              <Link to="#" className="dropdown-item">Tạo yêu cầu mới</Link>
-              <Link to="#" className="dropdown-item">Danh sách yêu cầu</Link>
-            </div>
           </div>
           
           <div className="nav-item">
             <Link 
               to="/sales/sales-orders" 
-              className={`nav-link ${location.pathname.startsWith('/sales') ? 'active' : ''}`}
+              className={`nav-link ${isSalesActive ? 'active' : ''}`}
             >
-              Bán hàng | Quản lý SO
+              <TrendingUp size={15} />
+              <span>Bán hàng (SO)</span>
             </Link>
             <div className="nav-dropdown">
               <Link to="/sales/sales-orders" className="dropdown-item">
-                <strong>Quản lý Đơn hàng bán (SO)</strong>
+                <FileText size={15} className="dropdown-icon" />
+                <span>Quản lý Đơn hàng bán (SO)</span>
               </Link>
               <Link to="/sales/sales-orders?create=true" className="dropdown-item">
-                + Lập đơn bán hàng mới (BH_BM1)
+                <PlusCircle size={15} className="dropdown-icon" />
+                <span>Lập đơn bán hàng mới (BH_BM1)</span>
               </Link>
               <Link to="/sales/sales-orders?rpt005=true" className="dropdown-item">
-                Kiểm tra thiếu tồn kho (RPT005)
+                <CheckSquare size={15} className="dropdown-icon" />
+                <span>Kiểm tra thiếu tồn kho (RPT005)</span>
               </Link>
               <Link to="/reports/rpt057" className="dropdown-item">
-                Báo cáo doanh số & sản lượng (RPT057)
+                <BarChart3 size={15} className="dropdown-icon" />
+                <span>Báo cáo doanh số & sản lượng (RPT057)</span>
               </Link>
             </div>
           </div>
@@ -56,35 +81,63 @@ const Header = ({ user, onLogout }) => {
           <div className="nav-item">
             <Link 
               to="/purchase/purchase-orders" 
-              className={`nav-link ${location.pathname.startsWith('/purchase') ? 'active' : ''}`}
+              className={`nav-link ${isPurchaseActive ? 'active' : ''}`}
             >
-              Mua hàng | Quản lý PO
+              <ShoppingCart size={15} />
+              <span>Mua hàng (PO)</span>
             </Link>
             <div className="nav-dropdown">
               <Link to="/purchase/purchase-orders" className="dropdown-item">
-                <strong>Quản lý Đơn đặt hàng mua (PO)</strong>
+                <FileText size={15} className="dropdown-icon" />
+                <span>Quản lý Đơn đặt hàng mua (PO)</span>
               </Link>
-              <Link to="/purchase/ppo" className="dropdown-item" style={{ color: '#2563eb' }}>
-                ⚡ <strong>Đề xuất đặt hàng AI (PPO)</strong>
+              <Link to="/purchase/ppo" className="dropdown-item dropdown-item-featured">
+                <Sparkles size={15} className="dropdown-icon text-blue" />
+                <span><strong>Đề xuất đặt hàng AI (PPO)</strong></span>
+              </Link>
+              <Link to="/purchase/receiving" className="dropdown-item dropdown-item-success">
+                <Truck size={15} className="dropdown-icon text-green" />
+                <span><strong>Nhập kho đặt hàng (Chuyến xe D+3)</strong></span>
               </Link>
               <Link to="/purchase/purchase-orders?create=true" className="dropdown-item">
-                + Lập Đơn đặt hàng mua mới
-              </Link>
-              <Link to="/purchase/purchase-orders?discrepancy=true" className="dropdown-item">
-                Báo cáo chênh lệch nhận hàng
+                <PlusCircle size={15} className="dropdown-icon" />
+                <span>Lập Đơn đặt hàng mua mới</span>
               </Link>
             </div>
           </div>
 
           <div className="nav-item">
-            <div className="nav-link">
-              Tồn kho | Quản lý
+            <Link 
+              to="/inventory/rpt083" 
+              className={`nav-link ${isInventoryActive ? 'active' : ''}`}
+            >
+              <Box size={15} />
+              <span>Tồn kho</span>
+            </Link>
+            <div className="nav-dropdown">
+              <Link to="/inventory/rpt083" className="dropdown-item">
+                <BarChart3 size={15} className="dropdown-icon" />
+                <span>RPT083 - Báo cáo tồn kho NPP</span>
+              </Link>
+              <Link to="/sales/sales-orders?rpt005=true" className="dropdown-item">
+                <SlidersHorizontal size={15} className="dropdown-icon" />
+                <span>Kiểm soát phân bổ FEFO</span>
+              </Link>
+            </div>
+          </div>
+
+          <div className="nav-item">
+            <div className="nav-link nav-link-muted">
+              <HelpCircle size={15} />
+              <span>Hỗ trợ</span>
             </div>
             <div className="nav-dropdown">
-              <Link to="/inventory/rpt083" className="dropdown-item">RPT083 - Báo cáo tồn kho NPP</Link>
-              <Link to="#" className="dropdown-item">Điều chỉnh tồn kho</Link>
-              <Link to="#" className="dropdown-item">Điều chuyển hàng</Link>
-              <Link to="#" className="dropdown-item">Kiểm kê</Link>
+              <Link to="#" className="dropdown-item">
+                <span>Hướng dẫn quy trình 09:00 - 11:00</span>
+              </Link>
+              <Link to="#" className="dropdown-item">
+                <span>Hỗ trợ kỹ thuật & Đổi trả</span>
+              </Link>
             </div>
           </div>
         </nav>
@@ -92,30 +145,34 @@ const Header = ({ user, onLogout }) => {
 
       <div className="header-right">
         <div className="header-search">
-          <Search size={16} />
-          <input type="text" placeholder="Tìm kiếm theo tiêu đề, yêu cầu..." />
+          <Search size={15} />
+          <input type="text" placeholder="Tìm đơn, SKU, chuyến xe..." />
         </div>
         
-        <button className="header-action">
-          <Bell size={18} />
+        <button className="header-action" title="Thông báo hệ thống">
+          <Bell size={17} />
         </button>
         
-        <button className="header-action">
-          <Settings size={18} />
+        <button className="header-action" title="Cài đặt">
+          <Settings size={17} />
         </button>
         
         <div className="user-profile-header">
           <div className="user-info-header">
-            <span className="user-name-header">{user?.fullName || 'Admin NPP'}</span>
-            <span className="user-sub-header">INK.AD.G-10KF1292.04</span>
+            <span className="user-name-header">{user?.fullName || user?.username || 'Admin NPP'}</span>
+            <span className="user-sub-header">{user?.role || 'DISTRIBUTOR_ADMIN'}</span>
           </div>
           <div className="user-avatar">
-            <User size={18} />
+            <User size={16} />
           </div>
         </div>
 
-        <button className="header-action" onClick={onLogout} title="Đăng xuất" style={{ marginLeft: '12px', color: '#ef4444' }}>
-          <LogOut size={18} />
+        <button 
+          className="header-action logout-btn" 
+          onClick={onLogout} 
+          title="Đăng xuất khỏi hệ thống"
+        >
+          <LogOut size={17} />
         </button>
       </div>
     </header>

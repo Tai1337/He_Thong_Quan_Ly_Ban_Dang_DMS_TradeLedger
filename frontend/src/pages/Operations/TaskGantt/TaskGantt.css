@@ -1,0 +1,243 @@
+/* ==========================================================================
+   Task Gantt Style (Image 3 Style)
+   ========================================================================== */
+
+.gantt-page-layout {
+  display: flex;
+  background-color: #ffffff;
+  min-height: 100%;
+}
+
+/* CỘT BỘ LỌC TRÁI */
+.gantt-left-filters {
+  width: 220px;
+  flex-shrink: 0;
+  border-right: 1px solid #e5e7eb;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* VÙNG CHÍNH */
+.gantt-main-canvas {
+  flex: 1;
+  min-width: 0;
+  padding: 20px 28px 60px 28px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top Toolbar */
+.gantt-top-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 16px;
+}
+
+.gantt-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gantt-menu-icon {
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.gantt-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.gantt-actions-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gantt-view-select {
+  background-color: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12.5px;
+  color: #374151;
+  outline: none;
+  cursor: pointer;
+}
+
+.gantt-icon-btn {
+  background-color: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4b5563;
+  cursor: pointer;
+}
+
+.gantt-primary-dark-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #111827;
+  color: #ffffff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.gantt-primary-dark-btn:hover {
+  background-color: #1f2937;
+}
+
+/* Horizontal Filter Bar */
+.gantt-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.gantt-filter-input {
+  background-color: #f3f4f6;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12.5px;
+  color: #374151;
+  outline: none;
+  width: 100px;
+}
+
+.gantt-filter-input:focus {
+  background-color: #ffffff;
+  border-color: #1a73e8;
+}
+
+.gantt-filter-input.select {
+  cursor: pointer;
+}
+
+.gantt-secondary-btn {
+  background-color: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  color: #374151;
+  cursor: pointer;
+}
+
+/* Gantt Chart Container */
+.gantt-chart-container {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background-color: #ffffff;
+  overflow-x: auto;
+}
+
+.gantt-timeline-header {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(110px, 1fr));
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #ffffff;
+}
+
+.gantt-month-cell {
+  padding: 12px 8px;
+  text-align: center;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+/* Timeline Body */
+.gantt-timeline-body {
+  position: relative;
+  min-height: 480px;
+  min-width: 990px;
+}
+
+.gantt-grid-columns {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(110px, 1fr));
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.gantt-grid-col {
+  border-right: 1px solid #f3f4f6;
+}
+
+.gantt-grid-col:nth-child(even) {
+  background-color: #fafbfc;
+}
+
+/* Dependencies SVG */
+.gantt-dependencies-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Tasks Layer */
+.gantt-tasks-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+}
+
+.gantt-task-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 36px;
+  display: flex;
+  align-items: center;
+}
+
+.gantt-task-bar {
+  position: absolute;
+  height: 22px;
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.gantt-task-bar:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+.gantt-task-label {
+  position: absolute;
+  font-size: 11px;
+  color: #374151;
+  font-weight: 500;
+  white-space: nowrap;
+}

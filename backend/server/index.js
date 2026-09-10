@@ -10,6 +10,7 @@ import masterDataRoutes from './routes/masterDataRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import purchaseOrderRoutes from './routes/purchaseOrderRoutes.js';
 import ppoRoutes from './routes/ppoRoutes.js';
+import purchaseReceivingRoutes from './routes/purchaseReceivingRoutes.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -34,6 +35,7 @@ app.use('/api', salesOrderRoutes);
 app.use('/api', inventoryRoutes);
 app.use('/api', purchaseOrderRoutes);
 app.use('/api', ppoRoutes);
+app.use('/api', purchaseReceivingRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/master', masterDataRoutes);
 
