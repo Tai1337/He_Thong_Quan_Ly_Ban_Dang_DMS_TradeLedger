@@ -242,3 +242,91 @@ export const getTotalAvailableStock = async (productId, warehouseId) => {
   const lots = await findAvailableLotsByProduct(productId, warehouseId);
   return lots.reduce((sum, l) => sum + l.quantityAvailable, 0);
 };
+
+/**
+ * Tìm các chuyến xe khả dụng để gán đơn hàng
+ */
+export const findAvailableDeliveryTrips = async (distributorId, warehouseId) => {
+  const where = {
+    distributorId: BigInt(distributorId),
+    tripType: 'OUTBOUND',
+    status: { in: ['WAITING_CONFIRM', 'WAITING_SHIP', 'SHIPPING'] }
+  };
+  if (warehouseId) {
+    where.warehouseId = BigInt(warehouseId);
+  }
+
+  return prisma.deliveryTrip.findMany({
+    where,
+    include: {
+      driver: {
+        select: { id: true, fullName: true, phone: true }
+      },
+      warehouse: {
+        select: { id: true, name: true }
+      },
+      salesOrders: {
+        select: { id: true, orderCode: true, status: true }
+      }
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+};
+
+/**
+ * Lấy metadata danh sách khách hàng, kho xuất và sản phẩm kèm giá
+ */
+export const findSalesOrderMetaOptions = async (distributorId) => {
+  const [retailers, warehouses, products] = await Promise.all([
+    prisma.retailer.findMany({
+      where: { distributorId: BigInt(distributorId), status: true },
+      select: { id: true, code: true, name: true, phone: true, address: true },
+      orderBy: { name: 'asc' }
+    }),
+    prisma.warehouse.findMany({
+      where: { distributorId: BigInt(distributorId), status: true },
+      select: { id: true, code: true, name: true, type: true },
+      orderBy: { name: 'asc' }
+    }),
+    prisma.product.findMany({
+      where: { status: true },
+      select: { id: true, sku: true, name: true, unit: true, basePrice: true, stdSku: true },
+      orderBy: { name: 'asc' }
+    })
+  ]);
+
+  return { retailers, warehouses, products };
+};
+
+/**
+ * Thống kê tổng quan đơn bán hàng theo trạng thái & doanh thu
+ */
+export const getSalesSummaryAnalytics = async (distributorId, { startDate, endDate }) => {
+  const where = { distributorId: BigInt(distributorId) };
+  if (startDate || endDate) {
+    const createdAt = {};
+    if (startDate) createdAt.gte = new Date(startDate);
+    if (endDate) createdAt.lte = new Date(endDate);
+    where.createdAt = createdAt;
+  }
+
+  const [statusCounts, totalRevenueAgg] = await Promise.all([
+    prisma.salesOrder.groupBy({
+      by: ['status'],
+      where,
+      _count: { id: true }
+    }),
+    prisma.invoice.aggregate({
+      where: {
+        distributorId: BigInt(distributorId),
+        status: { in: ['PAID', 'PARTIALLY_PAID'] }
+      },
+      _sum: {
+        totalAmount: true,
+        paidAmount: true
+      }
+    })
+  ]);
+
+  return { statusCounts, totalRevenueAgg };
+};

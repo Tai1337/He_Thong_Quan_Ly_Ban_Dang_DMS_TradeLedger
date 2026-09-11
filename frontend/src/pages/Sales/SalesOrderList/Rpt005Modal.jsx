@@ -48,17 +48,27 @@ const Rpt005Modal = ({ isOpen, onClose, appliedFilters = {}, onOrderUpdated }) =
   };
 
   const handleSaveEdit = async (row) => {
-    if (Number(editQty) <= 0) {
-      alert('Số lượng phải lớn hơn 0');
+    const qtyNum = Number(editQty);
+    if (isNaN(qtyNum) || qtyNum < 0) {
+      alert('Số lượng không hợp lệ (phải từ 0 trở lên)');
       return;
     }
+
+    if (qtyNum === 0) {
+      const confirmZero = window.confirm(`Sản phẩm "${row.productName}" sẽ được cắt giảm số lượng về 0 (do hết tồn kho). Bạn có chắc chắn muốn lưu?`);
+      if (!confirmZero) return;
+    }
+
     setSavingItemId(row.itemId);
     try {
       await updateSalesOrderItemQty(row.orderId, row.itemId, {
-        newQuantity: Number(editQty),
-        reason: editReason
+        newQuantity: qtyNum,
+        reason: editReason || (qtyNum === 0 ? 'Cắt giảm về 0 do hết hàng' : 'Điều chỉnh số lượng do thiếu tồn')
       });
-      setSuccessMsg(`Đã cập nhật số lượng dòng ${row.sku} thành ${editQty}`);
+      setSuccessMsg(qtyNum === 0 
+        ? `Đã cắt giảm dòng ${row.sku} về 0 thành công (hết tồn kho)`
+        : `Đã cập nhật số lượng dòng ${row.sku} thành ${qtyNum}`
+      );
       setEditingItemId(null);
       await fetchReport();
       if (onOrderUpdated) onOrderUpdated();
