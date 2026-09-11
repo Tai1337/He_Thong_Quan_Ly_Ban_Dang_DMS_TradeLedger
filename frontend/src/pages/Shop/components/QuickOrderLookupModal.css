@@ -1,0 +1,422 @@
+.lookup-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.lookup-modal-dialog {
+  background: #ffffff;
+  width: 100%;
+  max-width: 620px;
+  border-radius: 20px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  animation: modalPopUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lookup-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fafafa;
+}
+
+.lookup-header-lead {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.lookup-icon-badge {
+  width: 42px;
+  height: 42px;
+  background: #ecfdf5;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lookup-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.lookup-subtitle {
+  margin: 2px 0 0 0;
+  font-size: 12.5px;
+  color: #64748b;
+}
+
+.lookup-close-btn {
+  background: #f1f5f9;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.lookup-close-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.lookup-search-bar {
+  display: flex;
+  gap: 10px;
+  padding: 20px 24px 16px 24px;
+}
+
+.lookup-input-group {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.lookup-search-icon {
+  position: absolute;
+  left: 14px;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.lookup-input {
+  width: 100%;
+  height: 46px;
+  padding: 0 40px 0 42px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #0f172a;
+  outline: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.lookup-input:focus {
+  background: #ffffff;
+  border-color: #059669;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.12);
+}
+
+.lookup-clear-btn {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.lookup-submit-btn {
+  height: 46px;
+  padding: 0 20px;
+  background: #059669;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  white-space: nowrap;
+}
+
+.lookup-submit-btn:hover:not(:disabled) {
+  background: #047857;
+}
+
+.lookup-submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.lookup-error-banner {
+  margin: 0 24px 16px 24px;
+  padding: 12px 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #b91c1c;
+}
+
+.lookup-result-card {
+  margin: 0 24px 24px 24px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  overflow: hidden;
+  overflow-y: auto;
+  max-height: calc(90vh - 220px);
+}
+
+.lookup-result-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.lookup-code-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.5px;
+}
+
+.lookup-code-val {
+  margin: 2px 0 0 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+  font-family: monospace;
+}
+
+.lookup-status-pill {
+  padding: 5px 12px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.lookup-status-pill.status-pending {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.lookup-status-pill.status-allocated {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.lookup-status-pill.status-delivering {
+  background: #e0e7ff;
+  color: #4f46e5;
+}
+
+.lookup-status-pill.status-completed {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.lookup-status-pill.status-cancelled {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* Timeline */
+.lookup-timeline-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 16px;
+  background: #ffffff;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.lookup-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  opacity: 0.45;
+  flex: 1;
+}
+
+.lookup-step.active {
+  opacity: 1;
+}
+
+.step-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #e2e8f0;
+}
+
+.lookup-step.active .step-circle {
+  background: #059669;
+  color: #ffffff;
+  border-color: #059669;
+}
+
+.step-content strong {
+  display: block;
+  font-size: 11.5px;
+  color: #0f172a;
+}
+
+.step-content small {
+  font-size: 10px;
+  color: #64748b;
+}
+
+.step-divider-line {
+  height: 2px;
+  background: #e2e8f0;
+  flex: 0.5;
+  margin: 0 4px;
+}
+
+/* Meta Grid */
+.lookup-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 16px;
+  background: #fafafa;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.lookup-meta-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.lookup-meta-item small {
+  display: block;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.lookup-meta-item strong {
+  display: block;
+  font-size: 12.5px;
+  color: #0f172a;
+}
+
+.lookup-total-price {
+  color: #ee4d2d !important;
+  font-weight: 800 !important;
+}
+
+/* Items list */
+.lookup-items-preview {
+  padding: 16px;
+}
+
+.lookup-items-head {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 10px;
+}
+
+.lookup-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lookup-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  font-size: 12.5px;
+}
+
+.lookup-item-name strong {
+  display: block;
+  color: #0f172a;
+}
+
+.lookup-item-name small {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.lookup-item-qty {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.lookup-item-subtotal {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* Guide box */
+.lookup-guide-box {
+  margin: 0 24px 24px 24px;
+  padding: 16px 20px;
+  background: #f0fdf4;
+  border: 1px dashed #86efac;
+  border-radius: 12px;
+}
+
+.lookup-guide-box h4 {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  color: #166534;
+}
+
+.lookup-guide-box ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: #15803d;
+  line-height: 1.7;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalPopUp {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@media (max-width: 640px) {
+  .lookup-search-bar {
+    flex-direction: column;
+  }
+  .lookup-meta-grid {
+    grid-template-columns: 1fr;
+  }
+  .lookup-timeline-wrapper {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+}

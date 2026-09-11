@@ -15,6 +15,8 @@ import ProfitLossStatement from './pages/Accounting/ProfitLossStatement/ProfitLo
 import JobCardCalendar from './pages/Operations/JobCardCalendar/JobCardCalendar';
 import TaskGantt from './pages/Operations/TaskGantt/TaskGantt';
 import ThemeReview from './pages/ThemeReview/ThemeReview';
+import ShopHome from './pages/Shop/ShopHome';
+import ShopProductDetail from './pages/Shop/ShopProductDetail';
 import Layout from './components/Layout/Layout';
 import './index.css';
 
@@ -53,6 +55,10 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Cổng Đặt Hàng Trực Tuyến (Public Web Bán Hàng) */}
+        <Route path="/shop" element={<ShopHome />} />
+        <Route path="/shop/product/:id" element={<ShopProductDetail />} />
+
         <Route 
           path="/login" 
           element={!user ? <Login onLogin={handleLogin} /> : <Navigate to="/" />} 

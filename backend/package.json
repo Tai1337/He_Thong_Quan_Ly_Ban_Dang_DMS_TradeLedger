@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node server/index.js",
+    "dev": "node --watch server/index.js",
     "start": "node server/index.js",
     "seed": "prisma db seed",
     "db:push": "prisma db push",

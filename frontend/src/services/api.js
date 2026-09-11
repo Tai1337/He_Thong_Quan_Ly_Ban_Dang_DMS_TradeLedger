@@ -530,3 +530,104 @@ export const receiveTripGoods = async (tripId, payload) => {
   return data;
 };
 
+// --- WEB BÁN HÀNG (ORDERING PORTAL - R- ORDERS) ---
+
+export const registerShopCustomer = async (payload) => {
+  const response = await fetch(`${API_URL}/shop/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Đăng ký tài khoản thất bại');
+  }
+  return data;
+};
+
+export const loginShopCustomer = async (phone, password) => {
+  const response = await fetch(`${API_URL}/shop/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone, password })
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Đăng nhập thất bại');
+  }
+  return data;
+};
+
+export const getShopProducts = async (params = {}) => {
+  const clean = {};
+  Object.keys(params).forEach(k => {
+    if (params[k] !== undefined && params[k] !== null && params[k] !== '') {
+      clean[k] = params[k];
+    }
+  });
+  const query = new URLSearchParams(clean).toString();
+  const response = await fetch(`${API_URL}/shop/products?${query}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi tải danh sách sản phẩm bán hàng');
+  }
+  return data;
+};
+
+export const getShopCategories = async () => {
+  const response = await fetch(`${API_URL}/shop/categories`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi tải danh mục sản phẩm');
+  }
+  return data;
+};
+
+export const getShopProductDetail = async (id, params = {}) => {
+  const clean = {};
+  Object.keys(params).forEach(k => {
+    if (params[k] !== undefined && params[k] !== null && params[k] !== '') {
+      clean[k] = params[k];
+    }
+  });
+  const query = new URLSearchParams(clean).toString();
+  const url = `${API_URL}/shop/products/${id}${query ? `?${query}` : ''}`;
+  const response = await fetch(url);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi tải chi tiết sản phẩm');
+  }
+  return data;
+};
+
+export const placeShopOrder = async (payload) => {
+  const response = await fetch(`${API_URL}/shop/orders`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi đặt hàng');
+  }
+  return data;
+};
+
+export const getCustomerOrders = async (customerId) => {
+  const response = await fetch(`${API_URL}/shop/my-orders/${customerId}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi tải lịch sử đơn hàng');
+  }
+  return data;
+};
+
+export const getShopOrderDetail = async (orderCode) => {
+  const response = await fetch(`${API_URL}/shop/orders/${encodeURIComponent(orderCode)}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Không tìm thấy đơn hàng');
+  }
+  return data;
+};
+

@@ -130,6 +130,11 @@ enum PaymentMethod {
   CHECK
 }
 
+enum CustomerAccountType {
+  CONSUMER
+  STORE
+}
+
 // MODELS
 
 model Role {
@@ -274,11 +279,32 @@ model Retailer {
   latitude      Decimal? @db.Decimal(10, 7)
   longitude     Decimal? @db.Decimal(10, 7)
 
-  distributor   Distributor @relation(fields: [distributorId], references: [id])
-  salesOrders   SalesOrder[]
+  distributor      Distributor       @relation(fields: [distributorId], references: [id])
+  salesOrders      SalesOrder[]
+  customerAccounts CustomerAccount[]
 
   @@unique([distributorId, code])
   @@map("retailers")
+}
+
+model CustomerAccount {
+  id           BigInt              @id @default(autoincrement())
+  phone        String              @unique @db.VarChar(20)
+  passwordHash String              @db.VarChar(255) @map("password_hash")
+  fullName     String              @db.VarChar(150) @map("full_name")
+  accountType  CustomerAccountType @default(CONSUMER) @map("account_type")
+  storeName    String?             @db.VarChar(200) @map("store_name")
+  address      String?             @db.VarChar(255)
+  email        String?             @db.VarChar(100)
+  status       Boolean             @default(true)
+  retailerId   BigInt?             @map("retailer_id")
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
+
+  retailer    Retailer?    @relation(fields: [retailerId], references: [id])
+  salesOrders SalesOrder[]
+
+  @@map("customer_accounts")
 }
 
 model Warehouse {
@@ -382,6 +408,7 @@ model SalesOrder {
   status          SalesOrderStatus @default(PENDING)
   deliveryTripId  BigInt?          @map("delivery_trip_id")
   createdById     BigInt?          @map("created_by")
+  customerId      BigInt?          @map("customer_id")
   createdAt       DateTime         @default(now()) @map("created_at")
   updatedAt       DateTime         @updatedAt @map("updated_at")
 
@@ -390,6 +417,7 @@ model SalesOrder {
   warehouse       Warehouse        @relation(fields: [warehouseId], references: [id])
   deliveryTrip    DeliveryTrip?    @relation(fields: [deliveryTripId], references: [id])
   createdBy       User?            @relation(fields: [createdById], references: [id])
+  customer        CustomerAccount? @relation(fields: [customerId], references: [id])
 
   items           SalesOrderItem[]
   statusHistory   OrderStatusHistory[]

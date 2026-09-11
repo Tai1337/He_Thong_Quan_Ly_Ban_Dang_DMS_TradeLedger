@@ -678,9 +678,25 @@ const SalesOrderList = () => {
                       />
                     </td>
                     <td>
-                      <Link to={`/sales/sales-orders/${row.id}`} className="order-link">
-                        {row.orderCode}
-                      </Link>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        <Link to={`/sales/sales-orders/${row.id}`} className="order-link">
+                          {row.orderCode}
+                        </Link>
+                        {row.orderCode?.startsWith('R-') && (
+                          <span style={{
+                            background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                            color: '#b45309',
+                            border: '1px solid #f59e0b',
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            whiteSpace: 'nowrap'
+                          }} title="Đơn hàng trực tuyến từ Web Bán Hàng">
+                            🛒 Web R
+                          </span>
+                        )}
+                      </div>
                       <div style={{ fontSize: '11px', color: '#64748b' }}>{row.itemCount} mặt hàng</div>
                     </td>
                     <td>

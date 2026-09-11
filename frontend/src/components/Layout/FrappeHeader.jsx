@@ -9,7 +9,8 @@ import {
   User,
   Shield,
   Palette,
-  Layers
+  Layers,
+  ShoppingCart
 } from 'lucide-react';
 import './Layout.css';
 
@@ -144,6 +145,18 @@ const FrappeHeader = ({ user, onLogout }) => {
           <span>Trợ giúp</span>
           <ChevronDown size={13} />
         </button>
+
+        {/* Web Bán Hàng Link */}
+        <Link 
+          to="/shop" 
+          target="_blank"
+          className="frappe-theme-review-badge"
+          style={{ background: '#ecfdf5', color: '#047857', borderColor: '#a7f3d0' }}
+          title="Mở Cổng đặt hàng trực tuyến (Web Bán Hàng /shop)"
+        >
+          <ShoppingCart size={14} />
+          <span>Web Bán Hàng</span>
+        </Link>
 
         {/* Review Themes Button */}
         <Link 
