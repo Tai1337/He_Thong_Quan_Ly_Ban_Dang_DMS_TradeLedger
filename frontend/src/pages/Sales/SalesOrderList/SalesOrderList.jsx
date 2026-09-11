@@ -42,10 +42,12 @@ const formatCurrency = (value) => new Intl.NumberFormat('vi-VN').format(value ||
 
 // Danh sách các trạng thái hỗ trợ multi-select
 const ALL_STATUSES = [
-  { code: 'PENDING', label: 'Đã gửi đơn', color: 'badge-pending' },
+  { code: 'PENDING', label: 'Chờ duyệt', color: 'badge-pending' },
+  { code: 'SUBMITTED', label: 'Chờ phân bổ', color: 'badge-submitted' },
   { code: 'ALLOCATED', label: 'Chờ giao', color: 'badge-allocated' },
   { code: 'SHIPPED', label: 'Đang giao', color: 'badge-shipped' },
   { code: 'DELIVERED', label: 'Đã giao', color: 'badge-delivered' },
+  { code: 'INVOICED', label: 'Đã lập HĐ', color: 'badge-invoiced' },
   { code: 'PAID', label: 'Đã đóng', color: 'badge-paid' },
   { code: 'CANCELLED', label: 'Đã huỷ', color: 'badge-cancelled' }
 ];
@@ -551,6 +553,28 @@ const SalesOrderList = () => {
             <p>{kpis.totalCbm || '0.0000'}</p>
           </div>
           <div className="kpi-icon"><Layers size={20} /></div>
+        </div>
+        <div 
+          className="kpi-card amber"
+          title="Nhấn để lọc các đơn đã giao / lập hóa đơn đang chờ đóng đơn"
+          onClick={() => {
+            setSelectedStatusList(['DELIVERED', 'INVOICED']);
+            const nextFilters = { ...filterForm, status: 'DELIVERED,INVOICED' };
+            setFilterForm(nextFilters);
+            sessionStorage.setItem('dms_sales_order_filters', JSON.stringify(nextFilters));
+            applyFilters(nextFilters);
+          }}
+        >
+          <div className="kpi-info">
+            <h4 style={{ color: '#c2410c', fontWeight: 600 }}>Đơn chưa đóng ⚠️</h4>
+            <p style={{ color: '#ea580c', fontWeight: 700 }}>
+              {kpis.unclosedOrdersCount || 0}
+              <span style={{ fontSize: '12px', fontWeight: 500, marginLeft: '6px', color: '#9a3412' }}>
+                ({formatCurrency(kpis.unclosedOrdersAmount)} đ)
+              </span>
+            </p>
+          </div>
+          <div className="kpi-icon" style={{ color: '#ea580c' }}><Truck size={20} /></div>
         </div>
       </div>
 

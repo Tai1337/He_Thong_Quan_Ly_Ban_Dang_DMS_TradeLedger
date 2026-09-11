@@ -126,14 +126,137 @@ export const closeOrder = async (req, res) => {
 export const updateOrderItemQuantity = async (req, res) => {
   try {
     const { id, itemId } = req.params;
-    const { newQuantity, reason, changedById } = req.body;
+    const { newQuantity, quantity, reason, changedById } = req.body;
+    const finalQty = newQuantity !== undefined ? newQuantity : quantity;
     const distributorId = req.query.distributorId || req.user?.distributorId || 1;
     const userId = changedById || req.user?.id || 1;
 
-    const result = await salesOrderService.updateOrderItemQuantity(id, itemId, newQuantity, distributorId, userId, reason);
+    const result = await salesOrderService.updateOrderItemQuantity(id, itemId, finalQty, distributorId, userId, reason);
     res.status(200).json(result);
   } catch (error) {
     console.error('Error in updateOrderItemQuantity:', error);
     res.status(400).json({ error: error.message || 'Lỗi khi cập nhật số lượng' });
+  }
+};
+
+export const submitOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const distributorId = req.query.distributorId || req.user?.distributorId || 1;
+    const userId = req.body.changedById || req.user?.id || 1;
+
+    const result = await salesOrderService.submitOrder(id, distributorId, userId);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error in submitOrder:', error);
+    res.status(400).json({ error: error.message || 'Lỗi khi nộp duyệt đơn hàng' });
+  }
+};
+
+export const unassignTrip = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason, changedById } = req.body;
+    const distributorId = req.query.distributorId || req.user?.distributorId || 1;
+    const userId = changedById || req.user?.id || 1;
+
+    const result = await salesOrderService.unassignDeliveryTrip(id, distributorId, userId, reason);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error in unassignTrip:', error);
+    res.status(400).json({ error: error.message || 'Lỗi khi huỷ gán chuyến xe' });
+  }
+};
+
+export const createInvoice = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const distributorId = req.query.distributorId || req.user?.distributorId || 1;
+    const userId = req.body.changedById || req.user?.id || 1;
+
+    const result = await salesOrderService.createOrderInvoice(id, distributorId, userId, req.body);
+    res.status(201).json(result);
+  } catch (error) {
+    console.error('Error in createInvoice:', error);
+    res.status(400).json({ error: error.message || 'Lỗi khi xuất hoá đơn' });
+  }
+};
+
+export const recordPayment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const distributorId = req.query.distributorId || req.user?.distributorId || 1;
+    const userId = req.body.changedById || req.user?.id || 1;
+
+    const result = await salesOrderService.recordOrderPayment(id, distributorId, userId, req.body);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error in recordPayment:', error);
+    res.status(400).json({ error: error.message || 'Lỗi khi ghi nhận thanh toán' });
+  }
+};
+
+export const addOrderItem = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const distributorId = req.query.distributorId || req.user?.distributorId || 1;
+    const userId = req.body.changedById || req.user?.id || 1;
+
+    const result = await salesOrderService.addOrderItem(id, distributorId, userId, req.body);
+    res.status(201).json(result);
+  } catch (error) {
+    console.error('Error in addOrderItem:', error);
+    res.status(400).json({ error: error.message || 'Lỗi khi thêm sản phẩm vào đơn' });
+  }
+};
+
+export const removeOrderItem = async (req, res) => {
+  try {
+    const { id, itemId } = req.params;
+    const distributorId = req.query.distributorId || req.user?.distributorId || 1;
+    const userId = req.body.changedById || req.user?.id || 1;
+
+    const result = await salesOrderService.removeOrderItem(id, itemId, distributorId, userId);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error in removeOrderItem:', error);
+    res.status(400).json({ error: error.message || 'Lỗi khi xoá sản phẩm khỏi đơn' });
+  }
+};
+
+export const getAvailableTrips = async (req, res) => {
+  try {
+    const distributorId = req.query.distributorId || req.user?.distributorId || 1;
+    const { warehouseId } = req.query;
+
+    const trips = await salesOrderService.getAvailableDeliveryTrips(distributorId, warehouseId);
+    res.status(200).json({ data: trips });
+  } catch (error) {
+    console.error('Error in getAvailableTrips:', error);
+    res.status(500).json({ error: error.message || 'Lỗi khi lấy danh sách chuyến xe' });
+  }
+};
+
+export const getSalesOrderMeta = async (req, res) => {
+  try {
+    const distributorId = req.query.distributorId || req.user?.distributorId || 1;
+
+    const meta = await salesOrderService.getSalesOrderMetadata(distributorId);
+    res.status(200).json(meta);
+  } catch (error) {
+    console.error('Error in getSalesOrderMeta:', error);
+    res.status(500).json({ error: error.message || 'Lỗi khi lấy dữ liệu cấu hình đơn hàng' });
+  }
+};
+
+export const getSalesAnalytics = async (req, res) => {
+  try {
+    const distributorId = req.query.distributorId || req.user?.distributorId || 1;
+
+    const analytics = await salesOrderService.getSalesAnalytics(distributorId, req.query);
+    res.status(200).json(analytics);
+  } catch (error) {
+    console.error('Error in getSalesAnalytics:', error);
+    res.status(500).json({ error: error.message || 'Lỗi khi lấy báo cáo thống kê bán hàng' });
   }
 };

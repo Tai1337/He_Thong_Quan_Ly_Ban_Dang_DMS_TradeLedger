@@ -33,13 +33,25 @@ export const getSalesOrdersWithKPIs = async (distributorId, filters = {}) => {
     }
 
     // Kiểm tra xem đơn hàng có bị thiếu tồn kho không (nếu đơn chưa xuất kho)
-    if (order.status === 'PENDING') {
+    if (order.status === 'PENDING' || order.status === 'SUBMITTED') {
       for (const item of (order.items || [])) {
+        const qty = Number(item.quantity);
+        if (qty <= 0) continue; // Bỏ qua nếu đã cắt giảm về 0
         const prodId = item.productId.toString();
         if (productStockCache[prodId] === undefined) {
           productStockCache[prodId] = await getTotalAvailableStock(item.productId, order.warehouseId);
         }
-        if (Number(item.quantity) > productStockCache[prodId]) {
+        if (qty > productStockCache[prodId]) {
+          isShortage = true;
+        }
+      }
+    } else if (order.status === 'ALLOCATED') {
+      // Đơn đã ALLOCATED nhưng nếu có dòng chưa phân bổ đủ lô -> đánh dấu thiếu tồn
+      for (const item of (order.items || [])) {
+        const qty = Number(item.quantity);
+        if (qty <= 0) continue;
+        const allocatedQty = (item.allocations || []).reduce((s, a) => s + Number(a.quantity), 0);
+        if (allocatedQty < qty) {
           isShortage = true;
         }
       }
@@ -76,6 +88,21 @@ export const getSalesOrdersWithKPIs = async (distributorId, filters = {}) => {
     };
   }));
 
+  // Lấy tổng quan các đơn hàng chưa đóng (DELIVERED hoặc INVOICED) của NPP
+  const unclosedOrdersList = await prisma.salesOrder.findMany({
+    where: {
+      distributorId: BigInt(distributorId),
+      status: { in: ['DELIVERED', 'INVOICED'] }
+    },
+    include: { items: true, invoice: true }
+  });
+
+  const unclosedOrdersCount = unclosedOrdersList.length;
+  const unclosedOrdersAmount = unclosedOrdersList.reduce((sum, o) => {
+    if (o.invoice) return sum + Number(o.invoice.totalAmount);
+    return sum + (o.items || []).reduce((s, it) => s + (Number(it.quantity) * Number(it.unitPrice)), 0);
+  }, 0);
+
   // Lọc theo stockFilter nếu người dùng chọn tab 'Đủ tồn' / 'Thiếu tồn'
   let filteredData = formattedOrders;
   if (filters.stockFilter === 'enough') {
@@ -93,6 +120,8 @@ export const getSalesOrdersWithKPIs = async (distributorId, filters = {}) => {
       totalOrderValue: totalAmount - totalDiscount,
       totalTons: (totalAmount / 50000000).toFixed(4), // Ước tính quy đổi tấn
       totalCbm: (totalAmount / 30000000).toFixed(4),  // Ước tính quy đổi khối m3
+      unclosedOrdersCount,
+      unclosedOrdersAmount
     },
     pagination: {
       total,
@@ -212,8 +241,8 @@ export const confirmOrder = async (orderId, distributorId, changedById) => {
       throw new Error('Đơn hàng không tồn tại hoặc không thuộc quyền quản lý');
     }
 
-    if (order.status !== 'PENDING') {
-      throw new Error(`Đơn hàng đang ở trạng thái "${order.status}", chỉ có thể xác nhận đơn ở trạng thái "Đã gửi đơn" (PENDING)`);
+    if (order.status !== 'PENDING' && order.status !== 'SUBMITTED') {
+      throw new Error(`Đơn hàng đang ở trạng thái "${order.status}", chỉ có thể xác nhận đơn ở trạng thái "Chờ duyệt" (PENDING hoặc SUBMITTED)`);
     }
 
     if (!order.items || order.items.length === 0) {
@@ -223,9 +252,17 @@ export const confirmOrder = async (orderId, distributorId, changedById) => {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
 
-    // 2. Phân bổ lô theo FEFO cho từng mặt hàng
+    // 2. Phân bổ lô theo FEFO cho từng mặt hàng (bỏ qua các sản phẩm đã chỉnh số lượng về 0)
+    let validItemsToAllocate = 0;
+
     for (const item of order.items) {
       const requiredQty = Number(item.quantity);
+
+      // Nếu sản phẩm đã được cắt giảm về 0 do hết hàng -> bỏ qua
+      if (requiredQty <= 0) {
+        continue;
+      }
+      validItemsToAllocate++;
 
       // Tìm tất cả các lô hàng còn hạn sử dụng, trạng thái GOOD, sắp xếp FEFO
       const lots = await tx.stockLot.findMany({
@@ -240,7 +277,7 @@ export const confirmOrder = async (orderId, distributorId, changedById) => {
         },
         include: { stockBalance: true },
         orderBy: [
-          { expiryDate: 'asc' },
+          { expiryDate: 'asc' }, // FEFO: Hạn dùng gần nhất xuất trước
           { id: 'asc' }
         ]
       });
@@ -259,7 +296,7 @@ export const confirmOrder = async (orderId, distributorId, changedById) => {
       }
 
       if (totalAvailable < requiredQty) {
-        throw new Error(`Sản phẩm "${item.product.name}" không đủ tồn kho khả dụng (Yêu cầu: ${requiredQty}, Khả dụng: ${totalAvailable})`);
+        throw new Error(`Sản phẩm "${item.product.name}" (SKU: ${item.product.sku}) không đủ tồn kho khả dụng để xác nhận đơn. Yêu cầu: ${requiredQty}, Tồn khả dụng hiện tại: ${totalAvailable}. Vui lòng rà soát điều chỉnh qua RPT005 hoặc nhập thêm hàng!`);
       }
 
       // Tiến hành phân bổ số lượng theo FEFO
@@ -292,6 +329,10 @@ export const confirmOrder = async (orderId, distributorId, changedById) => {
       }
     }
 
+    if (validItemsToAllocate === 0) {
+      throw new Error('Đơn hàng không có sản phẩm nào có số lượng > 0 để phân bổ lô. Vui lòng thêm sản phẩm hoặc huỷ đơn hàng này.');
+    }
+
     // 3. Cập nhật trạng thái đơn hàng -> ALLOCATED (Chờ giao)
     await tx.salesOrder.update({
       where: { id: order.id },
@@ -302,7 +343,7 @@ export const confirmOrder = async (orderId, distributorId, changedById) => {
     await tx.orderStatusHistory.create({
       data: {
         salesOrderId: order.id,
-        fromStatus: 'PENDING',
+        fromStatus: order.status,
         toStatus: 'ALLOCATED',
         changedById: changedById ? BigInt(changedById) : null,
         notes: 'Xác nhận đơn và tự động phân bổ lô theo FEFO (giữ chỗ Reserved Stock)'
@@ -653,8 +694,8 @@ export const closeOrder = async (orderId, distributorId, changedById) => {
  */
 export const updateOrderItemQuantity = async (orderId, itemId, newQuantity, distributorId, changedById, reason = '') => {
   const qty = Number(newQuantity);
-  if (isNaN(qty) || qty <= 0) {
-    throw new Error('Số lượng sản phẩm phải lớn hơn 0');
+  if (isNaN(qty) || qty < 0) {
+    throw new Error('Số lượng sản phẩm không hợp lệ (phải từ 0 trở lên)');
   }
 
   return prisma.$transaction(async (tx) => {
@@ -666,8 +707,8 @@ export const updateOrderItemQuantity = async (orderId, itemId, newQuantity, dist
     });
 
     if (!order) throw new Error('Không tìm thấy đơn hàng');
-    if (order.status !== 'PENDING') {
-      throw new Error('Chỉ được chỉnh sửa số lượng khi đơn hàng ở trạng thái "Đã gửi đơn" (PENDING)');
+    if (order.status !== 'PENDING' && order.status !== 'SUBMITTED') {
+      throw new Error('Chỉ được chỉnh sửa số lượng khi đơn hàng ở trạng thái "Chờ duyệt" (PENDING hoặc SUBMITTED)');
     }
 
     const item = await tx.salesOrderItem.findUnique({
@@ -684,19 +725,23 @@ export const updateOrderItemQuantity = async (orderId, itemId, newQuantity, dist
       data: { quantity: qty }
     });
 
+    const noteText = qty === 0 
+      ? `Điều chỉnh số lượng SP [${item.product.name}] từ ${oldQty} về 0 (Cắt giảm do hết tồn kho). Lý do: ${reason || 'Hết hàng'}`
+      : `Điều chỉnh số lượng SP [${item.product.name}] từ ${oldQty} thành ${qty}. Lý do: ${reason || 'Kế toán điều chỉnh do thiếu tồn kho'}`;
+
     await tx.orderStatusHistory.create({
       data: {
         salesOrderId: order.id,
-        fromStatus: 'PENDING',
-        toStatus: 'PENDING',
+        fromStatus: order.status,
+        toStatus: order.status,
         changedById: changedById ? BigInt(changedById) : null,
-        notes: `Điều chỉnh số lượng SP [${item.product.name}] từ ${oldQty} thành ${qty}. Lý do: ${reason || 'Kế toán điều chỉnh do thiếu tồn kho'}`
+        notes: noteText
       }
     });
 
     return {
       success: true,
-      message: 'Cập nhật số lượng sản phẩm thành công',
+      message: qty === 0 ? 'Đã cắt giảm số lượng sản phẩm về 0 thành công' : 'Cập nhật số lượng sản phẩm thành công',
       oldQuantity: oldQty,
       newQuantity: qty
     };
@@ -772,5 +817,515 @@ export const createNewSalesOrder = async (orderData, distributorId, createdById)
       }
     };
   });
+};
+
+/**
+ * Nộp đơn hàng để duyệt (PENDING -> SUBMITTED)
+ */
+export const submitOrder = async (orderId, distributorId, changedById) => {
+  return prisma.$transaction(async (tx) => {
+    const order = await tx.salesOrder.findFirst({
+      where: {
+        id: BigInt(orderId),
+        ...(distributorId ? { distributorId: BigInt(distributorId) } : {})
+      }
+    });
+
+    if (!order) throw new Error('Không tìm thấy đơn hàng');
+    if (order.status !== 'PENDING') {
+      throw new Error(`Chỉ có thể nộp duyệt đơn hàng ở trạng thái "Mới tạo" (PENDING). Trạng thái hiện tại: ${order.status}`);
+    }
+
+    await tx.salesOrder.update({
+      where: { id: order.id },
+      data: { status: 'SUBMITTED' }
+    });
+
+    await tx.orderStatusHistory.create({
+      data: {
+        salesOrderId: order.id,
+        fromStatus: 'PENDING',
+        toStatus: 'SUBMITTED',
+        changedById: changedById ? BigInt(changedById) : null,
+        notes: 'Nhân viên bán hàng nộp đơn chờ thủ kho/kế toán xác nhận phân bổ'
+      }
+    });
+
+    return {
+      success: true,
+      message: 'Nộp đơn hàng thành công, chuyển sang Chờ duyệt (SUBMITTED)',
+      orderId: order.id.toString(),
+      status: 'SUBMITTED'
+    };
+  });
+};
+
+/**
+ * Hủy gán chuyến xe giao hàng (SHIPPED -> ALLOCATED)
+ */
+export const unassignDeliveryTrip = async (orderId, distributorId, changedById, reason = '') => {
+  return prisma.$transaction(async (tx) => {
+    const order = await tx.salesOrder.findFirst({
+      where: {
+        id: BigInt(orderId),
+        ...(distributorId ? { distributorId: BigInt(distributorId) } : {})
+      },
+      include: { deliveryTrip: true }
+    });
+
+    if (!order) throw new Error('Không tìm thấy đơn hàng');
+    if (order.status !== 'SHIPPED') {
+      throw new Error(`Chỉ có thể huỷ gán chuyến xe cho đơn hàng đang ở trạng thái "Đang giao" (SHIPPED). Trạng thái hiện tại: ${order.status}`);
+    }
+
+    const oldTripCode = order.deliveryTrip?.tripCode || '';
+
+    await tx.salesOrder.update({
+      where: { id: order.id },
+      data: {
+        deliveryTripId: null,
+        status: 'ALLOCATED'
+      }
+    });
+
+    await tx.orderStatusHistory.create({
+      data: {
+        salesOrderId: order.id,
+        fromStatus: 'SHIPPED',
+        toStatus: 'ALLOCATED',
+        changedById: changedById ? BigInt(changedById) : null,
+        reason: reason.trim() || 'Hủy gán chuyến xe',
+        notes: `Hủy gán khỏi chuyến xe [${oldTripCode}], hoàn về Chờ giao (ALLOCATED)`
+      }
+    });
+
+    return {
+      success: true,
+      message: 'Đã gỡ đơn hàng khỏi chuyến xe và hoàn về Chờ giao',
+      orderId: order.id.toString(),
+      status: 'ALLOCATED'
+    };
+  });
+};
+
+/**
+ * Thêm sản phẩm vào đơn hàng (chỉ khi PENDING)
+ */
+export const addOrderItem = async (orderId, distributorId, changedById, itemData) => {
+  const { productId, quantity = 1, unitPrice = 0, isPromotion = false } = itemData;
+  const qty = Number(quantity);
+  const price = Number(unitPrice);
+
+  if (!productId) throw new Error('Vui lòng chọn sản phẩm');
+  if (isNaN(qty) || qty <= 0) throw new Error('Số lượng sản phẩm phải lớn hơn 0');
+
+  return prisma.$transaction(async (tx) => {
+    const order = await tx.salesOrder.findFirst({
+      where: {
+        id: BigInt(orderId),
+        ...(distributorId ? { distributorId: BigInt(distributorId) } : {})
+      }
+    });
+
+    if (!order) throw new Error('Không tìm thấy đơn hàng');
+    if (order.status !== 'PENDING') {
+      throw new Error('Chỉ có thể thêm sản phẩm khi đơn hàng ở trạng thái "Mới tạo" (PENDING)');
+    }
+
+    const product = await tx.product.findUnique({
+      where: { id: BigInt(productId) }
+    });
+    if (!product) throw new Error('Sản phẩm không tồn tại');
+
+    // Kiểm tra xem sản phẩm đã có trong đơn chưa
+    const existing = await tx.salesOrderItem.findUnique({
+      where: {
+        salesOrderId_productId: {
+          salesOrderId: order.id,
+          productId: product.id
+        }
+      }
+    });
+
+    let savedItem;
+    if (existing) {
+      // Cộng dồn số lượng
+      savedItem = await tx.salesOrderItem.update({
+        where: { id: existing.id },
+        data: {
+          quantity: { increment: qty }
+        }
+      });
+    } else {
+      savedItem = await tx.salesOrderItem.create({
+        data: {
+          salesOrderId: order.id,
+          productId: product.id,
+          quantity: qty,
+          unitPrice: price > 0 ? price : Number(product.basePrice),
+          isPromotion: Boolean(isPromotion)
+        }
+      });
+    }
+
+    await tx.orderStatusHistory.create({
+      data: {
+        salesOrderId: order.id,
+        fromStatus: 'PENDING',
+        toStatus: 'PENDING',
+        changedById: changedById ? BigInt(changedById) : null,
+        notes: `Thêm sản phẩm [${product.name}] - SL: ${qty}`
+      }
+    });
+
+    return {
+      success: true,
+      message: 'Thêm sản phẩm vào đơn hàng thành công',
+      itemId: savedItem.id.toString()
+    };
+  });
+};
+
+/**
+ * Xoá sản phẩm khỏi đơn hàng (chỉ khi PENDING)
+ */
+export const removeOrderItem = async (orderId, itemId, distributorId, changedById) => {
+  return prisma.$transaction(async (tx) => {
+    const order = await tx.salesOrder.findFirst({
+      where: {
+        id: BigInt(orderId),
+        ...(distributorId ? { distributorId: BigInt(distributorId) } : {})
+      },
+      include: { items: true }
+    });
+
+    if (!order) throw new Error('Không tìm thấy đơn hàng');
+    if (order.status !== 'PENDING') {
+      throw new Error('Chỉ có thể xoá sản phẩm khi đơn hàng ở trạng thái "Mới tạo" (PENDING)');
+    }
+
+    if (order.items.length <= 1) {
+      throw new Error('Đơn hàng phải có ít nhất 1 sản phẩm. Không thể xoá hết');
+    }
+
+    const item = await tx.salesOrderItem.findUnique({
+      where: { id: BigInt(itemId) },
+      include: { product: true }
+    });
+
+    if (!item || item.salesOrderId !== order.id) {
+      throw new Error('Không tìm thấy dòng sản phẩm trong đơn');
+    }
+
+    await tx.salesOrderItem.delete({
+      where: { id: item.id }
+    });
+
+    await tx.orderStatusHistory.create({
+      data: {
+        salesOrderId: order.id,
+        fromStatus: 'PENDING',
+        toStatus: 'PENDING',
+        changedById: changedById ? BigInt(changedById) : null,
+        notes: `Xoá sản phẩm [${item.product?.name || 'N/A'}] khỏi đơn hàng`
+      }
+    });
+
+    return {
+      success: true,
+      message: 'Xoá sản phẩm khỏi đơn hàng thành công'
+    };
+  });
+};
+
+/**
+ * Xuất hóa đơn bán hàng cho đơn đã giao (DELIVERED -> INVOICED)
+ */
+export const createOrderInvoice = async (orderId, distributorId, changedById, invoiceData = {}) => {
+  const { vatRate = 0.1, dueDate } = invoiceData;
+
+  return prisma.$transaction(async (tx) => {
+    const order = await tx.salesOrder.findFirst({
+      where: {
+        id: BigInt(orderId),
+        ...(distributorId ? { distributorId: BigInt(distributorId) } : {})
+      },
+      include: {
+        items: true,
+        invoice: true
+      }
+    });
+
+    if (!order) throw new Error('Không tìm thấy đơn hàng');
+    if (order.status !== 'DELIVERED' && order.status !== 'SHIPPED') {
+      throw new Error(`Chỉ có thể xuất hoá đơn khi đơn hàng đã bàn giao hoặc đã giao thành công (SHIPPED/DELIVERED). Trạng thái hiện tại: ${order.status}`);
+    }
+
+    if (order.invoice) {
+      throw new Error(`Đơn hàng đã có hoá đơn [${order.invoice.invoiceCode}]`);
+    }
+
+    // Tính subtotal
+    const subtotal = order.items.reduce((sum, it) => {
+      if (it.isPromotion) return sum; // Hàng tặng không tính tiền
+      return sum + (Number(it.quantity) * Number(it.unitPrice));
+    }, 0);
+
+    const rate = Number(vatRate) || 0.1;
+    const vatAmount = subtotal * rate;
+    const totalAmount = subtotal + vatAmount;
+
+    // Sinh mã hóa đơn INV-YYYYMMDD-XXXXX
+    const now = new Date();
+    const yyyymmdd = now.toISOString().slice(0, 10).replace(/-/g, '');
+    const rand = Math.floor(10000 + Math.random() * 90000);
+    const invoiceCode = `INV-${yyyymmdd}-${rand}`;
+
+    const due = dueDate ? new Date(dueDate) : new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000); // 15 ngày hạn công nợ mặc định
+
+    const invoice = await tx.invoice.create({
+      data: {
+        invoiceCode,
+        salesOrderId: order.id,
+        distributorId: order.distributorId,
+        invoiceDate: now,
+        dueDate: due,
+        subtotal,
+        vatRate: rate,
+        vatAmount,
+        totalAmount,
+        paidAmount: 0,
+        status: 'UNPAID'
+      }
+    });
+
+    // Cập nhật trạng thái đơn hàng sang INVOICED
+    await tx.salesOrder.update({
+      where: { id: order.id },
+      data: { status: 'INVOICED' }
+    });
+
+    await tx.orderStatusHistory.create({
+      data: {
+        salesOrderId: order.id,
+        fromStatus: order.status,
+        toStatus: 'INVOICED',
+        changedById: changedById ? BigInt(changedById) : null,
+        notes: `Xuất hoá đơn bán hàng [${invoiceCode}] - Tổng tiền: ${totalAmount.toLocaleString('vi-VN')} VND`
+      }
+    });
+
+    return {
+      success: true,
+      message: 'Xuất hoá đơn bán hàng thành công',
+      invoice: {
+        id: invoice.id.toString(),
+        invoiceCode: invoice.invoiceCode,
+        subtotal: Number(invoice.subtotal),
+        vatRate: Number(invoice.vatRate),
+        vatAmount: Number(invoice.vatAmount),
+        totalAmount: Number(invoice.totalAmount),
+        status: invoice.status
+      }
+    };
+  });
+};
+
+/**
+ * Ghi nhận thanh toán cho đơn hàng / hoá đơn
+ */
+export const recordOrderPayment = async (orderId, distributorId, changedById, paymentData = {}) => {
+  const { amount, paymentMethod = 'BANK_TRANSFER', paymentDate, note = '' } = paymentData;
+  const payAmount = Number(amount);
+
+  if (isNaN(payAmount) || payAmount <= 0) {
+    throw new Error('Số tiền thanh toán phải lớn hơn 0');
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const order = await tx.salesOrder.findFirst({
+      where: {
+        id: BigInt(orderId),
+        ...(distributorId ? { distributorId: BigInt(distributorId) } : {})
+      },
+      include: {
+        invoice: {
+          include: { payments: true }
+        },
+        items: true
+      }
+    });
+
+    if (!order) throw new Error('Không tìm thấy đơn hàng');
+
+    let invoice = order.invoice;
+
+    // Nếu đơn chưa có invoice nhưng đã DELIVERED, tự động tạo invoice để thu tiền
+    if (!invoice) {
+      if (order.status !== 'DELIVERED' && order.status !== 'INVOICED') {
+        throw new Error(`Chỉ có thể thu tiền cho đơn hàng đã giao hoặc đã xuất hoá đơn. Trạng thái hiện tại: ${order.status}`);
+      }
+
+      const subtotal = order.items.reduce((sum, it) => sum + (Number(it.quantity) * Number(it.unitPrice)), 0);
+      const vatRate = 0.1;
+      const vatAmount = subtotal * vatRate;
+      const totalAmount = subtotal + vatAmount;
+
+      const now = new Date();
+      const yyyymmdd = now.toISOString().slice(0, 10).replace(/-/g, '');
+      const invoiceCode = `INV-${yyyymmdd}-${Math.floor(10000 + Math.random() * 90000)}`;
+
+      invoice = await tx.invoice.create({
+        data: {
+          invoiceCode,
+          salesOrderId: order.id,
+          distributorId: order.distributorId,
+          invoiceDate: now,
+          dueDate: new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000),
+          subtotal,
+          vatRate,
+          vatAmount,
+          totalAmount,
+          paidAmount: 0,
+          status: 'UNPAID'
+        }
+      });
+    }
+
+    const currentPaid = Number(invoice.paidAmount || 0);
+    const invoiceTotal = Number(invoice.totalAmount);
+    const newPaid = currentPaid + payAmount;
+    const isFullPaid = newPaid >= invoiceTotal;
+
+    // Tạo bản ghi Payment
+    const payment = await tx.payment.create({
+      data: {
+        invoiceId: invoice.id,
+        amount: payAmount,
+        paymentMethod: paymentMethod || 'BANK_TRANSFER',
+        paymentDate: paymentDate ? new Date(paymentDate) : new Date(),
+        note: note ? note.trim() : 'Thanh toán đơn hàng'
+      }
+    });
+
+    // Cập nhật Invoice
+    await tx.invoice.update({
+      where: { id: invoice.id },
+      data: {
+        paidAmount: newPaid,
+        status: isFullPaid ? 'PAID' : 'PARTIALLY_PAID'
+      }
+    });
+
+    // Nếu đã thanh toán đủ -> chuyển trạng thái SalesOrder sang PAID
+    if (isFullPaid) {
+      await tx.salesOrder.update({
+        where: { id: order.id },
+        data: { status: 'PAID' }
+      });
+    }
+
+    await tx.orderStatusHistory.create({
+      data: {
+        salesOrderId: order.id,
+        fromStatus: order.status,
+        toStatus: isFullPaid ? 'PAID' : order.status,
+        changedById: changedById ? BigInt(changedById) : null,
+        notes: `Thanh toán ${payAmount.toLocaleString('vi-VN')} VND qua ${paymentMethod}. Đã trả: ${newPaid.toLocaleString('vi-VN')} / ${invoiceTotal.toLocaleString('vi-VN')} VND`
+      }
+    });
+
+    return {
+      success: true,
+      message: isFullPaid ? 'Thanh toán toàn bộ đơn hàng thành công (Đã chuyển trạng thái PAID)' : 'Ghi nhận thanh toán một phần thành công',
+      paymentId: payment.id.toString(),
+      totalAmount: invoiceTotal,
+      paidAmount: newPaid,
+      remainingAmount: Math.max(0, invoiceTotal - newPaid),
+      isFullPaid,
+      orderStatus: isFullPaid ? 'PAID' : order.status
+    };
+  });
+};
+
+/**
+ * Lấy danh sách chuyến xe khả dụng cho việc gán đơn hàng
+ */
+export const getAvailableDeliveryTrips = async (distributorId, warehouseId) => {
+  const { findAvailableDeliveryTrips } = await import('../repositories/salesOrderRepository.js');
+  const trips = await findAvailableDeliveryTrips(distributorId, warehouseId);
+
+  return trips.map(t => ({
+    id: t.id.toString(),
+    tripCode: t.tripCode,
+    driverName: t.driver?.fullName || 'Chưa gán tài xế',
+    driverPhone: t.driver?.phone || '',
+    warehouseName: t.warehouse?.name || '',
+    status: t.status,
+    orderCount: t.salesOrders?.length || 0
+  }));
+};
+
+/**
+ * Lấy metadata phục vụ form tạo/sửa đơn hàng
+ */
+export const getSalesOrderMetadata = async (distributorId) => {
+  const { findSalesOrderMetaOptions, getTotalAvailableStock } = await import('../repositories/salesOrderRepository.js');
+  const { retailers, warehouses, products } = await findSalesOrderMetaOptions(distributorId);
+
+  // Kho đầu tiên làm mặc định để tính tồn
+  const defaultWarehouseId = warehouses[0]?.id;
+
+  const productsWithStock = await Promise.all(products.map(async (p) => {
+    let availableStock = 0;
+    if (defaultWarehouseId) {
+      availableStock = await getTotalAvailableStock(p.id, defaultWarehouseId);
+    }
+    return {
+      id: p.id.toString(),
+      sku: p.sku,
+      name: p.name,
+      unit: p.unit,
+      basePrice: Number(p.basePrice),
+      availableStock
+    };
+  }));
+
+  return {
+    retailers: retailers.map(r => ({
+      id: r.id.toString(),
+      code: r.code,
+      name: r.name,
+      phone: r.phone || '',
+      address: r.address || ''
+    })),
+    warehouses: warehouses.map(w => ({
+      id: w.id.toString(),
+      code: w.code,
+      name: w.name,
+      type: w.type
+    })),
+    products: productsWithStock
+  };
+};
+
+/**
+ * Lấy báo cáo thống kê bán hàng
+ */
+export const getSalesAnalytics = async (distributorId, query = {}) => {
+  const { getSalesSummaryAnalytics } = await import('../repositories/salesOrderRepository.js');
+  const { statusCounts, totalRevenueAgg } = await getSalesSummaryAnalytics(distributorId, query);
+
+  const statusMap = {};
+  statusCounts.forEach(s => {
+    statusMap[s.status] = s._count.id;
+  });
+
+  return {
+    statusCounts: statusMap,
+    totalRevenue: Number(totalRevenueAgg._sum?.totalAmount || 0),
+    totalPaid: Number(totalRevenueAgg._sum?.paidAmount || 0),
+    totalDebt: Math.max(0, Number(totalRevenueAgg._sum?.totalAmount || 0) - Number(totalRevenueAgg._sum?.paidAmount || 0))
+  };
 };
 
