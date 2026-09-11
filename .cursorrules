@@ -1,0 +1,50 @@
+# DMS-NPP Cursor Rules (Based on PatrickJS/awesome-cursorrules & Project AGENTS.md)
+
+You are an expert full-stack developer working on the DMS-NPP (Distributor Management System - Nhà Phân Phối) monorepo.
+
+## Project Structure & Stack Overview
+- Monorepo using `pnpm workspace`.
+- Frontend (`frontend/`): React 19, Vite, React Router v7, Lucide React, Recharts, Vanilla CSS thuần túy.
+- Backend (`backend/`): Node.js (ESM), Express 5, Prisma 6 ORM, Socket.io, ExcelJS/XLSX.
+
+---
+
+## Absolute Constraints (NEVER VIOLATE)
+1. **ESM Only:** Always use `import`/`export`. NEVER use `require()` or `module.exports`. Always include `.js` extension when importing local files in backend.
+2. **PrismaClient Singleton:** NEVER instantiate `new PrismaClient()` in controllers or routes. Always `import prisma from '../config/prisma.js'`.
+3. **BigInt Serialization:** Every BigInt field from Prisma MUST be converted with `.toString()` before sending in JSON responses.
+4. **Data Isolation:** All data read/write queries MUST filter by `distributorId` (except for `ADMIN` role).
+5. **API via Services:** NEVER call `fetch()` directly in React components. All requests must go through functions in `src/services/api.js`.
+6. **Dedicated CSS Files:** Each page/component must have its own dedicated Vanilla CSS file. NO inline CSS blocks, NO global CSS for component-specific styles.
+7. **No TypeScript:** Frontend uses `.jsx`. Backend uses `.js`. NEVER create `.ts` or `.tsx` files.
+8. **No Tailwind:** NEVER use Tailwind CSS classes. Use pure Vanilla CSS.
+
+---
+
+## Frontend Guidelines (React 19 + Vite + React Router v7)
+- Use Functional Components only, PascalCase naming (e.g., `SalesOrderList.jsx`).
+- Keep components small and focused (< 200 lines). Extract complex logic into custom hooks.
+- Use controlled components for forms with loading and disabled states to prevent double submission.
+- Optimize performance using `useMemo`, `useCallback`, and `React.memo` for large tables/lists. Always provide unique stable `key` props (never use array index as key for dynamic lists).
+- Manage query filters, pagination with URL search params (`useSearchParams`) where appropriate.
+- Ensure proper accessibility with semantic HTML elements and ARIA attributes for icon buttons.
+
+---
+
+## Backend Guidelines (Node.js + Express 5 + Prisma)
+- Follow the **Repository Pattern** (`server/repositories/`) for complex Prisma queries.
+- Follow the **Service Layer Pattern** (`server/services/`) for business logic, multi-step transactions, and Socket.io events.
+- Follow the **Guard Clause Pattern**: validate inputs early and return immediately.
+- Use `prisma.$transaction` for interrelated create/update operations (e.g., creating orders and updating warehouse stock).
+- Standardize all list API responses: `{ data, total, page, limit }`.
+- Always wrap controller logic in `try/catch` with clear error messages.
+- Remove `console.log` in production code; only use `console.error` for errors.
+
+---
+
+## Clean Code & Naming Conventions
+- File names: camelCase for JS (`authController.js`), PascalCase for JSX (`OrderCard.jsx`).
+- Function names: camelCase starting with an action verb (`getOrders`, `createOrder`, `handleSubmit`).
+- API route paths: kebab-case (e.g., `/api/sales-orders`, `/api/delivery-trips`).
+- Replace magic numbers and strings with well-named constants.
+- Adhere strictly to SOLID principles (Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion).

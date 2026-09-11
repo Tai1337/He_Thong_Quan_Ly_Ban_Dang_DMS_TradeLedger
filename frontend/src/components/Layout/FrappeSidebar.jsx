@@ -23,7 +23,8 @@ import {
   ChevronRight,
   Pin,
   PinOff,
-  Search
+  Search,
+  Palette
 } from 'lucide-react';
 import './Layout.css';
 
@@ -40,6 +41,7 @@ const modulesData = {
       { label: 'Đơn hàng cần xử lý', path: '/sales/sales-orders', icon: FileText },
       { label: 'Chuyến xe nhập kho đến hạn', path: '/purchase/receiving', icon: Truck },
       { label: 'Báo cáo tài chính nhanh', path: '/reports/profit-and-loss', icon: PieChart },
+      { label: 'Review Khung Màu (4 Theme)', path: '/theme-review', icon: Palette, badge: 'Mới' },
     ]
   },
   buying: {

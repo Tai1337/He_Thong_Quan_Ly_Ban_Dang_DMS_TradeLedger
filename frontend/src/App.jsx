@@ -14,6 +14,7 @@ import PurchaseReceivingList from './pages/Purchase/PurchaseReceiving/PurchaseRe
 import ProfitLossStatement from './pages/Accounting/ProfitLossStatement/ProfitLossStatement';
 import JobCardCalendar from './pages/Operations/JobCardCalendar/JobCardCalendar';
 import TaskGantt from './pages/Operations/TaskGantt/TaskGantt';
+import ThemeReview from './pages/ThemeReview/ThemeReview';
 import Layout from './components/Layout/Layout';
 import './index.css';
 
@@ -197,6 +198,18 @@ function App() {
               </Layout>
             ) : (
               <Navigate to="/login" />
+            )
+          } 
+        />
+        <Route 
+          path="/theme-review" 
+          element={
+            user ? (
+              <Layout user={user} onLogout={handleLogout}>
+                <ThemeReview />
+              </Layout>
+            ) : (
+              <ThemeReview />
             )
           } 
         />

@@ -1,0 +1,21 @@
+---
+description: "React Router v7 navigation, routing structure, and data management for frontend"
+globs: "frontend/src/**/*.{js,jsx}"
+alwaysApply: false
+---
+# React Router v7 Rules
+
+## Route Structure & Navigation
+- Quản lý cấu trúc routing tập trung và rõ ràng.
+- Sử dụng Layout components lồng nhau (Nested Routes) để chia sẻ Header, Sidebar, và Breadcrumbs.
+- Luôn có trang fallback 404 (`NotFound`) và Error Boundary bắt lỗi cho các route cấp cao.
+- Không lạm dụng hardcode URL path trong component, nên tổ chức constants hoặc helper cho route paths.
+
+## Data Loading & State Sync
+- Với các trang danh sách có phân trang và bộ lọc (search, filter status, page, limit): ưu tiên đồng bộ trạng thái vào URL Search Params (`useSearchParams`) để người dùng có thể bookmark, refresh hoặc chia sẻ link.
+- Tránh việc gọi fetch API lặp đi lặp lại không kiểm soát trong `useEffect`; dùng cleanup function hoặc AbortController khi chuyển trang để huỷ các request chưa hoàn thành.
+- Đảm bảo các route yêu cầu quyền truy cập (Auth Guard, Role Guard) được bọc qua component bảo vệ tuyến đường (ví dụ: `ProtectedRoute`) để ngăn chặn việc render component trước khi xác thực hoàn tất.
+
+## Progressive Enhancement & Error Handling
+- Hiển thị Skeleton hoặc Loading spinner phù hợp trong khi đang chờ tải dữ liệu trang.
+- Đóng gói lỗi của từng trang vào ErrorBoundary để lỗi ở một page không làm crash toàn bộ ứng dụng.

@@ -1,0 +1,29 @@
+---
+description: "Clean code principles, naming conventions, and SOLID guidelines"
+globs: "**/*"
+alwaysApply: false
+---
+# Clean Code & SOLID Guidelines
+
+## Constants Over Magic Numbers
+- Thay thế các giá trị hardcode/magic numbers bằng các hằng số có tên mô tả rõ ràng (ví dụ: `const DEFAULT_PAGE_LIMIT = 20;`, `const ORDER_STATUS = { ... }`).
+- Đặt constants ở đầu file hoặc tách riêng vào file hằng số (`constants.js`).
+
+## Meaningful Names & Conventions
+- **Tên file:** camelCase cho file JS thông thường (`authController.js`), PascalCase cho React component (`SalesOrderList.jsx`).
+- **Tên component:** PascalCase (ví dụ: `InventoryTable`).
+- **Tên hàm:** camelCase bắt đầu bằng động từ hành động (ví dụ: `getOrders`, `createOrder`, `handleSubmit`, `calculateTotalDiscount`).
+- **Tên route API:** kebab-case (ví dụ: `/api/sales-orders`, `/api/delivery-trips`).
+- Tránh viết tắt gây khó hiểu, tên biến và hàm cần tự giải thích được mục đích sử dụng.
+
+## Single Responsibility & DRY
+- Mỗi module, controller hoặc component chỉ chịu trách nhiệm cho một công việc duy nhất.
+- Trích xuất code lặp lại thành các helper function, hook hoặc service dùng chung.
+- Không lặp lại logic tính toán hay validate ở nhiều nơi.
+
+## SOLID Principles
+- **S (Single Responsibility):** Controller chỉ handle HTTP, Service xử lý business logic, Repo xử lý Prisma query.
+- **O (Open/Closed):** Mở rộng tính năng bằng cách thêm handler/strategy mới, không sửa đổi làm gãy luồng cũ đang chạy ổn định.
+- **L (Liskov Substitution):** Các endpoint và hàm lấy dữ liệu trả về output format nhất quán (`{ data, total, page, limit }`).
+- **I (Interface Segregation):** Truyền param rõ ràng qua destructuring thay vì pass cả object lớn `req.body`.
+- **D (Dependency Inversion):** Không khởi tạo Prisma rải rác; luôn dùng singleton `prisma` được import từ config.

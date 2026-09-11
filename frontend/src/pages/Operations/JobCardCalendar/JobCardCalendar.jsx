@@ -13,31 +13,33 @@ import './JobCardCalendar.css';
 
 const JobCardCalendar = () => {
   const [viewMode, setViewMode] = useState('Month'); // Month, Week, Day
-  const [currentMonth, setCurrentMonth] = useState('March 2023');
+  const [currentMonth, setCurrentMonth] = useState('Tháng 9, 2026');
 
   return (
     <div className="calendar-page-layout">
       {/* CỘT TRÁI: BỘ LỌC LỊCH (LEFT FILTER SIDEBAR) */}
       <aside className="calendar-left-filters">
         <div className="filter-group-block">
-          <label className="filter-block-title">Calendar</label>
+          <label className="filter-block-title">Lịch Vận hành</label>
           <select className="filter-block-select">
-            <option>Select Calendar</option>
-            <option>Production Schedule</option>
-            <option>Delivery Trips D+3</option>
+            <option>Chọn loại lịch</option>
+            <option>Lịch Điều Phối Xe Giao Hàng D+3</option>
+            <option>Lịch Nhận Hàng Container từ NCC (Masan/THP)</option>
           </select>
         </div>
 
         <div className="filter-group-block">
-          <label className="filter-block-title">Filter By</label>
+          <label className="filter-block-title">Lọc Theo Nhân sự</label>
           <select className="filter-block-select">
-            <option>Assigned To</option>
+            <option>Tài xế / Nhân viên giao nhận</option>
             <option>Nguyễn Văn An (NVBH001)</option>
-            <option>Phạm Văn Tài (NVGH001)</option>
+            <option>Phạm Văn Tài (NVGH001 - Xe tải 2.5T)</option>
+            <option>Lê Hoàng Nam (NVGH002 - Xe tải 1.5T)</option>
           </select>
           <select className="filter-block-select" style={{ marginTop: '8px' }}>
-            <option>Created By</option>
-            <option>Administrator</option>
+            <option>Người tạo chuyến</option>
+            <option>Điều phối viên kho (Dispatcher)</option>
+            <option>Quản trị viên NPP</option>
           </select>
         </div>
 

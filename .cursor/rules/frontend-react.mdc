@@ -1,0 +1,39 @@
+---
+description: "React 19 best practices and component guidelines for DMS-NPP frontend"
+globs: "frontend/src/**/*.{js,jsx,css}"
+alwaysApply: false
+---
+# React Best Practices & Component Guidelines
+
+## Component Structure & Standards
+- Dùng Functional Components thuần túy, tuyệt đối không dùng Class Components.
+- Mỗi file chỉ chứa một component chính duy nhất (Single Responsibility).
+- Tên component viết dạng PascalCase (ví dụ: `SalesOrderList.jsx`, `InventoryModal.jsx`).
+- File extension sử dụng `.jsx` (không sử dụng TypeScript `.tsx` theo quy tắc dự án).
+- Giữ component gọn gàng, chia nhỏ các sub-component nếu vượt quá 200 dòng.
+- Không viết logic API trực tiếp trong component; tách vào `src/services/api.js` hoặc custom hooks.
+
+## CSS & Styling
+- Sử dụng Vanilla CSS thuần túy. KHÔNG dùng Tailwind CSS, inline CSS dài dòng, hoặc CSS-in-JS không cần thiết.
+- Mỗi page hoặc component phải có file CSS riêng tương ứng (ví dụ: `SalesOrderList.css` đi kèm `SalesOrderList.jsx`).
+- Đặt tên class theo chuẩn BEM hoặc có tiền tố rõ ràng để tránh xung đột style toàn cục.
+
+## Custom Hooks & State Management
+- Tách logic phức tạp, state logic tái sử dụng ra Custom Hook (ví dụ: `useSalesOrders`, `useDebounce`).
+- Tuân thủ nghiêm ngặt Rules of Hooks (không gọi hook trong vòng lặp hay câu lệnh điều kiện).
+- State quản lý càng gần nơi sử dụng càng tốt; tránh truyền props qua quá nhiều tầng (prop drilling).
+- Dùng `useState` cho local state đơn giản, `useReducer` cho state phức tạp có nhiều action.
+
+## Performance Optimization
+- Áp dụng `useMemo` và `useCallback` hợp lý khi xử lý danh sách lớn hoặc các hàm tính toán nặng.
+- Sử dụng `React.memo` cho các component hiển thị thuần dữ liệu trong bảng lớn (bảng tồn kho, bảng báo cáo).
+- Khi render mảng trong JSX, luôn cung cấp `key` ổn định và duy nhất (ví dụ: `item.id`), không dùng index mảng làm key khi mảng có thể thêm/xóa/sắp xếp.
+
+## Form & User Feedback
+- Sử dụng Controlled Components cho các form nhập liệu.
+- Xử lý trạng thái `loading`, `disabled` trên button khi submit để tránh duplicate submission.
+- Hiển thị thông báo lỗi rõ ràng, thân thiện cho người dùng khi API trả về lỗi.
+
+## Accessibility (a11y)
+- Dùng đúng thẻ semantic HTML (`<main>`, `<nav>`, `<section>`, `<button>`, `<label>`).
+- Mọi nút bấm icon (Lucide icons) phải có thuộc tính `title` hoặc `aria-label` tương ứng.

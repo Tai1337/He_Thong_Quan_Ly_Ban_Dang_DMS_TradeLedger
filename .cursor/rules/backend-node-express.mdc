@@ -1,0 +1,29 @@
+---
+description: "Node.js, Express 5, and Prisma ORM guidelines for DMS-NPP backend"
+globs: "backend/**/*.{js,mjs}"
+alwaysApply: false
+---
+# Node.js & Express.js Backend Guidelines
+
+## Module System & ESM Only
+- Luôn sử dụng cú pháp ES Modules (`import`/`export`). Tuyệt đối KHÔNG dùng `require()` hoặc `module.exports`.
+- Khi import các file nội bộ, luôn có đuôi mở rộng `.js` (ví dụ: `import prisma from '../config/prisma.js'`).
+- Không tạo file TypeScript (`.ts`); backend sử dụng JavaScript chuẩn (`.js`).
+
+## Prisma ORM & Database Access
+- **Singleton Pattern:** KHÔNG BAO GIỜ khởi tạo `new PrismaClient()` trong controller hay route. Luôn import singleton từ `server/config/prisma.js`.
+- **BigInt Serialization:** Prisma trả về các trường ID hoặc số lớn dạng `BigInt`. Mọi trường BigInt PHẢI được chuyển đổi sang chuỗi (`.toString()`) trước khi gửi qua `res.json()`.
+- **Data Isolation (Bắt buộc):** Mọi truy vấn đọc/ghi dữ liệu nghiệp vụ phải luôn lọc theo `distributorId` (ngoại trừ tài khoản có quyền `ADMIN` hệ thống).
+- Khi thực hiện nhiều thao tác ghi dữ liệu liên quan (ví dụ: tạo đơn hàng + trừ tồn kho), luôn bọc trong `prisma.$transaction`.
+
+## Architecture & Code Organization
+- **Repository Pattern:** Tách các Prisma query phức tạp ra thư mục `server/repositories/` thay vì viết lồng hàng loạt trong controller.
+- **Service Layer Pattern:** Controller chỉ đóng vai trò tiếp nhận HTTP Request và gửi HTTP Response. Mọi logic nghiệp vụ, tính toán chiết khấu, kiểm tra kho, emit Socket.io phải nằm ở `server/services/`.
+- **Guard Clause Pattern:** Tránh if-else lồng nhau quá sâu. Kiểm tra điều kiện không hợp lệ và return sớm (Early Return).
+- **Consistent Response Format:** Các API danh sách luôn trả về định dạng thống nhất: `{ data, total, page, limit }`.
+
+## Error Handling & Security
+- Luôn bọc logic controller trong khối `try/catch`. Sử dụng middleware xử lý lỗi tập trung `errorHandler`.
+- Sử dụng HTTP status code chuẩn xác (`200 OK`, `201 Created`, `400 Bad Request`, `401 Unauthorized`, `403 Forbidden`, `404 Not Found`, `500 Internal Server Error`).
+- KHÔNG để lại `console.log` trong code production; chỉ dùng `console.error` khi bắt lỗi.
+- Đảm bảo cấu hình CORS an toàn và xác thực token JWT trên các route yêu cầu bảo mật.

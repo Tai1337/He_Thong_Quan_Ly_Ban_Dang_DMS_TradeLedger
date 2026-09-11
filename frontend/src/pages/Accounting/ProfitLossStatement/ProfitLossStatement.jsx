@@ -29,19 +29,19 @@ const chartData = [
 ];
 
 const ProfitLossStatement = () => {
-  // Bộ lọc theo giao diện mẫu
+  // Bộ lọc theo phân hệ DMS-NPP
   const [filters, setFilters] = useState({
-    company: 'Spindl Inc',
-    financeBook: '',
-    fiscalYear: '2024-2025',
-    fromYear: '2024-2025',
-    toYear: '2024-2025',
-    periodicity: 'Quarterly',
-    currency: 'USD',
-    costCenter: '',
-    branch: '',
-    project: '',
-    reportView: 'Summary',
+    company: 'Công ty TNHH Phân Phối DMS TradeLedger',
+    financeBook: 'Sổ cái Bán hàng & Kho vận',
+    fiscalYear: '2026',
+    fromYear: '2026',
+    toYear: '2026',
+    periodicity: 'Theo Quý',
+    currency: 'VNĐ',
+    costCenter: 'Trung tâm Phân phối Miền Nam',
+    branch: 'Chi nhánh Tổng Kho Bình Dương',
+    project: 'Kênh GT - Tạp hóa truyền thống',
+    reportView: 'Tổng hợp',
     accumulatedValues: true,
     includeDefaultFB: true
   });
@@ -58,7 +58,7 @@ const ProfitLossStatement = () => {
   };
 
   const formatMoney = (amount) => {
-    return '$ ' + new Intl.NumberFormat('en-US', { minimumFractionDigits: 2 }).format(amount);
+    return new Intl.NumberFormat('vi-VN').format(amount) + ' đ';
   };
 
   return (
@@ -115,15 +115,16 @@ const ProfitLossStatement = () => {
             value={filters.fiscalYear}
             onChange={(e) => setFilters({ ...filters, fiscalYear: e.target.value })}
           >
-            <option>Fiscal Year</option>
-            <option>2024-2025</option>
-            <option>2023-2024</option>
+            <option>Năm tài chính (2026)</option>
+            <option>2026</option>
+            <option>2025</option>
           </select>
 
           <input 
             type="text" 
             className="pnl-filter-input" 
             value={filters.fromYear} 
+            placeholder="Từ năm"
             onChange={(e) => setFilters({ ...filters, fromYear: e.target.value })}
           />
 
@@ -131,6 +132,7 @@ const ProfitLossStatement = () => {
             type="text" 
             className="pnl-filter-input" 
             value={filters.toYear} 
+            placeholder="Đến năm"
             onChange={(e) => setFilters({ ...filters, toYear: e.target.value })}
           />
 
@@ -139,9 +141,10 @@ const ProfitLossStatement = () => {
             value={filters.periodicity}
             onChange={(e) => setFilters({ ...filters, periodicity: e.target.value })}
           >
-            <option>Quarterly</option>
-            <option>Monthly</option>
-            <option>Yearly</option>
+            <option>Kỳ báo cáo (Theo Quý)</option>
+            <option>Theo Tháng</option>
+            <option>Theo Quý</option>
+            <option>Theo Năm</option>
           </select>
         </div>
 

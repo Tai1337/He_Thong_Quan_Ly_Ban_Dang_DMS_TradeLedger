@@ -7,7 +7,9 @@ import {
   HelpCircle,
   LogOut,
   User,
-  Shield
+  Shield,
+  Palette,
+  Layers
 } from 'lucide-react';
 import './Layout.css';
 
@@ -18,57 +20,78 @@ const FrappeHeader = ({ user, onLogout }) => {
   // Sinh Breadcrumbs theo URL
   const getBreadcrumbs = () => {
     const path = location.pathname;
+    if (path === '/theme-review') {
+      return [
+        { label: 'DMS-NPP TradeLedger', path: '/' },
+        { label: 'Thiết kế & Giao diện', path: '/theme-review' },
+        { label: 'Review Khung Màu', path: '/theme-review' }
+      ];
+    }
     if (path === '/') {
       return [
-        { label: 'spindl', path: '/' },
-        { label: 'Dashboard', path: '/' }
+        { label: 'DMS-NPP TradeLedger', path: '/' },
+        { label: 'Bàn làm việc (Dashboard)', path: '/' }
       ];
     }
     if (path.includes('/reports/profit-and-loss')) {
       return [
-        { label: 'spindl', path: '/' },
-        { label: 'Accounting', path: '/reports/profit-and-loss' },
-        { label: 'Profit and Loss Statement', path: '/reports/profit-and-loss' }
+        { label: 'DMS-NPP TradeLedger', path: '/' },
+        { label: 'Tài chính & Kế toán', path: '/reports/profit-and-loss' },
+        { label: 'Báo cáo Lãi Lỗ (P&L)', path: '/reports/profit-and-loss' }
       ];
     }
     if (path.includes('/operations/calendar')) {
       return [
-        { label: 'spindl', path: '/' },
-        { label: 'Manufacturing', path: '/operations/calendar' },
-        { label: 'Job Card', path: '/operations/calendar' }
+        { label: 'DMS-NPP TradeLedger', path: '/' },
+        { label: 'Vận hành & Giao hàng', path: '/operations/calendar' },
+        { label: 'Lịch xe giao nhận D+3', path: '/operations/calendar' }
       ];
     }
     if (path.includes('/operations/gantt')) {
       return [
-        { label: 'spindl', path: '/' },
-        { label: 'Projects', path: '/operations/gantt' },
-        { label: 'Task', path: '/operations/gantt' }
+        { label: 'DMS-NPP TradeLedger', path: '/' },
+        { label: 'Kế hoạch & Vận hành', path: '/operations/gantt' },
+        { label: 'Tiến độ Chuyến hàng D+3', path: '/operations/gantt' }
+      ];
+    }
+    if (path.startsWith('/purchase/ppo')) {
+      return [
+        { label: 'DMS-NPP TradeLedger', path: '/' },
+        { label: 'Mua hàng', path: '/purchase/purchase-orders' },
+        { label: 'Đề xuất Mua hàng AI (PPO)', path: '/purchase/ppo' }
+      ];
+    }
+    if (path.startsWith('/purchase/receiving')) {
+      return [
+        { label: 'DMS-NPP TradeLedger', path: '/' },
+        { label: 'Mua hàng', path: '/purchase/purchase-orders' },
+        { label: 'Nhập kho chuyến D+3', path: '/purchase/receiving' }
       ];
     }
     if (path.startsWith('/purchase')) {
       return [
-        { label: 'spindl', path: '/' },
-        { label: 'Buying', path: '/purchase/purchase-orders' },
-        { label: 'Purchase Order', path: '/purchase/purchase-orders' }
+        { label: 'DMS-NPP TradeLedger', path: '/' },
+        { label: 'Mua hàng', path: '/purchase/purchase-orders' },
+        { label: 'Đơn đặt hàng mua (PO)', path: '/purchase/purchase-orders' }
       ];
     }
     if (path.startsWith('/sales')) {
       return [
-        { label: 'spindl', path: '/' },
-        { label: 'Selling', path: '/sales/sales-orders' },
-        { label: 'Sales Order', path: '/sales/sales-orders' }
+        { label: 'DMS-NPP TradeLedger', path: '/' },
+        { label: 'Bán hàng', path: '/sales/sales-orders' },
+        { label: 'Đơn đặt hàng bán (SO)', path: '/sales/sales-orders' }
       ];
     }
     if (path.startsWith('/inventory')) {
       return [
-        { label: 'spindl', path: '/' },
-        { label: 'Stock', path: '/inventory/rpt083' },
-        { label: 'Inventory Summary', path: '/inventory/rpt083' }
+        { label: 'DMS-NPP TradeLedger', path: '/' },
+        { label: 'Kho bãi & Tồn kho', path: '/inventory/rpt083' },
+        { label: 'Báo cáo tồn kho (RPT083)', path: '/inventory/rpt083' }
       ];
     }
     return [
-      { label: 'spindl', path: '/' },
-      { label: 'Workspaces', path: '/' }
+      { label: 'DMS-NPP TradeLedger', path: '/' },
+      { label: 'Phân hệ chức năng', path: '/' }
     ];
   };
 
@@ -78,13 +101,11 @@ const FrappeHeader = ({ user, onLogout }) => {
     <header className="frappe-topbar">
       {/* Cụm Logo & Breadcrumbs (Bên trái) */}
       <div className="frappe-topbar-left">
-        <Link to="/" className="frappe-logo-spindl">
-          <svg className="spindl-svg-icon" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none">
-            <circle cx="12" cy="12" r="9" />
-            <path d="M12 3a9 9 0 0 1 9 9" />
-            <path d="M12 7a5 5 0 0 1 5 5" />
-          </svg>
-          <span className="spindl-brand-title">{breadcrumbs[0]?.label || 'spindl'}</span>
+        <Link to="/" className="frappe-logo-spindl" title="DMS-NPP TradeLedger Home">
+          <div className="frappe-logo-icon-wrap">
+            <Layers size={18} />
+          </div>
+          <span className="spindl-brand-title">DMS-NPP TradeLedger</span>
         </Link>
 
         {breadcrumbs.slice(1).map((crumb, idx) => (
@@ -99,27 +120,40 @@ const FrappeHeader = ({ user, onLogout }) => {
 
       {/* Cụm Tìm kiếm, Chuông & User Avatar (Bên phải) */}
       <div className="frappe-topbar-right">
-        {/* Command Search Box (⌘ + G / Ctrl + K) */}
+        {/* Command Search Box (⌘ + K / Ctrl + K) */}
         <div className="frappe-search-box">
           <Search size={14} className="frappe-search-ico" />
           <input 
             type="text" 
-            placeholder="Search or type a command (⌘ + G)"
+            placeholder="Tìm kiếm chứng từ, SKU, khách hàng… (Ctrl + K)"
             className="frappe-search-input"
+            spellCheck={false}
+            autoComplete="off"
+            aria-label="Tìm kiếm nhanh hoặc nhập lệnh"
           />
         </div>
 
         {/* Notifications Bell */}
-        <button type="button" className="frappe-tool-btn" title="Notifications">
+        <button type="button" className="frappe-tool-btn" title="Thông báo hệ thống" aria-label="Thông báo">
           <Bell size={16} />
           <span className="frappe-notif-dot"></span>
         </button>
 
         {/* Help dropdown */}
-        <button type="button" className="frappe-help-btn">
-          <span>Help</span>
+        <button type="button" className="frappe-help-btn" aria-label="Trợ giúp">
+          <span>Trợ giúp</span>
           <ChevronDown size={13} />
         </button>
+
+        {/* Review Themes Button */}
+        <Link 
+          to="/theme-review" 
+          className="frappe-theme-review-badge"
+          title="Xem trước 4 khung màu (UI/UX Pro Max & Vercel Skills)"
+        >
+          <Palette size={14} />
+          <span>Review Themes</span>
+        </Link>
 
         {/* User Profile Avatar */}
         <div className="frappe-user-menu-container">
@@ -141,6 +175,9 @@ const FrappeHeader = ({ user, onLogout }) => {
                 <span>{user?.email || 'admin@spindl.dms'}</span>
               </div>
               <div className="frappe-dropdown-divider"></div>
+              <Link to="/theme-review" className="frappe-drop-item" style={{ textDecoration: 'none' }}>
+                <Palette size={14} /> Review Khung Màu
+              </Link>
               <button type="button" className="frappe-drop-item">
                 <User size={14} /> Profile
               </button>

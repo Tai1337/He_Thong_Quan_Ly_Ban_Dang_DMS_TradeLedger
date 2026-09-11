@@ -9,32 +9,32 @@ import {
 import './TaskGantt.css';
 
 const months = [
-  'September', 'October', 'November', 'December', 
-  'January', 'February', 'March', 'April', 'May'
+  'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 
+  'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12', 'Tháng 1'
 ];
 
 const ganttTasks = [
   {
-    id: 'TASK-2023-00043',
-    name: 'Transfer employees',
+    id: 'TRIP-2026-00043',
+    name: 'Chuyến xe giao hàng D+3 (Tuyến Bình Dương - Củ Chi)',
     progress: 100,
-    color: '#701a35',
-    startMonthIndex: 4, // January
+    color: '#4f46e5',
+    startMonthIndex: 4, // Tháng 9
     durationMonths: 0.8,
     row: 0
   },
   {
-    id: 'TASK-2023-00041',
-    name: 'Purchase pantry equipment',
+    id: 'TRIP-2026-00041',
+    name: 'Nhận hàng Container NCC Masan Consumer (D+3)',
     progress: 60,
-    color: '#d97706',
-    startMonthIndex: 4.2, // January
+    color: '#059669',
+    startMonthIndex: 4.2,
     durationMonths: 0.9,
     row: 1
   },
   {
-    id: 'TASK-2023-00046',
-    name: 'Purchase furniture',
+    id: 'TRIP-2026-00046',
+    name: 'Giao hàng đợt 2: Kênh GT Tạp hóa Quận 12 & Hóc Môn',
     progress: 40,
     color: '#f59e0b',
     startMonthIndex: 4.1,
@@ -42,20 +42,20 @@ const ganttTasks = [
     row: 2
   },
   {
-    id: 'TASK-2023-00044',
-    name: 'Plant Preparation',
+    id: 'TRIP-2026-00044',
+    name: 'Đối soát công nợ & phiếu giao hàng (POD) Nhà phân phối',
     progress: 80,
-    color: '#2dd4bf',
-    startMonthIndex: 3.6, // Late Dec - Jan
+    color: '#0284c7',
+    startMonthIndex: 3.6,
     durationMonths: 1.4,
     row: 3
   },
   {
-    id: 'TASK-2023-00048',
-    name: 'Transfer assets',
+    id: 'TRIP-2026-00048',
+    name: 'Nhận lô hàng Tân Hiệp Phát (Trà Xanh & Nước Tăng Lực)',
     progress: 50,
-    color: '#ec4899',
-    startMonthIndex: 4.8, // Feb
+    color: '#6366f1',
+    startMonthIndex: 4.8,
     durationMonths: 0.9,
     row: 4
   },
