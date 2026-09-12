@@ -631,3 +631,97 @@ export const getShopOrderDetail = async (orderCode) => {
   return data;
 };
 
+// --- LOGISTICS & DELIVERY TRIPS ---
+
+export const getDeliveryTripsList = async (params = {}) => {
+  const query = new URLSearchParams(params).toString();
+  const response = await fetch(`${API_URL}/delivery-trips?${query}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi tải danh sách chuyến xe');
+  }
+  return data;
+};
+
+export const getDeliveryTripDetail = async (id, distributorId = 1) => {
+  const response = await fetch(`${API_URL}/delivery-trips/${id}?distributorId=${distributorId}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi tải chi tiết chuyến xe');
+  }
+  return data;
+};
+
+export const getDispatchableOrders = async (warehouseId = '', distributorId = 1) => {
+  const params = new URLSearchParams({ distributorId });
+  if (warehouseId) params.append('warehouseId', warehouseId);
+  const response = await fetch(`${API_URL}/delivery-trips/dispatchable-orders?${params.toString()}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi tải danh sách đơn chờ xếp xe');
+  }
+  return data.data || [];
+};
+
+export const createDeliveryTrip = async (payload) => {
+  const response = await fetch(`${API_URL}/delivery-trips`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi tạo chuyến xe mới');
+  }
+  return data;
+};
+
+export const dispatchOrdersToTrip = async (tripId, orderIds, changedById = 1) => {
+  const response = await fetch(`${API_URL}/delivery-trips/${tripId}/dispatch-orders`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ orderIds, changedById })
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi xếp đơn hàng lên xe');
+  }
+  return data;
+};
+
+export const removeOrderFromTrip = async (tripId, orderId, reason = '') => {
+  const response = await fetch(`${API_URL}/delivery-trips/${tripId}/remove-order`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ orderId, reason })
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi gỡ đơn hàng khỏi chuyến xe');
+  }
+  return data;
+};
+
+export const updateDeliveryTripStatus = async (tripId, toStatus, notes = '') => {
+  const response = await fetch(`${API_URL}/delivery-trips/${tripId}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ toStatus, notes })
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi cập nhật trạng thái chuyến xe');
+  }
+  return data;
+};
+
+export const getTripCargoManifest = async (tripId, distributorId = 1) => {
+  const response = await fetch(`${API_URL}/delivery-trips/${tripId}/manifest?distributorId=${distributorId}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi tải bảng kê hàng hóa số lô');
+  }
+  return data;
+};
+
+

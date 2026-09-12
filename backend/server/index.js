@@ -11,6 +11,7 @@ import reportRoutes from './routes/reportRoutes.js';
 import purchaseOrderRoutes from './routes/purchaseOrderRoutes.js';
 import ppoRoutes from './routes/ppoRoutes.js';
 import purchaseReceivingRoutes from './routes/purchaseReceivingRoutes.js';
+import deliveryTripRoutes from './routes/deliveryTripRoutes.js';
 import { setupShopRoutes } from './portal/shopRoutes.js';
 
 const app = express();
@@ -37,6 +38,7 @@ app.use('/api', inventoryRoutes);
 app.use('/api', purchaseOrderRoutes);
 app.use('/api', ppoRoutes);
 app.use('/api', purchaseReceivingRoutes);
+app.use('/api/delivery-trips', deliveryTripRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/master', masterDataRoutes);
 app.use('/api/shop', setupShopRoutes(io));

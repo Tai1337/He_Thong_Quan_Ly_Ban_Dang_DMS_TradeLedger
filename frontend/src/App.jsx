@@ -15,6 +15,7 @@ import ProfitLossStatement from './pages/Accounting/ProfitLossStatement/ProfitLo
 import JobCardCalendar from './pages/Operations/JobCardCalendar/JobCardCalendar';
 import TaskGantt from './pages/Operations/TaskGantt/TaskGantt';
 import ThemeReview from './pages/ThemeReview/ThemeReview';
+import DeliveryTripList from './pages/Logistics/DeliveryTripList';
 import ShopHome from './pages/Shop/ShopHome';
 import ShopProductDetail from './pages/Shop/ShopProductDetail';
 import Layout from './components/Layout/Layout';
@@ -98,6 +99,22 @@ function App() {
               <Navigate to="/login" />
             )
           } 
+        />
+        <Route 
+          path="/logistics/delivery-trips" 
+          element={
+            user ? (
+              <Layout user={user} onLogout={handleLogout}>
+                <DeliveryTripList />
+              </Layout>
+            ) : (
+              <Navigate to="/login" />
+            )
+          } 
+        />
+        <Route 
+          path="/sales/delivery-trips" 
+          element={<Navigate to="/logistics/delivery-trips" />} 
         />
         <Route 
           path="/purchase/purchase-orders" 

@@ -66,6 +66,7 @@ const modulesData = {
     path: '/sales/sales-orders',
     subItems: [
       { label: 'Danh sách đơn bán (SO)', path: '/sales/sales-orders', icon: FileText },
+      { label: 'Chuyến xe & Điều phối giao', path: '/logistics/delivery-trips', icon: Truck, badge: 'Mới' },
       { label: 'Lập đơn bán hàng mới', path: '/sales/sales-orders?create=true', icon: PlusCircle },
       { label: 'Kiểm tra thiếu tồn (RPT005)', path: '/sales/sales-orders?rpt005=true', icon: CheckSquare },
       { label: 'Doanh số & Sản lượng (RPT057)', path: '/reports/rpt057', icon: BarChart3 },
