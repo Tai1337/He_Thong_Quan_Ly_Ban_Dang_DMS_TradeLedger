@@ -9,7 +9,7 @@ const RPT083 = ({ user }) => {
 
   // Lấy ID và thông tin của Nhà phân phối từ user đang đăng nhập
   const distributorId = user?.distributorId || 1;
-  const distributorName = user?.distributor ? `[${user.distributor.code}] ${user.distributor.name}` : '[G-10KF1292] Nhà Phân Phối G KF1292';
+  const distributorName = user?.distributor ? `[${user.distributor.code}] ${user.distributor.name}` : '[NPP-TEST] Nhà Phân Phối Test';
 
   const [filterForm, setFilterForm] = useState({
     warehouseId: '',

@@ -74,8 +74,8 @@ export const getInventoryRpt083ExportService = async (distributorId, filters) =>
     };
 
     return {
-      distCode: lot.warehouse?.distributor?.code || 'G-10KF1292',
-      distName: lot.warehouse?.distributor?.name || 'Nhà Phân Phối G KF1292',
+      distCode: lot.warehouse?.distributor?.code || 'NPP-TEST',
+      distName: lot.warehouse?.distributor?.name || 'Nhà Phân Phối Test',
       channel: lot.warehouse?.distributor?.channel || 'Truyền thống',
       warehouseCode: lot.warehouse?.code || '',
       warehouseName: lot.warehouse?.name || '',

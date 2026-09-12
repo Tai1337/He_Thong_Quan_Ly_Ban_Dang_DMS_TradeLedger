@@ -26,12 +26,12 @@ async function main() {
   console.log("✓ Đã khởi tạo Roles");
 
   // 2. Distributor
-  let distributor = await prisma.distributor.findUnique({ where: { code: 'G-10KF1292' } });
+  let distributor = await prisma.distributor.findUnique({ where: { code: 'NPP-TEST' } });
   if (!distributor) {
     distributor = await prisma.distributor.create({
       data: {
-        code: 'G-10KF1292',
-        name: 'Nhà Phân Phối G KF1292',
+        code: 'NPP-TEST',
+        name: 'Nhà Phân Phối Test',
         address: '123 Nguyễn Văn Cừ, Quận 5, TP. Hồ Chí Minh',
         phone: '02838999999',
         channel: 'GT',
@@ -45,7 +45,7 @@ async function main() {
     where: {
       distributorId_code: {
         distributorId: distributor.id,
-        code: 'G-10KF1292'
+        code: 'KHO-TEST'
       }
     }
   });
@@ -53,8 +53,8 @@ async function main() {
     warehouse = await prisma.warehouse.create({
       data: {
         distributorId: distributor.id,
-        code: 'G-10KF1292',
-        name: 'Kho NPP mặc định',
+        code: 'KHO-TEST',
+        name: 'Kho NPP Test',
         type: 'SALES'
       }
     });

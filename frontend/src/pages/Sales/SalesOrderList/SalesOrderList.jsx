@@ -332,7 +332,7 @@ const SalesOrderList = () => {
             {/* NPP & Kho */}
             <div className="filter-item">
               <select disabled title="Nhà phân phối hiện tại">
-                <option>[G-10KF1292] Nhà Phân Phối G KF1292</option>
+                <option>[NPP-TEST] Nhà Phân Phối Test</option>
               </select>
             </div>
 

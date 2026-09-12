@@ -38,7 +38,7 @@ const Home = ({ user }) => {
           <div className="welcome-text">
             <h2>Xin chào, {user?.fullName || user?.username || 'Quản trị viên NPP'}!</h2>
             <p>
-              Mã NPP: <strong>INK.AD.G-10KF1292.04</strong> • Quyền: <span className="role-tag">{user?.role || 'DISTRIBUTOR_ADMIN'}</span>
+              Mã NPP: <strong>INK.AD.NPP-TEST.01</strong> • Quyền: <span className="role-tag">{user?.role || 'DISTRIBUTOR_ADMIN'}</span>
             </p>
           </div>
         </div>
