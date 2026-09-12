@@ -23,6 +23,17 @@ export default function TripClosingModal({ isOpen, onClose, tripId, onTripClosed
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('cargo'); // 'cargo', 'cod'
   
+  // Helper format ngày giờ an toàn tuyệt đối
+  const formatSafeDateTime = (val) => {
+    if (!val) return 'Vừa xong';
+    try {
+      const d = new Date(val);
+      return isNaN(d.getTime()) ? 'Vừa xong' : d.toLocaleString('vi-VN');
+    } catch {
+      return 'Vừa xong';
+    }
+  };
+
   // State form bàn giao & đóng chuyến
   const [codHandedOver, setCodHandedOver] = useState('');
   const [warehouseConfirmed, setWarehouseConfirmed] = useState(false);
@@ -90,7 +101,13 @@ export default function TripClosingModal({ isOpen, onClose, tripId, onTripClosed
         closedById: 1
       });
 
-      onTripClosed && onTripClosed();
+      if (onTripClosed) {
+        try {
+          await onTripClosed();
+        } catch (callErr) {
+          console.error('onTripClosed error:', callErr);
+        }
+      }
       onClose();
     } catch (err) {
       setError(err.message || 'Lỗi khi làm thủ tục đóng chuyến xe');
@@ -230,8 +247,8 @@ export default function TripClosingModal({ isOpen, onClose, tripId, onTripClosed
                             </tr>
                           </thead>
                           <tbody>
-                            {data.returnedItemsSummaryBySku.map((it, idx) => (
-                              <tr key={it.productId}>
+                            {(data?.returnedItemsSummaryBySku || []).map((it, idx) => (
+                              <tr key={it.productId || idx}>
                                 <td>{idx + 1}</td>
                                 <td><code>{it.productSku}</code></td>
                                 <td><strong>{it.productName}</strong></td>
@@ -240,7 +257,7 @@ export default function TripClosingModal({ isOpen, onClose, tripId, onTripClosed
                                   {it.totalReturnedQty}
                                 </td>
                                 <td style={{ textAlign: 'right', fontWeight: 600 }}>
-                                  {it.totalReturnedValue.toLocaleString('vi-VN')} đ
+                                  {(Number(it.totalReturnedValue) || 0).toLocaleString('vi-VN')} đ
                                 </td>
                               </tr>
                             ))}
@@ -248,8 +265,8 @@ export default function TripClosingModal({ isOpen, onClose, tripId, onTripClosed
                           <tfoot>
                             <tr style={{ background: '#f8fafc', fontWeight: 700 }}>
                               <td colSpan="4" style={{ textAlign: 'right' }}>TỔNG CỘNG HÀNG RỚT:</td>
-                              <td style={{ textAlign: 'center', color: '#dc2626' }}>{data.totalReturnedPackages} Thùng</td>
-                              <td style={{ textAlign: 'right' }}>{(data.totalReturnedValue || 0).toLocaleString('vi-VN')} đ</td>
+                              <td style={{ textAlign: 'center', color: '#dc2626' }}>{data?.totalReturnedPackages || 0} Thùng</td>
+                              <td style={{ textAlign: 'right' }}>{(Number(data?.totalReturnedValue) || 0).toLocaleString('vi-VN')} đ</td>
                             </tr>
                           </tfoot>
                         </table>
@@ -259,7 +276,7 @@ export default function TripClosingModal({ isOpen, onClose, tripId, onTripClosed
                       <div className="closing-section-card" style={{ marginTop: 16 }}>
                         <h4>2. Chi Tiết Các Đơn Hàng Bị Rớt</h4>
                         <div className="returned-orders-list">
-                          {data.returnedItems.map(item => (
+                          {(data?.returnedItems || []).map(item => (
                             <div key={item.itemId} className="returned-item-card">
                               <div className="item-card-left">
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -402,7 +419,7 @@ export default function TripClosingModal({ isOpen, onClose, tripId, onTripClosed
                 <div className="trip-closed-badge-banner">
                   <Lock size={18} />
                   <span>
-                    Chuyến xe này đã được <strong>ĐÓNG (CLOSED)</strong> lúc {new Date(data?.trip?.closedTime).toLocaleString('vi-VN')}. Mọi dữ liệu đã được khóa an toàn.
+                    Chuyến xe này đã được <strong>ĐÓNG (CLOSED)</strong> lúc {formatSafeDateTime(data?.trip?.closedTime)}. Mọi dữ liệu đã được khóa an toàn.
                   </span>
                 </div>
               )}

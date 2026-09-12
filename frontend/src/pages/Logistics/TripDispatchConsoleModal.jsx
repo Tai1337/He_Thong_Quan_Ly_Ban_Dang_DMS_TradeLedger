@@ -16,7 +16,9 @@ import {
   Phone, 
   Calendar,
   Send,
-  CheckCheck
+  CheckCheck,
+  Lock,
+  FileText
 } from 'lucide-react';
 import { 
   getDeliveryTripDetail, 
