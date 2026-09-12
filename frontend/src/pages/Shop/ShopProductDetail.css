@@ -158,7 +158,97 @@
   border: 1px solid #bae6fd;
 }
 
-/* 3D Box Illustration */
+/* Real Product Image & Gallery Display */
+.detail-real-image-container {
+  width: 100%;
+  height: 250px;
+  background: #ffffff;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin: 6px 0 16px 0;
+  padding: 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+.detail-real-img {
+  max-width: 100%;
+  max-height: 226px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.1));
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.detail-real-image-container:hover .detail-real-img {
+  transform: scale(1.05);
+}
+
+.detail-active-pkg-type {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background: rgba(15, 23, 42, 0.78);
+  backdrop-filter: blur(4px);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Multi-view Thumbnails */
+.detail-img-thumbnails {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  width: 100%;
+  justify-content: center;
+}
+
+.thumb-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.thumb-btn img {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+}
+
+.thumb-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.thumb-btn:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.thumb-btn.active {
+  border-color: #059669;
+  background: #ecfdf5;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
+}
+
+.thumb-btn.active .thumb-label {
+  color: #047857;
+}
+
+/* 3D Box Illustration Fallback */
 .detail-fmcg-graphic-box {
   width: 180px;
   height: 190px;
@@ -315,15 +405,30 @@
 .detail-cat-badge {
   font-size: 11px;
   font-weight: 700;
+  color: #0369a1;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.detail-group-badge {
+  font-size: 11px;
+  font-weight: 700;
   color: #059669;
   background: #ecfdf5;
+  border: 1px solid #a7f3d0;
   padding: 3px 8px;
   border-radius: 4px;
 }
 
 .detail-sku-badge {
   font-size: 11px;
-  color: #94a3b8;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 3px 8px;
+  border-radius: 4px;
   font-family: monospace;
 }
 
@@ -920,11 +1025,20 @@
   width: 56px;
   height: 56px;
   border-radius: 10px;
-  background: #ecfdf5;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  overflow: hidden;
+  padding: 4px;
+}
+
+.related-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
 }
 
 .related-info {

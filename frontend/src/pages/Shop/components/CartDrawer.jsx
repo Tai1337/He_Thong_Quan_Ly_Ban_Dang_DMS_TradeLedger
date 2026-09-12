@@ -72,17 +72,27 @@ export default function CartDrawer({
 
                 return (
                   <div key={item.id} className="cart-item-row">
-                    <div className="cart-item-info">
-                      <div className="cart-item-meta-head">
-                        <span className="cart-item-sku">{item.sku}</span>
-                        <span className="cart-item-unit-tag">{item.unit || 'THÙNG'}</span>
+                    <div className="cart-item-main">
+                      <div className="cart-item-thumb">
+                        {(item.imageUrl || item.retailImageUrl) ? (
+                          <img src={item.imageUrl || item.retailImageUrl} alt={item.name} />
+                        ) : (
+                          <Package size={22} color="#059669" />
+                        )}
                       </div>
-                      <h4 className="cart-item-name">{item.name}</h4>
-                      <div className="cart-item-price-unit">
-                        <span className="price-tag">
-                          {itemPrice.toLocaleString('vi-VN')} ₫
-                        </span>
-                        <span className="per-unit">/{item.unit || 'thùng'}</span>
+
+                      <div className="cart-item-info">
+                        <div className="cart-item-meta-head">
+                          <span className="cart-item-sku">{item.sku}</span>
+                          <span className="cart-item-unit-tag">{item.unit || 'THÙNG'}</span>
+                        </div>
+                        <h4 className="cart-item-name">{item.name}</h4>
+                        <div className="cart-item-price-unit">
+                          <span className="price-tag">
+                            {itemPrice.toLocaleString('vi-VN')} ₫
+                          </span>
+                          <span className="per-unit">/{item.unit || 'thùng'}</span>
+                        </div>
                       </div>
                     </div>
 

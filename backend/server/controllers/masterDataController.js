@@ -142,6 +142,9 @@ export const getProducts = async (req, res) => {
       sku: p.sku,
       name: p.name,
       unit: p.unit,
+      retailUnit: p.retailUnit,
+      imageUrl: p.imageUrl,
+      retailImageUrl: p.retailImageUrl,
       basePrice: Number(p.basePrice)
     })));
   } catch (error) {

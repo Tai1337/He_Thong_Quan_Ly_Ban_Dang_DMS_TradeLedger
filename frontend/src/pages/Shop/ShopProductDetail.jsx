@@ -79,6 +79,21 @@ export default function ShopProductDetail() {
   const [caseQty, setCaseQty] = useState(1);
   const [retailQty, setRetailQty] = useState(1);
 
+  // Image Gallery States
+  const [selectedImgMode, setSelectedImgMode] = useState('AUTO'); // 'AUTO' | 'CASE' | 'RETAIL'
+  const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    setSelectedImgMode('AUTO');
+    setImgError(false);
+  }, [id]);
+
+  const currentDetailImage = selectedImgMode === 'RETAIL'
+    ? (product?.retailImageUrl || product?.imageUrl)
+    : selectedImgMode === 'CASE'
+    ? (product?.imageUrl || product?.retailImageUrl)
+    : (buyMode === 'RETAIL' ? (product?.retailImageUrl || product?.imageUrl) : (product?.imageUrl || product?.retailImageUrl));
+
   // Modals visibility
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -350,15 +365,57 @@ export default function ShopProductDetail() {
                 </span>
               </div>
 
-              {/* 3D Package Illustration */}
-              <div className="detail-fmcg-graphic-box">
-                <div className="detail-graphic-tape"></div>
-                <Package size={80} color="#ffffff" strokeWidth={1.5} />
-                <span className="detail-graphic-label">{product.unit || 'THÙNG'}</span>
-                <div className="detail-graphic-barcode">
-                  <span></span><span></span><span></span><span></span><span></span>
+              {/* Real Image or 3D Package Illustration Fallback */}
+              {currentDetailImage && !imgError ? (
+                <div className="detail-real-image-container">
+                  <img 
+                    src={currentDetailImage} 
+                    alt={product.name} 
+                    className="detail-real-img" 
+                    onError={() => setImgError(true)}
+                  />
+                  <span className="detail-active-pkg-type">
+                    {(selectedImgMode === 'RETAIL' || (selectedImgMode === 'AUTO' && buyMode === 'RETAIL'))
+                      ? (product.retailUnit || 'LẺ')
+                      : (product.unit || 'THÙNG')}
+                  </span>
                 </div>
-              </div>
+              ) : (
+                <div className="detail-fmcg-graphic-box">
+                  <div className="detail-graphic-tape"></div>
+                  <Package size={80} color="#ffffff" strokeWidth={1.5} />
+                  <span className="detail-graphic-label">{product.unit || 'THÙNG'}</span>
+                  <div className="detail-graphic-barcode">
+                    <span></span><span></span><span></span><span></span><span></span>
+                  </div>
+                </div>
+              )}
+
+              {/* Multi-view Thumbnails (Thùng vs Gói lẻ) */}
+              {(product.imageUrl || product.retailImageUrl) && (
+                <div className="detail-img-thumbnails">
+                  {product.imageUrl && (
+                    <button
+                      type="button"
+                      className={`thumb-btn ${(selectedImgMode === 'CASE' || (selectedImgMode === 'AUTO' && buyMode !== 'RETAIL')) ? 'active' : ''}`}
+                      onClick={() => { setSelectedImgMode('CASE'); setImgError(false); }}
+                    >
+                      <img src={product.imageUrl} alt="Ảnh Thùng" />
+                      <span className="thumb-label">Thùng nguyên ({product.unit || 'THÙNG'})</span>
+                    </button>
+                  )}
+                  {product.retailImageUrl && (
+                    <button
+                      type="button"
+                      className={`thumb-btn ${(selectedImgMode === 'RETAIL' || (selectedImgMode === 'AUTO' && buyMode === 'RETAIL')) ? 'active' : ''}`}
+                      onClick={() => { setSelectedImgMode('RETAIL'); setImgError(false); }}
+                    >
+                      <img src={product.retailImageUrl} alt="Ảnh Lẻ" />
+                      <span className="thumb-label">Gói/Chai lẻ ({product.retailUnit || 'LẺ'})</span>
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* Expiry and Lot Details Card */}
               <div className="detail-lot-info-strip">
@@ -414,6 +471,9 @@ export default function ShopProductDetail() {
             <div className="detail-header-group">
               <div className="detail-meta-tags">
                 <span className="detail-cat-badge">{product.categoryName}</span>
+                {product.groupStdSku && (
+                  <span className="detail-group-badge">{product.groupStdSku}</span>
+                )}
                 <span className="detail-sku-badge">SKU: {product.sku}</span>
               </div>
               <h1 className="detail-product-title">{product.name}</h1>
@@ -801,7 +861,11 @@ export default function ShopProductDetail() {
                     className="related-card"
                   >
                     <div className="related-thumb">
-                      <Package size={36} color="#059669" />
+                      {(item.imageUrl || item.retailImageUrl) ? (
+                        <img src={item.imageUrl || item.retailImageUrl} alt={item.name} className="related-img" loading="lazy" />
+                      ) : (
+                        <Package size={36} color="#059669" />
+                      )}
                     </div>
                     <div className="related-info">
                       <h4 className="related-name" title={item.name}>{item.name}</h4>

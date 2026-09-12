@@ -76,87 +76,114 @@ export default function FlashSaleSection({
           </div>
 
           {/* Flash products row */}
+          {/* Products Horizontal Slider Track */}
           <div className="flash-products-track">
-            {flashProducts.map((p, idx) => {
-              // Simulated sold percent for visual urgency like Shopee/Hasaki
-              const soldPercent = Math.min(95, 60 + (idx * 7) % 35);
-              const isWholesale = customer?.accountType === 'STORE';
-              const displayPrice = isWholesale ? p.wholesalePrice : p.basePrice;
-              const originalPrice = Math.round(displayPrice * 1.15);
-
-              return (
-                <div 
-                  key={p.id} 
-                  className="flash-product-card"
-                  onClick={() => navigate(`/shop/product/${p.id}`)}
-                >
-                  {/* Discount ribbon */}
-                  <div className="flash-discount-tag">
-                    <span>-15%</span>
-                    <small>GIÁ SỈ</small>
-                  </div>
-
-                  {/* Packaging Visual Frame */}
-                  <div className="flash-thumb-frame">
-                    <div className="flash-package-graphic">
-                      <Package size={44} strokeWidth={1.5} color="#059669" />
-                    </div>
-                    {p.lotNumber && (
-                      <span className="flash-lot-tag">Lô: {p.lotNumber}</span>
-                    )}
-                  </div>
-
-                  {/* Info */}
-                  <div className="flash-card-info">
-                    <h4 className="flash-card-name" title={p.name}>{p.name}</h4>
-
-                    <div className="flash-price-row">
-                      <span className="flash-price-active">
-                        {displayPrice.toLocaleString('vi-VN')} đ
-                      </span>
-                      <span className="flash-price-old">
-                        {originalPrice.toLocaleString('vi-VN')} đ
-                      </span>
-                    </div>
-
-                    <div className="flash-unit-note">
-                      Đơn vị: <strong>{p.unit || 'Thùng'}</strong> (x{p.conversionRate || 1} {p.retailUnit || 'chai/gói'})
-                    </div>
-
-                    {/* Hasaki / Shopee Style Urgency Progress Bar */}
-                    <div className="flash-sold-progress">
-                      <div className="sold-progress-track">
-                        <div 
-                          className="sold-progress-fill" 
-                          style={{ width: `${soldPercent}%` }}
-                        />
-                      </div>
-                      <div className="sold-progress-text">
-                        <Flame size={12} color="#dc2626" />
-                        <span>Đã bán {soldPercent}%</span>
-                      </div>
-                    </div>
-
-                    {/* Quick Add Button */}
-                    <button
-                      type="button"
-                      className="flash-quick-add-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onAddToCart(p, 1);
-                      }}
-                      title="Thêm 1 thùng vào giỏ"
-                    >
-                      <ShoppingCart size={14} />
-                      <span>Thêm Giỏ Hàng</span>
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+            {flashProducts.map((p, idx) => (
+              <FlashCard 
+                key={p.id} 
+                product={p} 
+                idx={idx} 
+                customer={customer} 
+                onAddToCart={onAddToCart} 
+                navigate={navigate} 
+              />
+            ))}
           </div>
         </div>
       </div>
     </section>
+  );
+}
+
+function FlashCard({ product, customer, idx, onAddToCart, navigate }) {
+  const [imgError, setImgError] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+
+  const soldPercent = Math.min(95, 60 + (idx * 7) % 35);
+  const isWholesale = customer?.accountType === 'STORE';
+  const displayPrice = isWholesale ? product.wholesalePrice : product.basePrice;
+  const originalPrice = Math.round(displayPrice * 1.15);
+  const activeImg = product.imageUrl || product.retailImageUrl;
+
+  const handleAdd = (e) => {
+    e.stopPropagation();
+    setIsAdding(true);
+    onAddToCart && onAddToCart(product, 1);
+    setTimeout(() => setIsAdding(false), 400);
+  };
+
+  return (
+    <div 
+      className="flash-product-card"
+      onClick={() => navigate(`/shop/product/${product.id}`)}
+    >
+      {/* Discount ribbon */}
+      <div className="flash-discount-tag">
+        <span>-15%</span>
+        <small>GIÁ SỈ</small>
+      </div>
+
+      {/* Packaging Visual Frame */}
+      <div className="flash-thumb-frame">
+        {activeImg && !imgError ? (
+          <img 
+            src={activeImg} 
+            alt={product.name} 
+            className="flash-real-img" 
+            loading="lazy" 
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <div className="flash-package-graphic">
+            <Package size={44} strokeWidth={1.5} color="#059669" />
+          </div>
+        )}
+        {product.lotNumber && (
+          <span className="flash-lot-tag">Lô: {product.lotNumber}</span>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="flash-card-info">
+        <h4 className="flash-card-name" title={product.name}>{product.name}</h4>
+
+        <div className="flash-price-row">
+          <span className="flash-price-active">
+            {displayPrice.toLocaleString('vi-VN')} đ
+          </span>
+          <span className="flash-price-old">
+            {originalPrice.toLocaleString('vi-VN')} đ
+          </span>
+        </div>
+
+        <div className="flash-unit-note">
+          Đơn vị: <strong>{product.unit || 'Thùng'}</strong> (x{product.conversionRate || 1} {product.retailUnit || 'chai/gói'})
+        </div>
+
+        {/* Hasaki / Shopee Style Urgency Progress Bar */}
+        <div className="flash-sold-progress">
+          <div className="sold-progress-track">
+            <div 
+              className="sold-progress-fill" 
+              style={{ width: `${soldPercent}%` }}
+            />
+          </div>
+          <div className="sold-progress-text">
+            <Flame size={12} color="#dc2626" />
+            <span>Đã bán {soldPercent}%</span>
+          </div>
+        </div>
+
+        <button 
+          type="button" 
+          className="flash-add-btn"
+          onClick={handleAdd}
+          disabled={!product.inStock}
+        >
+          <ShoppingCart size={14} />
+          <span>{isAdding ? 'Đã thêm' : 'Thêm Giỏ Hàng'}</span>
+        </button>
+      </div>
+    </div>
   );
 }

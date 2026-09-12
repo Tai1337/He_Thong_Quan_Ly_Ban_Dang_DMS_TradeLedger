@@ -22,10 +22,12 @@ export default function ProductCard({
   const navigate = useNavigate();
   const [qty, setQty] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   const isStore = customer?.accountType === 'STORE';
   const displayPrice = isStore ? product.wholesalePrice : product.basePrice;
   const originalPrice = Math.round(displayPrice * 1.15);
+  const activeImage = product.imageUrl || product.retailImageUrl;
 
   // Deterministic sold count based on product.id for authentic FMCG e-commerce feel
   const seed = Math.abs((Number(product.id) || 1) * 73);
@@ -74,7 +76,20 @@ export default function ProductCard({
         className="product-card-media" 
         onClick={() => navigate(`/shop/product/${product.id}`)}
       >
-        {renderProductGraphic()}
+        {activeImage && !imgError ? (
+          <div className="product-real-image-wrap">
+            <img 
+              src={activeImage} 
+              alt={product.name} 
+              className="product-real-img" 
+              loading="lazy"
+              onError={() => setImgError(true)}
+            />
+            <span className="product-unit-pill">{product.unit || 'THÙNG'}</span>
+          </div>
+        ) : (
+          renderProductGraphic()
+        )}
 
         {/* Top Badges (Shopee Style Discount Tag) */}
         <div className="media-top-tags">
@@ -121,6 +136,12 @@ export default function ProductCard({
           <span className="cat-chip">{product.categoryName}</span>
           <span className="sku-chip">{product.sku}</span>
         </div>
+
+        {product.groupStdSku && (
+          <div className="meta-group-row">
+            <span className="group-chip">{product.groupStdSku}</span>
+          </div>
+        )}
 
         {/* Title */}
         <h3 

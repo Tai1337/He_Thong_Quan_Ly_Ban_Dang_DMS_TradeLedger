@@ -14,13 +14,17 @@ import './CategoryGridSection.css';
 
 // Preset icon mappings for FMCG categories
 const CATEGORY_ICONS = {
-  'Gia vị': { icon: Utensils, color: '#f97316', bg: '#fff7ed' },
-  'Nước giải khát': { icon: Wine, color: '#0284c7', bg: '#f0f9ff' },
+  'Mì': { icon: Utensils, color: '#ea580c', bg: '#fff7ed' },
+  'Phở': { icon: Utensils, color: '#ea580c', bg: '#fff7ed' },
+  'Xúc xích': { icon: Package, color: '#dc2626', bg: '#fef2f2' },
+  'Nước mắm': { icon: Droplet, color: '#0284c7', bg: '#f0f9ff' },
+  'Nước chấm': { icon: Droplet, color: '#0284c7', bg: '#f0f9ff' },
+  'Gia vị': { icon: Sparkles, color: '#d97706', bg: '#fffbeb' },
+  'Cà phê': { icon: Coffee, color: '#78350f', bg: '#fef3c7' },
+  'Thức uống': { icon: Wine, color: '#0284c7', bg: '#f0f9ff' },
   'Đồ uống': { icon: Wine, color: '#0284c7', bg: '#f0f9ff' },
-  'Mì': { icon: Utensils, color: '#eab308', bg: '#fefce8' },
   'Bánh kẹo': { icon: Cookie, color: '#ec4899', bg: '#fdf2f8' },
   'Sữa': { icon: Milk, color: '#3b82f6', bg: '#eff6ff' },
-  'Cà phê': { icon: Coffee, color: '#78350f', bg: '#fef3c7' },
   'Dầu ăn': { icon: Droplet, color: '#ca8a04', bg: '#fef9c3' },
   'Hoá phẩm': { icon: Sparkles, color: '#10b981', bg: '#ecfdf5' },
 };

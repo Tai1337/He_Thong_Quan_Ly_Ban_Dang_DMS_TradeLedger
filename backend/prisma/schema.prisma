@@ -232,6 +232,8 @@ model Product {
   groupStdSku String?  @db.VarChar(100) @map("group_std_sku")
   conversionRate Int   @default(1) @map("conversion_rate")
   basePrice   Decimal  @default(0) @db.Decimal(14, 2) @map("base_price")
+  imageUrl       String?  @map("image_url") @db.VarChar(500)
+  retailImageUrl String?  @map("retail_image_url") @db.VarChar(500)
   status      Boolean  @default(true)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")

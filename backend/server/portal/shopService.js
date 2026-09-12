@@ -279,6 +279,8 @@ export const getShopProducts = async ({ cursor, limit = 16, categoryId, search, 
       lotNumber: mainLotNumber,
       categoryName: p.category?.name || 'Khác',
       categoryId: p.categoryId ? p.categoryId.toString() : null,
+      imageUrl: p.imageUrl || null,
+      retailImageUrl: p.retailImageUrl || null,
       basePrice,
       wholesalePrice,
       activePrice,
@@ -302,10 +304,14 @@ export const getShopCategories = async () => {
   const categories = await prisma.productCategory.findMany({
     include: {
       _count: {
-        select: { products: true }
+        select: {
+          products: {
+            where: { status: true }
+          }
+        }
       }
     },
-    orderBy: { name: 'asc' }
+    orderBy: { id: 'asc' }
   });
 
   return categories.map(c => ({
@@ -398,6 +404,8 @@ export const getShopProductDetail = async (productId, accountType = 'CONSUMER') 
       retailUnit: item.retailUnit,
       conversionRate: item.conversionRate || 1,
       categoryName: item.category?.name || 'Khác',
+      imageUrl: item.imageUrl || null,
+      retailImageUrl: item.retailImageUrl || null,
       basePrice: price,
       wholesalePrice: Math.round(price * 0.88),
       activePrice: accountType === 'STORE' ? Math.round(price * 0.88) : price,
@@ -411,6 +419,8 @@ export const getShopProductDetail = async (productId, accountType = 'CONSUMER') 
     name: p.name,
     unit: p.unit || 'THÙNG',
     retailUnit: p.retailUnit || 'Chai/Gói',
+    imageUrl: p.imageUrl || null,
+    retailImageUrl: p.retailImageUrl || null,
     conversionRate,
     groupStdSku: p.groupStdSku || null,
     expiryDate: nearestExpiryDate ? new Date(nearestExpiryDate).toISOString().slice(0, 10) : null,
