@@ -1,17 +1,10 @@
 generator client {
   provider = "prisma-client-js"
 }
-// Của Tài 
-//datasource db {
-//  provider = "mysql"
-//  url      = env("DATABASE_URL")
-//}
 
-
-// Của Lưu
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL1")
+  url      = env("DATABASE_URL")
 }
 
 // ENUMS
@@ -44,6 +37,7 @@ enum SalesOrderStatus {
   ALLOCATED
   SHIPPED
   DELIVERED
+  DELIVERY_FAILED
   INVOICED
   PAID
   CANCELLED
@@ -419,6 +413,7 @@ model SalesOrder {
   deliveryTripId  BigInt?          @map("delivery_trip_id")
   createdById     BigInt?          @map("created_by")
   customerId      BigInt?          @map("customer_id")
+  deliveryNotes   String?          @db.Text @map("delivery_notes")
   createdAt       DateTime         @default(now()) @map("created_at")
   updatedAt       DateTime         @updatedAt @map("updated_at")
 
@@ -439,12 +434,14 @@ model SalesOrder {
 }
 
 model SalesOrderItem {
-  id              BigInt     @id @default(autoincrement())
-  salesOrderId    BigInt     @map("sales_order_id")
-  productId       BigInt     @map("product_id")
-  quantity        Decimal    @db.Decimal(14, 2)
-  unitPrice       Decimal    @db.Decimal(14, 2) @map("unit_price")
-  isPromotion     Boolean    @default(false) @map("is_promotion")
+  id                BigInt     @id @default(autoincrement())
+  salesOrderId      BigInt     @map("sales_order_id")
+  productId         BigInt     @map("product_id")
+  quantity          Decimal    @db.Decimal(14, 2)
+  deliveredQuantity Decimal?   @map("delivered_quantity") @db.Decimal(14, 2)
+  failedQuantity    Decimal?   @default(0) @map("failed_quantity") @db.Decimal(14, 2)
+  unitPrice         Decimal    @db.Decimal(14, 2) @map("unit_price")
+  isPromotion       Boolean    @default(false) @map("is_promotion")
 
   salesOrder      SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
   product         Product    @relation(fields: [productId], references: [id])
@@ -559,6 +556,11 @@ model DeliveryTrip {
   currentWeightKg      Decimal     @default(0) @db.Decimal(10, 2) @map("current_weight_kg")
   departureTime        DateTime?   @map("departure_time")
   completedTime        DateTime?   @map("completed_time")
+  closedTime           DateTime?   @map("closed_time")
+  closedById           BigInt?     @map("closed_by")
+  totalCodCollected    Decimal?    @default(0) @db.Decimal(14, 2) @map("total_cod_collected")
+  codHandedOver        Decimal?    @default(0) @db.Decimal(14, 2) @map("cod_handed_over")
+  closeNotes           String?     @db.Text @map("close_notes")
   notes                String?     @db.Text
   status               TripStatus  @default(WAITING_CONFIRM)
   createdAt            DateTime    @default(now()) @map("created_at")

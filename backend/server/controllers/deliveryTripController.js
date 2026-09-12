@@ -6,7 +6,10 @@ import {
   dispatchOrdersToTripService,
   removeOrderFromTripService,
   updateTripStatusService,
-  getTripCargoManifestService
+  getTripCargoManifestService,
+  confirmStopDeliveryService,
+  getTripReturnSummaryService,
+  closeDeliveryTripService
 } from '../services/deliveryTripService.js';
 
 export const getDeliveryTrips = async (req, res) => {
@@ -171,3 +174,78 @@ export const getTripCargoManifest = async (req, res) => {
     res.status(500).json({ error: error.message || 'Lỗi khi lập bảng kê hàng hóa số lô' });
   }
 };
+
+export const confirmStopDelivery = async (req, res) => {
+  try {
+    const { id: tripId } = req.params;
+    const {
+      orderId,
+      distributorId = 1,
+      deliveryResult,
+      itemsDelivery,
+      notes,
+      changedById
+    } = req.body;
+
+    if (!orderId) {
+      return res.status(400).json({ error: 'orderId là bắt buộc' });
+    }
+    if (!deliveryResult) {
+      return res.status(400).json({ error: 'deliveryResult là bắt buộc (DELIVERED_FULL, DELIVERED_PARTIAL hoặc DELIVERY_FAILED)' });
+    }
+
+    const result = await confirmStopDeliveryService({
+      tripId,
+      orderId,
+      distributorId,
+      deliveryResult,
+      itemsDelivery,
+      notes,
+      changedById
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error('confirmStopDelivery error:', error);
+    res.status(400).json({ error: error.message || 'Lỗi khi xác nhận kết quả giao hàng' });
+  }
+};
+
+export const getTripReturnSummary = async (req, res) => {
+  try {
+    const { id: tripId } = req.params;
+    const { distributorId = 1 } = req.query;
+
+    const summary = await getTripReturnSummaryService(tripId, distributorId);
+    res.json(summary);
+  } catch (error) {
+    console.error('getTripReturnSummary error:', error);
+    res.status(500).json({ error: error.message || 'Lỗi khi tải bảng kê hàng rớt & quyết toán COD' });
+  }
+};
+
+export const closeDeliveryTrip = async (req, res) => {
+  try {
+    const { id: tripId } = req.params;
+    const {
+      distributorId = 1,
+      codHandedOver,
+      closeNotes,
+      closedById
+    } = req.body;
+
+    const result = await closeDeliveryTripService({
+      tripId,
+      distributorId,
+      codHandedOver,
+      closeNotes,
+      closedById
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error('closeDeliveryTrip error:', error);
+    res.status(400).json({ error: error.message || 'Lỗi khi làm thủ tục đóng chuyến xe' });
+  }
+};
+

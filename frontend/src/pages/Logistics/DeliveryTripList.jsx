@@ -14,7 +14,8 @@ import {
   ChevronLeft,
   ChevronRight,
   SlidersHorizontal,
-  Send
+  Send,
+  Lock
 } from 'lucide-react';
 import { useDeliveryTrips } from '../../hooks/useDeliveryTrips';
 import CreateTripModal from './CreateTripModal';
@@ -44,12 +45,18 @@ export default function DeliveryTripList() {
 
   const renderStatusBadge = (status) => {
     switch (status) {
-      case 'WAITING_SHIP':
       case 'WAITING_CONFIRM':
+        return (
+          <span className="trip-status-badge waiting-confirm" style={{ background: '#f1f5f9', color: '#475569' }}>
+            <Clock size={12} />
+            <span>Chờ xác nhận</span>
+          </span>
+        );
+      case 'WAITING_SHIP':
         return (
           <span className="trip-status-badge waiting-ship">
             <Clock size={12} />
-            <span>Chờ xếp xe</span>
+            <span>Chờ xuất bến</span>
           </span>
         );
       case 'SHIPPING':
@@ -64,6 +71,13 @@ export default function DeliveryTripList() {
           <span className="trip-status-badge completed">
             <CheckCircle2 size={12} />
             <span>Hoàn thành</span>
+          </span>
+        );
+      case 'CLOSED':
+        return (
+          <span className="trip-status-badge closed" style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1' }}>
+            <Lock size={12} />
+            <span>Đã đóng chuyến</span>
           </span>
         );
       case 'CANCELLED':
@@ -184,9 +198,11 @@ export default function DeliveryTripList() {
             onChange={(e) => setFilters({ ...filters, status: e.target.value, page: 1 })}
           >
             <option value="ALL">-- Tất cả trạng thái --</option>
-            <option value="WAITING_SHIP">Chờ xếp hàng (WAITING_SHIP)</option>
+            <option value="WAITING_CONFIRM">Chờ xác nhận (WAITING_CONFIRM)</option>
+            <option value="WAITING_SHIP">Chờ xuất bến (WAITING_SHIP)</option>
             <option value="SHIPPING">Đang giao hàng (SHIPPING)</option>
             <option value="COMPLETED">Đã hoàn thành (COMPLETED)</option>
+            <option value="CLOSED">Đã đóng chuyến (CLOSED)</option>
             <option value="CANCELLED">Đã hủy (CANCELLED)</option>
           </select>
 

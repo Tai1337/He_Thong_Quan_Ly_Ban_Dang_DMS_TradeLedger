@@ -514,3 +514,80 @@
 .btn-trip-cancel-run:hover:not(:disabled) {
   background: #fee2e2;
 }
+
+/* Nút xác nhận giao hàng cho đơn */
+.btn-confirm-order-delivery {
+  background: #10b981;
+  color: #ffffff;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s;
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.2);
+}
+
+.btn-confirm-order-delivery:hover {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+/* Tag ghi chú giao hàng / đơn rớt */
+.order-delivery-notes-tag {
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11.5px;
+  color: #475569;
+  margin-top: 4px;
+}
+
+/* Nút Hạ tải hàng rớt & đóng chuyến xe (CLOSED) */
+.btn-trip-close-final {
+  background: #7c3aed;
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+  box-shadow: 0 1px 3px rgba(124, 58, 237, 0.25);
+}
+
+.btn-trip-close-final:hover {
+  background: #6d28d9;
+}
+
+/* Nút xem lại biên bản đóng chuyến */
+.btn-trip-view-closing {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+}
+
+.btn-trip-view-closing:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+

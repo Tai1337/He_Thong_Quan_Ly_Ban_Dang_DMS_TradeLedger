@@ -724,4 +724,41 @@ export const getTripCargoManifest = async (tripId, distributorId = 1) => {
   return data;
 };
 
+export const confirmStopDelivery = async (tripId, payload) => {
+  const response = await fetch(`${API_URL}/delivery-trips/${tripId}/confirm-delivery`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi xác nhận kết quả giao hàng');
+  }
+  return data;
+};
+
+export const getTripReturnSummary = async (tripId, distributorId = 1) => {
+  const response = await fetch(`${API_URL}/delivery-trips/${tripId}/return-summary?distributorId=${distributorId}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi tải bảng kê hàng rớt & quyết toán COD');
+  }
+  return data;
+};
+
+export const closeDeliveryTrip = async (tripId, payload) => {
+  const response = await fetch(`${API_URL}/delivery-trips/${tripId}/close-trip`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi làm thủ tục đóng chuyến xe');
+  }
+  return data;
+};
+
+
+
 

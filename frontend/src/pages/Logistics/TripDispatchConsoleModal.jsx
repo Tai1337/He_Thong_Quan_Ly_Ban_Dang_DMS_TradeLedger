@@ -26,6 +26,8 @@ import {
   updateDeliveryTripStatus, 
   getTripCargoManifest 
 } from '../../services/api';
+import ConfirmDeliveryModal from './ConfirmDeliveryModal';
+import TripClosingModal from './TripClosingModal';
 import './TripDispatchConsoleModal.css';
 
 export default function TripDispatchConsoleModal({ tripId, isOpen, onClose, onRefreshList }) {
@@ -39,6 +41,12 @@ export default function TripDispatchConsoleModal({ tripId, isOpen, onClose, onRe
   
   // Selected order IDs in the left queue
   const [selectedOrderIds, setSelectedOrderIds] = useState([]);
+
+  // State xác nhận giao hàng cho từng đơn
+  const [selectedOrderForDelivery, setSelectedOrderForDelivery] = useState(null);
+
+  // State mở modal bàn giao & đóng chuyến xe
+  const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
 
   // Load data for the modal
   const loadTripData = useCallback(async () => {
@@ -128,10 +136,12 @@ export default function TripDispatchConsoleModal({ tripId, isOpen, onClose, onRe
   // Change Trip status
   const handleStatusChange = async (toStatus) => {
     let confirmMsg = `Xác nhận chuyển trạng thái chuyến xe sang "${toStatus}"?`;
-    if (toStatus === 'SHIPPING') {
+    if (toStatus === 'WAITING_SHIP') {
+      confirmMsg = `Xác nhận chuyến xe [${trip.licensePlate || trip.tripCode}] đã hoàn tất chuẩn bị và sẵn sàng xuất bến?`;
+    } else if (toStatus === 'SHIPPING') {
       confirmMsg = `Xác nhận xuất bến chuyến xe [${trip.licensePlate || trip.tripCode}]? Tất cả đơn hàng sẽ chuyển sang trạng thái "Đang giao" (SHIPPED).`;
     } else if (toStatus === 'COMPLETED') {
-      confirmMsg = `Xác nhận chuyến xe đã giao hàng thành công toàn bộ? Các đơn hàng sẽ chuyển sang "Đã giao" (DELIVERED).`;
+      confirmMsg = `Xác nhận hoàn tất chuyến xe? Các đơn hàng còn lại sẽ được xác nhận giao hoàn tất.`;
     }
 
     if (!window.confirm(confirmMsg)) return;
@@ -344,38 +354,74 @@ export default function TripDispatchConsoleModal({ tripId, isOpen, onClose, onRe
                       Chưa có đơn hàng nào trên chuyến xe này. Hãy chọn đơn từ hàng đợi bên trái để bốc xếp.
                     </div>
                   ) : (
-                    trip.orders.map(order => (
-                      <div key={order.id} className="loaded-order-card">
-                        <div className="loaded-order-top">
-                          <div>
-                            <strong style={{ fontSize: '13.5px', color: '#0f172a' }}>{order.orderCode}</strong>
-                            <span style={{ marginLeft: 8, fontSize: '11px', color: '#2563eb', background: '#eff6ff', padding: '1px 6px', borderRadius: 4 }}>
-                              {order.status}
-                            </span>
+                    trip.orders.map(order => {
+                      const isShipped = order.status === 'SHIPPED';
+                      const isDelivered = order.status === 'DELIVERED';
+                      const isFailed = order.status === 'DELIVERY_FAILED';
+
+                      return (
+                        <div key={order.id} className="loaded-order-card">
+                          <div className="loaded-order-top">
+                            <div>
+                              <strong style={{ fontSize: '13.5px', color: '#0f172a' }}>{order.orderCode}</strong>
+                              <span 
+                                style={{ 
+                                  marginLeft: 8, 
+                                  fontSize: '11px', 
+                                  padding: '2px 7px', 
+                                  borderRadius: 4,
+                                  fontWeight: 600,
+                                  background: isDelivered ? '#ecfdf5' : isFailed ? '#fef2f2' : isShipped ? '#fffbeb' : '#eff6ff',
+                                  color: isDelivered ? '#059669' : isFailed ? '#dc2626' : isShipped ? '#d97706' : '#2563eb'
+                                }}
+                              >
+                                {isDelivered ? 'Đã Giao' : isFailed ? 'Giao Thất Bại' : isShipped ? 'Đang Giao' : order.status}
+                              </span>
+                            </div>
+                            
+                            {/* Chặn xóa đơn khi xe đang SHIPPING hoặc COMPLETED */}
+                            {trip.status !== 'SHIPPING' && trip.status !== 'COMPLETED' && order.status === 'ALLOCATED' && (
+                              <button 
+                                type="button" 
+                                className="btn-remove-order"
+                                title="Gỡ khỏi chuyến xe"
+                                onClick={() => handleRemoveOrder(order.id, order.orderCode)}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+
+                            {/* Khi xe đang giao (SHIPPING): Nút xác nhận giao hàng cho đơn */}
+                            {trip.status === 'SHIPPING' && isShipped && (
+                              <button
+                                type="button"
+                                className="btn-confirm-order-delivery"
+                                onClick={() => setSelectedOrderForDelivery(order)}
+                              >
+                                <CheckCircle2 size={13} />
+                                <span>Xác Nhận Giao</span>
+                              </button>
+                            )}
                           </div>
-                          
-                          {trip.status !== 'SHIPPING' && trip.status !== 'COMPLETED' && (
-                            <button 
-                              type="button" 
-                              className="btn-remove-order"
-                              title="Gỡ khỏi chuyến xe"
-                              onClick={() => handleRemoveOrder(order.id, order.orderCode)}
-                            >
-                              <Trash2 size={14} />
-                            </button>
+
+                          <div style={{ fontSize: '12.5px', color: '#475569' }}>
+                            Khách: <strong>{order.retailer?.name}</strong> • {order.retailer?.address}
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#64748b' }}>
+                            <span>Trọng lượng: <strong style={{ color: '#0f172a' }}>{order.orderWeightKg} kg</strong></span>
+                            <span>Số mặt hàng: {order.items?.length || 0}</span>
+                          </div>
+
+                          {/* Hiển thị ghi chú đơn rớt hoặc giao thất bại */}
+                          {order.deliveryNotes && (
+                            <div className="order-delivery-notes-tag">
+                              <em>{order.deliveryNotes}</em>
+                            </div>
                           )}
                         </div>
-
-                        <div style={{ fontSize: '12.5px', color: '#475569' }}>
-                          Khách: <strong>{order.retailer?.name}</strong> • {order.retailer?.address}
-                        </div>
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#64748b' }}>
-                          <span>Trọng lượng: <strong style={{ color: '#0f172a' }}>{order.orderWeightKg} kg</strong></span>
-                          <span>Số mặt hàng: {order.items?.length || 0}</span>
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </div>
@@ -452,62 +498,108 @@ export default function TripDispatchConsoleModal({ tripId, isOpen, onClose, onRe
           {/* TAB 3: ĐIỂM DỪNG & GIAO HÀNG */}
           {activeTab === 'stops' && (
             <div className="manifest-container">
-              <h3 style={{ margin: '0 0 10px 0', fontSize: '15px' }}>Lộ Trình Các Điểm Giao Hàng</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <h3 style={{ margin: 0, fontSize: '15px' }}>Lộ Trình Các Điểm Giao Hàng</h3>
+                {trip?.status === 'SHIPPING' && (
+                  <span style={{ fontSize: '12.5px', color: '#2563eb', fontWeight: 600 }}>
+                    Tiến độ: {(trip?.orders || []).filter(o => o.status === 'DELIVERED' || o.status === 'DELIVERY_FAILED').length} / {(trip?.orders || []).length} điểm đã hoàn thành
+                  </span>
+                )}
+              </div>
+
               {!manifest?.retailerStops || manifest.retailerStops.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>
                   Chưa có lộ trình giao hàng nào.
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {manifest.retailerStops.map((stop, index) => (
-                    <div 
-                      key={stop.orderCode} 
-                      style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'space-between',
-                        padding: '12px 16px',
-                        background: '#f8fafc',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: 8
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                        <div style={{ 
-                          width: 28, 
-                          height: 28, 
-                          borderRadius: '50%', 
-                          background: '#2563eb', 
-                          color: '#fff', 
+                  {manifest.retailerStops.map((stop, index) => {
+                    const matchingOrder = (trip?.orders || []).find(o => o.orderCode === stop.orderCode);
+                    const isShipped = stop.status === 'SHIPPED';
+                    const isDelivered = stop.status === 'DELIVERED';
+                    const isFailed = stop.status === 'DELIVERY_FAILED';
+
+                    return (
+                      <div 
+                        key={stop.orderCode} 
+                        style={{ 
                           display: 'flex', 
                           alignItems: 'center', 
-                          justifyContent: 'center',
-                          fontWeight: 700,
-                          fontSize: '13px'
-                        }}>
-                          {stop.stopNumber}
-                        </div>
-                        <div>
-                          <h4 style={{ margin: 0, fontSize: '14px', color: '#0f172a' }}>{stop.retailerName}</h4>
-                          <div style={{ fontSize: '12.5px', color: '#64748b', marginTop: 3 }}>
-                            <MapPin size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />
-                            {stop.address || 'Chưa cập nhật địa chỉ'}
-                            {stop.phone && (
-                              <span style={{ marginLeft: 12 }}>
-                                <Phone size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />
-                                {stop.phone}
-                              </span>
+                          justifyContent: 'space-between',
+                          padding: '14px 16px',
+                          background: isDelivered ? '#f0fdf4' : isFailed ? '#fef2f2' : '#f8fafc',
+                          border: isDelivered ? '1px solid #bbf7d0' : isFailed ? '1px solid #fecaca' : '1px solid #e2e8f0',
+                          borderRadius: 10
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                          <div style={{ 
+                            width: 32, 
+                            height: 32, 
+                            borderRadius: '50%', 
+                            background: isDelivered ? '#10b981' : isFailed ? '#ef4444' : '#2563eb', 
+                            color: '#fff', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            fontWeight: 700,
+                            fontSize: '13px'
+                          }}>
+                            {stop.stopNumber}
+                          </div>
+                          <div>
+                            <h4 style={{ margin: 0, fontSize: '14.5px', color: '#0f172a' }}>{stop.retailerName}</h4>
+                            <div style={{ fontSize: '12.5px', color: '#64748b', marginTop: 3 }}>
+                              <MapPin size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                              {stop.address || 'Chưa cập nhật địa chỉ'}
+                              {stop.phone && (
+                                <span style={{ marginLeft: 12 }}>
+                                  <Phone size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                                  {stop.phone}
+                                </span>
+                              )}
+                            </div>
+                            {stop.deliveryNotes && (
+                              <div style={{ fontSize: '12px', color: isFailed ? '#b91c1c' : '#047857', marginTop: 4, fontWeight: 500 }}>
+                                <em>Ghi chú giao: {stop.deliveryNotes}</em>
+                              </div>
                             )}
                           </div>
                         </div>
-                      </div>
 
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '12px', color: '#64748b' }}>Đơn hàng: <strong>{stop.orderCode}</strong></div>
-                        <div style={{ fontSize: '13px', fontWeight: 700, color: '#10b981' }}>{stop.orderWeightKg} kg</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '12px', color: '#64748b' }}>Đơn hàng: <strong>{stop.orderCode}</strong></div>
+                            <div style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>{stop.orderWeightKg} kg</div>
+                          </div>
+
+                          {/* Trạng thái / Nút xác nhận giao tại điểm */}
+                          {trip?.status === 'SHIPPING' && isShipped && matchingOrder && (
+                            <button
+                              type="button"
+                              className="btn-confirm-order-delivery"
+                              onClick={() => setSelectedOrderForDelivery(matchingOrder)}
+                            >
+                              <CheckCircle2 size={14} />
+                              <span>Xác Nhận Giao Điểm Này</span>
+                            </button>
+                          )}
+
+                          {isDelivered && (
+                            <span style={{ background: '#dcfce7', color: '#15803d', padding: '4px 10px', borderRadius: 6, fontSize: '12px', fontWeight: 700 }}>
+                              ✓ Đã Giao Hàng
+                            </span>
+                          )}
+
+                          {isFailed && (
+                            <span style={{ background: '#fee2e2', color: '#b91c1c', padding: '4px 10px', borderRadius: 6, fontSize: '12px', fontWeight: 700 }}>
+                              ✕ Giao Thất Bại
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -518,9 +610,28 @@ export default function TripDispatchConsoleModal({ tripId, isOpen, onClose, onRe
         <div className="dispatch-modal-footer">
           <div className="footer-status-pill">
             Trạng thái hiện tại: <strong>{trip?.status}</strong>
+            {trip?.status === 'SHIPPING' && (
+              <span style={{ marginLeft: 8, color: '#2563eb' }}>
+                (Đã giao: {(trip?.orders || []).filter(o => o.status === 'DELIVERED' || o.status === 'DELIVERY_FAILED').length} / {(trip?.orders || []).length} đơn)
+              </span>
+            )}
           </div>
 
           <div className="footer-btn-group">
+            {/* WAITING_CONFIRM -> WAITING_SHIP */}
+            {trip?.status === 'WAITING_CONFIRM' && (
+              <button 
+                type="button" 
+                className="btn-trip-ship"
+                disabled={actionLoading || !trip?.orders || trip.orders.length === 0}
+                onClick={() => handleStatusChange('WAITING_SHIP')}
+              >
+                <CheckCircle2 size={15} />
+                <span>Xác Nhận Xe (Sẵn Sàng Bốc)</span>
+              </button>
+            )}
+
+            {/* WAITING_SHIP -> SHIPPING */}
             {trip?.status === 'WAITING_SHIP' && (
               <button 
                 type="button" 
@@ -533,6 +644,7 @@ export default function TripDispatchConsoleModal({ tripId, isOpen, onClose, onRe
               </button>
             )}
 
+            {/* SHIPPING -> COMPLETED */}
             {trip?.status === 'SHIPPING' && (
               <button 
                 type="button" 
@@ -541,11 +653,35 @@ export default function TripDispatchConsoleModal({ tripId, isOpen, onClose, onRe
                 onClick={() => handleStatusChange('COMPLETED')}
               >
                 <CheckCheck size={16} />
-                <span>Xác Nhận Giao Hoàn Tất Toàn Bộ</span>
+                <span>Hoàn Tất Chuyến Xe</span>
               </button>
             )}
 
-            {trip?.status !== 'COMPLETED' && trip?.status !== 'SHIPPING' && (
+            {/* COMPLETED -> Mở modal Bàn giao hàng rớt & Đóng chuyến (CLOSED) */}
+            {trip?.status === 'COMPLETED' && (
+              <button 
+                type="button" 
+                className="btn-trip-close-final"
+                onClick={() => setIsClosingModalOpen(true)}
+              >
+                <Lock size={15} />
+                <span>Hạ Tải Hàng Rớt & Đóng Chuyến (CLOSED)</span>
+              </button>
+            )}
+
+            {/* Đã CLOSED -> Xem lại biên bản đóng chuyến */}
+            {trip?.status === 'CLOSED' && (
+              <button 
+                type="button" 
+                className="btn-trip-view-closing"
+                onClick={() => setIsClosingModalOpen(true)}
+              >
+                <FileText size={15} />
+                <span>Xem Biên Bản Nghiệm Thu Đóng Chuyến</span>
+              </button>
+            )}
+
+            {trip?.status !== 'COMPLETED' && trip?.status !== 'SHIPPING' && trip?.status !== 'CLOSED' && (
               <button 
                 type="button" 
                 className="btn-trip-cancel-run"
@@ -561,6 +697,33 @@ export default function TripDispatchConsoleModal({ tripId, isOpen, onClose, onRe
             </button>
           </div>
         </div>
+
+        {/* Modal Xác Nhận Giao Hàng Tại Từng Điểm Bán */}
+        {selectedOrderForDelivery && (
+          <ConfirmDeliveryModal
+            isOpen={Boolean(selectedOrderForDelivery)}
+            tripId={tripId}
+            order={selectedOrderForDelivery}
+            onClose={() => setSelectedOrderForDelivery(null)}
+            onDeliveryConfirmed={async () => {
+              await loadTripData();
+              onRefreshList && onRefreshList();
+            }}
+          />
+        )}
+
+        {/* Modal Hạ Tải Hàng Rớt & Quyết Toán COD Đóng Chuyến Xe */}
+        {isClosingModalOpen && (
+          <TripClosingModal
+            isOpen={isClosingModalOpen}
+            tripId={tripId}
+            onClose={() => setIsClosingModalOpen(false)}
+            onTripClosed={async () => {
+              await loadTripData();
+              onRefreshList && onRefreshList();
+            }}
+          />
+        )}
       </div>
     </div>
   );
