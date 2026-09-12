@@ -309,7 +309,6 @@
   height: 100%;
   background: linear-gradient(90deg, #f97316 0%, #ee4d2d 100%);
   border-radius: 10px;
-  transition: width 0.4s ease;
 }
 
 .load-more-btn {

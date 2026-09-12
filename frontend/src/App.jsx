@@ -113,6 +113,18 @@ function App() {
           } 
         />
         <Route 
+          path="/logistics/trips" 
+          element={
+            user ? (
+              <Layout user={user} onLogout={handleLogout}>
+                <DeliveryTripList />
+              </Layout>
+            ) : (
+              <Navigate to="/login" />
+            )
+          } 
+        />
+        <Route 
           path="/sales/delivery-trips" 
           element={<Navigate to="/logistics/delivery-trips" />} 
         />

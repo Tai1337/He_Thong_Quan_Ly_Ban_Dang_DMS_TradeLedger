@@ -8,7 +8,6 @@ import {
   LogOut,
   User,
   Shield,
-  Palette,
   Layers,
   ShoppingCart
 } from 'lucide-react';
@@ -156,16 +155,6 @@ const FrappeHeader = ({ user, onLogout }) => {
         >
           <ShoppingCart size={14} />
           <span>Web Bán Hàng</span>
-        </Link>
-
-        {/* Review Themes Button */}
-        <Link 
-          to="/theme-review" 
-          className="frappe-theme-review-badge"
-          title="Xem trước 4 khung màu (UI/UX Pro Max & Vercel Skills)"
-        >
-          <Palette size={14} />
-          <span>Review Themes</span>
         </Link>
 
         {/* User Profile Avatar */}

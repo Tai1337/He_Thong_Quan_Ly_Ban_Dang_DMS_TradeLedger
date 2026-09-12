@@ -119,7 +119,7 @@
   font-size: 13px;
   font-weight: 600;
   text-decoration: none;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   transition: background-color 150ms ease, transform 150ms ease;
 }
 
@@ -155,15 +155,14 @@
 }
 
 .theme-selector-card:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.4);
-  border-color: #2563eb;
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
 }
 
 .theme-selector-card.selected {
   border-color: #2563eb;
   background-color: #f8fafc;
-  box-shadow: 0 0 0 2px #2563eb, 0 8px 20px -4px rgba(37, 99, 235, 0.15);
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.08);
 }
 
 .card-top-row {

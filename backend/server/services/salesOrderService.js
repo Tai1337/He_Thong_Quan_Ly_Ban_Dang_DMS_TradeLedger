@@ -690,7 +690,110 @@ export const closeOrder = async (orderId, distributorId, changedById) => {
 };
 
 /**
- * Chỉnh sửa số lượng sản phẩm trên đơn hàng (Dùng cho RPT005 khi thiếu tồn kho)
+ * Tái phân bổ lô hàng theo FEFO cho đơn hàng (khi đơn đang ALLOCATED được chỉnh sửa mặt hàng/số lượng)
+ */
+export const reallocateLotsForOrder = async (tx, orderId) => {
+  const order = await tx.salesOrder.findUnique({
+    where: { id: BigInt(orderId) },
+    include: {
+      items: {
+        include: {
+          product: true,
+          allocations: true
+        }
+      }
+    }
+  });
+
+  if (!order) throw new Error('Không tìm thấy đơn hàng');
+
+  // 1. Giải phóng toàn bộ allocations cũ và hoàn trả quantityReserved
+  for (const item of order.items) {
+    for (const alloc of (item.allocations || [])) {
+      await tx.stockBalance.update({
+        where: { lotId: alloc.lotId },
+        data: {
+          quantityReserved: {
+            decrement: alloc.quantity
+          }
+        }
+      });
+    }
+    await tx.salesOrderItemAllocation.deleteMany({
+      where: { salesOrderItemId: item.id }
+    });
+  }
+
+  // 2. Tái phân bổ theo chuẩn FEFO cho các mặt hàng có quantity > 0
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+
+  for (const item of order.items) {
+    const requiredQty = Number(item.quantity);
+    if (requiredQty <= 0) continue;
+
+    const lots = await tx.stockLot.findMany({
+      where: {
+        productId: item.productId,
+        warehouseId: order.warehouseId,
+        status: 'GOOD',
+        OR: [
+          { expiryDate: null },
+          { expiryDate: { gte: now } }
+        ]
+      },
+      include: { stockBalance: true },
+      orderBy: [
+        { expiryDate: 'asc' },
+        { id: 'asc' }
+      ]
+    });
+
+    let totalAvailable = 0;
+    const validLots = [];
+    for (const lot of lots) {
+      const onHand = Number(lot.stockBalance?.quantityOnHand || 0);
+      const reserved = Number(lot.stockBalance?.quantityReserved || 0);
+      const available = Math.max(0, onHand - reserved);
+      if (available > 0) {
+        validLots.push({ lot, available });
+        totalAvailable += available;
+      }
+    }
+
+    if (totalAvailable < requiredQty) {
+      throw new Error(`Sản phẩm "${item.product.name}" (SKU: ${item.product.sku}) không đủ tồn kho khả dụng để phân bổ. Yêu cầu: ${requiredQty}, Tồn khả dụng hiện tại: ${totalAvailable}`);
+    }
+
+    let remainingQty = requiredQty;
+    for (const { lot, available } of validLots) {
+      if (remainingQty <= 0) break;
+      const allocateQty = Math.min(available, remainingQty);
+
+      await tx.salesOrderItemAllocation.create({
+        data: {
+          salesOrderItemId: item.id,
+          lotId: lot.id,
+          quantity: allocateQty
+        }
+      });
+
+      await tx.stockBalance.update({
+        where: { lotId: lot.id },
+        data: {
+          quantityReserved: {
+            increment: allocateQty
+          }
+        }
+      });
+
+      remainingQty -= allocateQty;
+    }
+  }
+};
+
+/**
+ * Chỉnh sửa số lượng sản phẩm trên đơn hàng (Cho PENDING, SUBMITTED hoặc ALLOCATED chưa gán xe)
  */
 export const updateOrderItemQuantity = async (orderId, itemId, newQuantity, distributorId, changedById, reason = '') => {
   const qty = Number(newQuantity);
@@ -707,8 +810,13 @@ export const updateOrderItemQuantity = async (orderId, itemId, newQuantity, dist
     });
 
     if (!order) throw new Error('Không tìm thấy đơn hàng');
-    if (order.status !== 'PENDING' && order.status !== 'SUBMITTED') {
-      throw new Error('Chỉ được chỉnh sửa số lượng khi đơn hàng ở trạng thái "Chờ duyệt" (PENDING hoặc SUBMITTED)');
+
+    if (order.deliveryTripId) {
+      throw new Error('Đơn hàng đã được gán vào chuyến xe giao hàng, không thể chỉnh sửa!');
+    }
+
+    if (order.status !== 'PENDING' && order.status !== 'SUBMITTED' && order.status !== 'ALLOCATED') {
+      throw new Error('Chỉ được chỉnh sửa số lượng khi đơn hàng ở trạng thái "Chờ duyệt" hoặc "Chờ giao" (chưa gán chuyến xe)');
     }
 
     const item = await tx.salesOrderItem.findUnique({
@@ -725,9 +833,13 @@ export const updateOrderItemQuantity = async (orderId, itemId, newQuantity, dist
       data: { quantity: qty }
     });
 
+    if (order.status === 'ALLOCATED') {
+      await reallocateLotsForOrder(tx, order.id);
+    }
+
     const noteText = qty === 0 
       ? `Điều chỉnh số lượng SP [${item.product.name}] từ ${oldQty} về 0 (Cắt giảm do hết tồn kho). Lý do: ${reason || 'Hết hàng'}`
-      : `Điều chỉnh số lượng SP [${item.product.name}] từ ${oldQty} thành ${qty}. Lý do: ${reason || 'Kế toán điều chỉnh do thiếu tồn kho'}`;
+      : `Điều chỉnh số lượng SP [${item.product.name}] từ ${oldQty} thành ${qty}. Lý do: ${reason || 'Kế toán điều chỉnh số lượng'}`;
 
     await tx.orderStatusHistory.create({
       data: {
@@ -909,7 +1021,7 @@ export const unassignDeliveryTrip = async (orderId, distributorId, changedById, 
 };
 
 /**
- * Thêm sản phẩm vào đơn hàng (chỉ khi PENDING)
+ * Thêm sản phẩm vào đơn hàng (cho PENDING, SUBMITTED hoặc ALLOCATED chưa gán xe)
  */
 export const addOrderItem = async (orderId, distributorId, changedById, itemData) => {
   const { productId, quantity = 1, unitPrice = 0, isPromotion = false } = itemData;
@@ -928,8 +1040,13 @@ export const addOrderItem = async (orderId, distributorId, changedById, itemData
     });
 
     if (!order) throw new Error('Không tìm thấy đơn hàng');
-    if (order.status !== 'PENDING') {
-      throw new Error('Chỉ có thể thêm sản phẩm khi đơn hàng ở trạng thái "Mới tạo" (PENDING)');
+
+    if (order.deliveryTripId) {
+      throw new Error('Đơn hàng đã được gán vào chuyến xe giao hàng, không thể chỉnh sửa!');
+    }
+
+    if (order.status !== 'PENDING' && order.status !== 'SUBMITTED' && order.status !== 'ALLOCATED') {
+      throw new Error('Chỉ có thể thêm sản phẩm khi đơn hàng ở trạng thái "Chờ duyệt" hoặc "Chờ giao" (chưa gán chuyến xe)');
     }
 
     const product = await tx.product.findUnique({
@@ -968,11 +1085,15 @@ export const addOrderItem = async (orderId, distributorId, changedById, itemData
       });
     }
 
+    if (order.status === 'ALLOCATED') {
+      await reallocateLotsForOrder(tx, order.id);
+    }
+
     await tx.orderStatusHistory.create({
       data: {
         salesOrderId: order.id,
-        fromStatus: 'PENDING',
-        toStatus: 'PENDING',
+        fromStatus: order.status,
+        toStatus: order.status,
         changedById: changedById ? BigInt(changedById) : null,
         notes: `Thêm sản phẩm [${product.name}] - SL: ${qty}`
       }
@@ -987,7 +1108,7 @@ export const addOrderItem = async (orderId, distributorId, changedById, itemData
 };
 
 /**
- * Xoá sản phẩm khỏi đơn hàng (chỉ khi PENDING)
+ * Xoá sản phẩm khỏi đơn hàng (cho PENDING, SUBMITTED hoặc ALLOCATED chưa gán xe)
  */
 export const removeOrderItem = async (orderId, itemId, distributorId, changedById) => {
   return prisma.$transaction(async (tx) => {
@@ -1000,8 +1121,13 @@ export const removeOrderItem = async (orderId, itemId, distributorId, changedByI
     });
 
     if (!order) throw new Error('Không tìm thấy đơn hàng');
-    if (order.status !== 'PENDING') {
-      throw new Error('Chỉ có thể xoá sản phẩm khi đơn hàng ở trạng thái "Mới tạo" (PENDING)');
+
+    if (order.deliveryTripId) {
+      throw new Error('Đơn hàng đã được gán vào chuyến xe giao hàng, không thể chỉnh sửa!');
+    }
+
+    if (order.status !== 'PENDING' && order.status !== 'SUBMITTED' && order.status !== 'ALLOCATED') {
+      throw new Error('Chỉ có thể xoá sản phẩm khi đơn hàng ở trạng thái "Chờ duyệt" hoặc "Chờ giao" (chưa gán chuyến xe)');
     }
 
     if (order.items.length <= 1) {
@@ -1017,15 +1143,38 @@ export const removeOrderItem = async (orderId, itemId, distributorId, changedByI
       throw new Error('Không tìm thấy dòng sản phẩm trong đơn');
     }
 
+    if (order.status === 'ALLOCATED') {
+      const allocs = await tx.salesOrderItemAllocation.findMany({
+        where: { salesOrderItemId: item.id }
+      });
+      for (const alloc of allocs) {
+        await tx.stockBalance.update({
+          where: { lotId: alloc.lotId },
+          data: {
+            quantityReserved: {
+              decrement: alloc.quantity
+            }
+          }
+        });
+      }
+      await tx.salesOrderItemAllocation.deleteMany({
+        where: { salesOrderItemId: item.id }
+      });
+    }
+
     await tx.salesOrderItem.delete({
       where: { id: item.id }
     });
 
+    if (order.status === 'ALLOCATED') {
+      await reallocateLotsForOrder(tx, order.id);
+    }
+
     await tx.orderStatusHistory.create({
       data: {
         salesOrderId: order.id,
-        fromStatus: 'PENDING',
-        toStatus: 'PENDING',
+        fromStatus: order.status,
+        toStatus: order.status,
         changedById: changedById ? BigInt(changedById) : null,
         notes: `Xoá sản phẩm [${item.product?.name || 'N/A'}] khỏi đơn hàng`
       }

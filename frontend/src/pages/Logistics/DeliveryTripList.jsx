@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { 
   Truck, 
   Plus, 
@@ -23,6 +24,10 @@ import TripDispatchConsoleModal from './TripDispatchConsoleModal';
 import './DeliveryTripList.css';
 
 export default function DeliveryTripList() {
+  const location = useLocation();
+  const incomingOrderIds = location.state?.selectedOrderIds || [];
+  const autoCreate = location.state?.autoCreate || false;
+
   const [filters, setFilters] = useState({
     search: '',
     status: 'ALL',
@@ -33,7 +38,7 @@ export default function DeliveryTripList() {
 
   const { trips, total, loading, error, refetch } = useDeliveryTrips(filters);
 
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(() => autoCreate && incomingOrderIds.length > 0);
   const [selectedTripId, setSelectedTripId] = useState(null);
 
   // KPI Calculations
@@ -360,6 +365,7 @@ export default function DeliveryTripList() {
         isOpen={isCreateModalOpen} 
         onClose={() => setIsCreateModalOpen(false)} 
         onSuccess={refetch} 
+        initialOrderIds={incomingOrderIds}
       />
 
       {/* Modal Bàn điều phối bốc xếp đơn hàng & Bảng kê số lô */}

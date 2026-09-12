@@ -19,7 +19,9 @@ import {
   FileText,
   Edit3,
   Save,
-  AlertCircle
+  AlertCircle,
+  Plus,
+  Trash2
 } from 'lucide-react';
 import { 
   getSalesOrderById, 
@@ -29,7 +31,10 @@ import {
   confirmDeliverySalesOrder, 
   closeSalesOrder,
   getDeliveryTrips,
-  updateSalesOrderItemQty
+  updateSalesOrderItemQty,
+  addSalesOrderItem,
+  removeSalesOrderItem,
+  getProducts
 } from '../../../services/api';
 import './SalesOrderDetail.css';
 
@@ -70,6 +75,15 @@ const SalesOrderDetail = () => {
   const [editQty, setEditQty] = useState('');
   const [editReason, setEditReason] = useState('');
   const [savingItem, setSavingItem] = useState(false);
+
+  // Chế độ chỉnh sửa đơn hàng toàn diện (PENDING / SUBMITTED)
+  const [isEditingOrder, setIsEditingOrder] = useState(false);
+  const [editItems, setEditItems] = useState([]);
+  const [savingOrder, setSavingOrder] = useState(false);
+  const [availableProducts, setAvailableProducts] = useState([]);
+  const [showAddProductModal, setShowAddProductModal] = useState(false);
+  const [selectedProductToAdd, setSelectedProductToAdd] = useState('');
+  const [addProductQty, setAddProductQty] = useState(1);
 
   const loadOrderDetail = async () => {
     setLoading(true);
@@ -166,6 +180,184 @@ const SalesOrderDetail = () => {
       alert(err.message || 'Lỗi khi cập nhật số lượng');
     } finally {
       setSavingItem(false);
+    }
+  };
+
+  // --- Chế độ chỉnh sửa đơn hàng (cho PENDING, SUBMITTED hoặc ALLOCATED chưa gán chuyến xe) ---
+  const canEditOrder = order && 
+    (order.status === 'PENDING' || order.status === 'SUBMITTED' || order.status === 'ALLOCATED') &&
+    !order.deliveryTrip &&
+    !order.deliveryTripId;
+
+  const handleStartEditOrder = async () => {
+    setIsEditingOrder(true);
+    setEditItems(
+      (order.items || []).map((it) => ({
+        id: it.id,
+        productId: it.productId,
+        productSku: it.productSku,
+        productName: it.productName,
+        unit: it.unit,
+        quantity: Number(it.quantity),
+        originalQuantity: Number(it.quantity),
+        unitPrice: Number(it.unitPrice),
+        totalAmount: Number(it.totalAmount),
+        allocations: it.allocations || [],
+        isShortage: it.isShortage,
+        availableStock: it.availableStock,
+        isNew: false,
+        isDeleted: false
+      }))
+    );
+
+    if (availableProducts.length === 0) {
+      try {
+        const prodRes = await getProducts();
+        setAvailableProducts(prodRes.data || prodRes || []);
+      } catch (err) {
+        console.error('Lỗi tải danh mục sản phẩm:', err);
+      }
+    }
+  };
+
+  const handleCancelEditOrder = () => {
+    setIsEditingOrder(false);
+    setEditItems([]);
+    setShowAddProductModal(false);
+  };
+
+  const handleItemQtyChange = (idx, newQtyStr) => {
+    const val = Number(newQtyStr);
+    setEditItems((prev) => {
+      const updated = [...prev];
+      const item = { ...updated[idx] };
+      const safeQty = isNaN(val) || val < 0 ? 0 : val;
+      item.quantity = safeQty;
+      item.totalAmount = safeQty * item.unitPrice;
+      item.isDeleted = safeQty === 0;
+      updated[idx] = item;
+      return updated;
+    });
+  };
+
+  const handleItemRemove = (idx) => {
+    setEditItems((prev) => {
+      const updated = [...prev];
+      const item = { ...updated[idx] };
+      if (item.isNew) {
+        return updated.filter((_, i) => i !== idx);
+      } else {
+        item.quantity = 0;
+        item.isDeleted = true;
+        item.totalAmount = 0;
+        updated[idx] = item;
+        return updated;
+      }
+    });
+  };
+
+  const handleAddProduct = () => {
+    if (!selectedProductToAdd) {
+      alert('Vui lòng chọn sản phẩm cần thêm');
+      return;
+    }
+    const qty = Number(addProductQty);
+    if (isNaN(qty) || qty <= 0) {
+      alert('Số lượng sản phẩm phải lớn hơn 0');
+      return;
+    }
+
+    const prod = availableProducts.find(p => p.id?.toString() === selectedProductToAdd.toString());
+    if (!prod) {
+      alert('Không tìm thấy thông tin sản phẩm đã chọn');
+      return;
+    }
+
+    const existingIdx = editItems.findIndex(it => 
+      !it.isDeleted && (it.productId?.toString() === prod.id?.toString() || it.productSku === prod.sku)
+    );
+
+    if (existingIdx !== -1) {
+      setEditItems(prev => {
+        const updated = [...prev];
+        updated[existingIdx].quantity += qty;
+        updated[existingIdx].totalAmount = updated[existingIdx].quantity * updated[existingIdx].unitPrice;
+        updated[existingIdx].isDeleted = false;
+        return updated;
+      });
+    } else {
+      const price = Number(prod.basePrice || prod.price || 0);
+      setEditItems(prev => [
+        ...prev,
+        {
+          id: `temp_${Date.now()}`,
+          productId: prod.id,
+          productSku: prod.sku,
+          productName: prod.name,
+          unit: prod.unit || 'Thùng',
+          quantity: qty,
+          originalQuantity: 0,
+          unitPrice: price,
+          totalAmount: qty * price,
+          allocations: [],
+          isShortage: false,
+          availableStock: 0,
+          isNew: true,
+          isDeleted: false
+        }
+      ]);
+    }
+
+    setShowAddProductModal(false);
+    setSelectedProductToAdd('');
+    setAddProductQty(1);
+  };
+
+  const handleSaveOrderChanges = async () => {
+    const activeItems = editItems.filter(it => !it.isDeleted && it.quantity > 0);
+    if (activeItems.length === 0) {
+      alert('Đơn hàng phải có ít nhất 1 sản phẩm. Không thể xoá tất cả sản phẩm khỏi đơn!');
+      return;
+    }
+
+    setSavingOrder(true);
+    try {
+      // 1. Thêm các sản phẩm mới trước
+      for (const it of editItems) {
+        if (it.isNew && !it.isDeleted && it.quantity > 0) {
+          await addSalesOrderItem(id, {
+            productId: it.productId,
+            quantity: it.quantity,
+            unitPrice: it.unitPrice
+          });
+        }
+      }
+
+      // 2. Cập nhật số lượng các sản phẩm cũ có thay đổi
+      for (const it of editItems) {
+        if (!it.isNew && !it.isDeleted && it.quantity !== it.originalQuantity) {
+          await updateSalesOrderItemQty(id, it.id, {
+            newQuantity: it.quantity,
+            reason: 'Chỉnh sửa đơn hàng từ giao diện chi tiết'
+          });
+        }
+      }
+
+      // 3. Xoá các sản phẩm bị đánh dấu xoá hoặc SL về 0
+      for (const it of editItems) {
+        if (!it.isNew && it.isDeleted) {
+          await removeSalesOrderItem(id, it.id);
+        }
+      }
+
+      setSuccessMsg('Đã lưu tất cả thay đổi đơn hàng thành công!');
+      setIsEditingOrder(false);
+      setEditItems([]);
+      await loadOrderDetail();
+    } catch (err) {
+      alert(err.message || 'Lỗi khi lưu thay đổi đơn hàng');
+    } finally {
+      setSavingOrder(false);
     }
   };
 
@@ -414,7 +606,48 @@ const SalesOrderDetail = () => {
       <div className="detail-table-card">
         <div className="card-title-bar">
           <h3>Danh sách sản phẩm & Phân bổ lô hàng (FEFO)</h3>
+          
+          <div className="card-title-actions">
+            {!isEditingOrder ? (
+              canEditOrder && (
+                <button 
+                  type="button" 
+                  className="btn-edit-order"
+                  onClick={handleStartEditOrder}
+                >
+                  <Edit3 size={15} /> Chỉnh sửa đơn hàng
+                </button>
+              )
+            ) : (
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  className="btn-add-product-open"
+                  onClick={() => setShowAddProductModal(true)}
+                >
+                  <Plus size={15} /> Thêm sản phẩm
+                </button>
+                <button
+                  type="button"
+                  className="btn-save-order"
+                  onClick={handleSaveOrderChanges}
+                  disabled={savingOrder}
+                >
+                  <Save size={15} /> {savingOrder ? 'Đang lưu...' : 'Lưu thay đổi'}
+                </button>
+                <button
+                  type="button"
+                  className="btn-cancel-edit-order"
+                  onClick={handleCancelEditOrder}
+                  disabled={savingOrder}
+                >
+                  <X size={15} /> Huỷ
+                </button>
+              </div>
+            )}
+          </div>
         </div>
+
         <table className="detail-table">
           <thead>
             <tr>
@@ -427,17 +660,40 @@ const SalesOrderDetail = () => {
               <th style={{ textAlign: 'right' }}>Thành tiền</th>
               <th>Lô hàng phân bổ (FEFO) & HSD</th>
               <th style={{ textAlign: 'center' }}>Trạng thái tồn</th>
+              {isEditingOrder && <th style={{ width: '50px', textAlign: 'center' }}>Xoá</th>}
             </tr>
           </thead>
           <tbody>
-            {order.items.map((item, idx) => (
-              <tr key={item.id}>
+            {(isEditingOrder ? editItems : order.items).map((item, idx) => (
+              <tr key={item.id || idx} className={item.isDeleted ? 'row-will-delete' : ''}>
                 <td style={{ textAlign: 'center' }}>{idx + 1}</td>
-                <td><code>{item.productSku}</code></td>
-                <td style={{ fontWeight: 500 }}>{item.productName}</td>
+                <td>
+                  <code>{item.productSku}</code>
+                  {item.isNew && (
+                    <span style={{ marginLeft: '4px', background: '#ecfdf5', color: '#059669', fontSize: '10px', padding: '1px 5px', borderRadius: '4px', fontWeight: 600 }}>Mới</span>
+                  )}
+                </td>
+                <td style={{ fontWeight: 500 }}>
+                  <span style={item.isDeleted ? { textDecoration: 'line-through', color: '#dc2626' } : {}}>
+                    {item.productName}
+                  </span>
+                </td>
                 <td>{item.unit}</td>
                 <td style={{ textAlign: 'right', fontWeight: 600 }}>
-                  {editingItemId === item.id ? (
+                  {isEditingOrder ? (
+                    <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
+                      <input 
+                        type="number" 
+                        min="0"
+                        className={`edit-order-qty-input ${item.isDeleted ? 'deleted' : ''}`}
+                        value={item.quantity}
+                        onChange={(e) => handleItemQtyChange(idx, e.target.value)}
+                      />
+                      {item.isDeleted && (
+                        <span className="badge-will-delete">Xoá</span>
+                      )}
+                    </div>
+                  ) : editingItemId === item.id ? (
                     <div className="inline-edit-qty-wrap" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                       <input 
                         type="number" 
@@ -474,25 +730,21 @@ const SalesOrderDetail = () => {
                       {Number(item.quantity) === 0 && (
                         <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: 500 }}>(Cắt về 0)</span>
                       )}
-                      {(order.status === 'PENDING' || order.status === 'SUBMITTED') && (
-                        <button 
-                          type="button"
-                          style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '3px 5px', cursor: 'pointer', display: 'inline-flex', color: '#0284c7' }}
-                          title="Sửa số lượng sản phẩm này"
-                          onClick={() => handleStartEditItem(item)}
-                        >
-                          <Edit3 size={12} />
-                        </button>
-                      )}
                     </div>
                   )}
                 </td>
                 <td style={{ textAlign: 'right' }}>{formatCurrency(item.unitPrice)} đ</td>
                 <td style={{ textAlign: 'right', fontWeight: 600 }}>
-                  {formatCurrency(item.totalAmount)} đ
+                  <span style={item.isDeleted ? { textDecoration: 'line-through', color: '#94a3b8' } : {}}>
+                    {formatCurrency(item.totalAmount)} đ
+                  </span>
                 </td>
                 <td>
-                  {item.allocations.length > 0 ? (
+                  {isEditingOrder ? (
+                    <span style={{ fontSize: '12px', color: '#64748b', fontStyle: 'italic' }}>
+                      Sẽ tự động phân bổ lô lại sau khi lưu
+                    </span>
+                  ) : item.allocations && item.allocations.length > 0 ? (
                     <div className="allocations-list">
                       {item.allocations.map(a => (
                         <span key={a.id} className="lot-badge">
@@ -508,7 +760,9 @@ const SalesOrderDetail = () => {
                   )}
                 </td>
                 <td style={{ textAlign: 'center' }}>
-                  {item.isShortage ? (
+                  {isEditingOrder ? (
+                    <span style={{ fontSize: '12px', color: '#64748b' }}>-</span>
+                  ) : item.isShortage ? (
                     <span className="item-stock-tag shortage">
                       Thiếu tồn (Có: {item.availableStock})
                     </span>
@@ -518,11 +772,87 @@ const SalesOrderDetail = () => {
                     </span>
                   )}
                 </td>
+                {isEditingOrder && (
+                  <td style={{ textAlign: 'center' }}>
+                    <button 
+                      type="button" 
+                      className="btn-remove-row-item"
+                      onClick={() => handleItemRemove(idx)}
+                      title={item.isDeleted ? 'Đã đánh dấu xoá' : 'Xoá sản phẩm này khỏi đơn'}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* Modal Thêm sản phẩm khi chỉnh sửa */}
+      {showAddProductModal && (
+        <div className="modal-backdrop-trip" onClick={() => setShowAddProductModal(false)}>
+          <div className="modal-trip-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '520px' }}>
+            <div className="modal-trip-header">
+              <div className="modal-trip-header-title">
+                <Plus size={20} color="#2563eb" />
+                <h3>Thêm sản phẩm vào đơn hàng</h3>
+              </div>
+              <button type="button" className="btn-close-trip-modal" onClick={() => setShowAddProductModal(false)}>
+                <X size={18} />
+              </button>
+            </div>
+            <div className="modal-trip-body" style={{ padding: '20px' }}>
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
+                  Chọn sản phẩm <span style={{ color: 'red' }}>*</span>
+                </label>
+                <select 
+                  value={selectedProductToAdd}
+                  onChange={(e) => setSelectedProductToAdd(e.target.value)}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none' }}
+                >
+                  <option value="">-- Chọn sản phẩm --</option>
+                  {availableProducts.map(p => (
+                    <option key={p.id} value={p.id}>
+                      [{p.sku}] {p.name} - {formatCurrency(p.basePrice || p.price)} đ ({p.unit || 'Thu'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px' }}>
+                  Số lượng đặt <span style={{ color: 'red' }}>*</span>
+                </label>
+                <input 
+                  type="number"
+                  min="1"
+                  value={addProductQty}
+                  onChange={(e) => setAddProductQty(e.target.value)}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none' }}
+                />
+              </div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', padding: '12px 20px', borderTop: '1px solid #e2e8f0', background: '#f8fafc' }}>
+              <button 
+                type="button" 
+                onClick={() => setShowAddProductModal(false)}
+                style={{ padding: '8px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', background: 'white', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}
+              >
+                Huỷ
+              </button>
+              <button 
+                type="button" 
+                onClick={handleAddProduct}
+                style={{ padding: '8px 16px', borderRadius: '6px', border: 'none', background: '#2563eb', color: 'white', fontWeight: 600, cursor: 'pointer', fontSize: '13px' }}
+              >
+                Thêm vào đơn
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Status History Timeline (Audit Trail) */}
       <div id="order-history" className="detail-table-card">

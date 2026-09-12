@@ -35,10 +35,10 @@ const Login = ({ onLogin }) => {
       <div className="login-card">
         {/* Brand Header */}
         <div className="login-brand">
-          <div className="login-logo-badge">
-            <Layers size={28} />
+          <div className="login-brand-header">
+            <Layers size={26} className="login-brand-icon" />
+            <h1 className="login-title">DMS-NPP TradeLedger</h1>
           </div>
-          <h1 className="login-title">DMS-NPP TradeLedger</h1>
           <p className="login-subtitle">Hệ thống Quản lý Phân phối, Đặt hàng PPO & Tồn kho NPP</p>
         </div>
 

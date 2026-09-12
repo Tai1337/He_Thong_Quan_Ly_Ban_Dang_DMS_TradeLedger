@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   FileText, 
   Wallet, 
@@ -22,9 +22,6 @@ import {
   SlidersHorizontal,
   ChevronUp,
   Plus,
-  MoreVertical,
-  Eye,
-  History,
   Menu
 } from 'lucide-react';
 import { useSalesOrders } from '../../../hooks/useSalesOrders';
@@ -97,11 +94,35 @@ const SalesOrderList = () => {
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
 
   // Modals
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isRpt005Open, setIsRpt005Open] = useState(false);
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
-  const [openOrderMenuId, setOpenOrderMenuId] = useState(null);
+
+  // Tạo chuyến xe từ các đơn hàng đã chọn
+  const handleCreateTripFromSelected = () => {
+    setIsActionMenuOpen(false);
+    if (!selectedIds || selectedIds.length === 0) {
+      alert('Vui lòng chọn ít nhất 1 đơn hàng đã xác nhận ("Chờ giao") để tạo chuyến xe.');
+      return;
+    }
+
+    const selectedOrders = orders.filter(o => selectedIds.includes(o.id));
+    const nonAllocated = selectedOrders.filter(o => o.status !== 'ALLOCATED');
+    
+    if (nonAllocated.length > 0) {
+      alert(`Có ${nonAllocated.length} đơn hàng được chọn chưa ở trạng thái "Chờ giao" (ALLOCATED). Vui lòng chỉ chọn các đơn hàng đã xác nhận đủ tồn để xếp chuyến xe.`);
+      return;
+    }
+
+    navigate('/logistics/delivery-trips', {
+      state: {
+        selectedOrderIds: selectedIds,
+        autoCreate: true
+      }
+    });
+  };
 
   // Tự động mở modal nếu có query params (từ Home hoặc Header link)
   useEffect(() => {
@@ -541,61 +562,68 @@ const SalesOrderList = () => {
       <div className="table-section">
         {/* Table Toolbar & Report Buttons */}
         <div className="table-toolbar">
-          <div className="stock-tabs">
-            <button 
-              className={`stock-tab ${filterForm.stockFilter === 'all' ? 'active' : ''}`}
-              onClick={() => handleStockFilterClick('all')}
-            >
-              Tất cả ({pagination.total || 0})
-            </button>
-            <button 
-              className={`stock-tab ${filterForm.stockFilter === 'enough' ? 'active' : ''}`}
-              onClick={() => handleStockFilterClick('enough')}
-            >
-              Đủ tồn
-            </button>
-            <button 
-              className={`stock-tab danger ${filterForm.stockFilter === 'shortage' ? 'active' : ''}`}
-              onClick={() => handleStockFilterClick('shortage')}
-            >
-              Thiếu tồn
-            </button>
+          <div className="table-toolbar-row-top">
+            <div className="stock-tabs">
+              <button 
+                className={`stock-tab ${filterForm.stockFilter === 'all' ? 'active' : ''}`}
+                onClick={() => handleStockFilterClick('all')}
+              >
+                Tất cả ({pagination.total || 0})
+              </button>
+              <button 
+                className={`stock-tab ${filterForm.stockFilter === 'enough' ? 'active' : ''}`}
+                onClick={() => handleStockFilterClick('enough')}
+              >
+                Đủ tồn
+              </button>
+              <button 
+                className={`stock-tab danger ${filterForm.stockFilter === 'shortage' ? 'active' : ''}`}
+                onClick={() => handleStockFilterClick('shortage')}
+              >
+                Thiếu tồn
+              </button>
+            </div>
           </div>
 
-          <div className="quick-reports">
-            <div className="list-action-menu">
-              <button
-                type="button"
-                className="btn-list-actions"
-                onClick={() => setIsActionMenuOpen((isOpen) => !isOpen)}
-                aria-expanded={isActionMenuOpen}
-                aria-haspopup="menu"
-              >
-                <Menu size={15} /> Thao tác <ChevronDown size={14} />
-              </button>
-              {isActionMenuOpen && (
-                <div className="list-action-dropdown" role="menu">
-                  <button type="button" role="menuitem" onClick={() => setIsActionMenuOpen(false)}>
-                    <Truck size={15} /> Tạo chuyến xe
-                  </button>
-                </div>
-              )}
+          <div className="table-toolbar-row-bottom">
+            <div className="table-toolbar-left">
+              <div className="list-action-menu">
+                <button
+                  type="button"
+                  className="btn-list-actions"
+                  onClick={() => setIsActionMenuOpen((isOpen) => !isOpen)}
+                  aria-expanded={isActionMenuOpen}
+                  aria-haspopup="menu"
+                >
+                  <Menu size={15} /> Thao tác <ChevronDown size={14} />
+                </button>
+                {isActionMenuOpen && (
+                  <div className="list-action-dropdown" role="menu">
+                    <button type="button" role="menuitem" onClick={handleCreateTripFromSelected}>
+                      <Truck size={15} /> Tạo chuyến xe
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-            <button className="btn-report highlight" onClick={() => setIsRpt005Open(true)}>
-              <AlertCircle size={14} /> RPT005 - Kiểm tra thiếu tồn
-            </button>
-            <button className="btn-report" onClick={() => handleExportRpt('rpt057')}>
-              <Download size={14} /> RPT057 - Doanh số & Sản lượng
-            </button>
-            <button className="btn-report" onClick={() => handleExportRpt('rpt006')}>
-              <Download size={14} /> RPT006 - Bảng kê theo NVGH
-            </button>
-            <button className="btn-report" onClick={() => handleExportRpt('rpt061')}>
-              <Download size={14} /> RPT061 - Line Item
-            </button>
-            <button className="btn-report green" onClick={handleExportList}>
-              <Download size={14} /> Xuất Excel danh sách
-            </button>
+
+            <div className="table-toolbar-right quick-reports">
+              <button className="btn-report highlight" onClick={() => setIsRpt005Open(true)}>
+                <AlertCircle size={14} /> RPT005 - Kiểm tra thiếu tồn
+              </button>
+              <button className="btn-report" onClick={() => handleExportRpt('rpt057')}>
+                <Download size={14} /> RPT057 - Doanh số & Sản lượng
+              </button>
+              <button className="btn-report" onClick={() => handleExportRpt('rpt006')}>
+                <Download size={14} /> RPT006 - Bảng kê theo NVGH
+              </button>
+              <button className="btn-report" onClick={() => handleExportRpt('rpt061')}>
+                <Download size={14} /> RPT061 - Line Item
+              </button>
+              <button className="btn-report green" onClick={handleExportList}>
+                <Download size={14} /> Xuất Excel danh sách
+              </button>
+            </div>
           </div>
         </div>
         
@@ -682,29 +710,6 @@ const SalesOrderList = () => {
                         <Link to={`/sales/sales-orders/${row.id}`} className="order-link">
                           {row.orderCode}
                         </Link>
-                        <div className="row-action-menu">
-                          <button
-                            type="button"
-                            className="btn-row-actions"
-                            onClick={() => setOpenOrderMenuId((currentId) => currentId === row.id ? null : row.id)}
-                            aria-label={`Thao tác cho đơn ${row.orderCode}`}
-                            aria-expanded={openOrderMenuId === row.id}
-                            aria-haspopup="menu"
-                            title="Thao tác"
-                          >
-                            <MoreVertical size={18} />
-                          </button>
-                          {openOrderMenuId === row.id && (
-                            <div className="row-action-dropdown" role="menu">
-                              <Link to={`/sales/sales-orders/${row.id}`} role="menuitem">
-                                <Eye size={15} /> Chi tiết
-                              </Link>
-                              <Link to={`/sales/sales-orders/${row.id}#order-history`} role="menuitem">
-                                <History size={15} /> Lịch sử
-                              </Link>
-                            </div>
-                          )}
-                        </div>
                         {row.orderCode?.startsWith('R-') && (
                           <span style={{
                             background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',

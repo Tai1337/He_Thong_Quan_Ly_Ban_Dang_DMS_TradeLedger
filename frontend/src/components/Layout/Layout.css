@@ -47,8 +47,6 @@
   border-right: 1px solid var(--erp-border);
   background-color: var(--erp-sidebar-bg);
   z-index: 50;
-  transition: width var(--erp-duration-normal) var(--erp-ease-standard);
-  will-change: width;
 }
 
 /* CỘT 1: PRIMARY MODULE SIDEBAR */
@@ -361,9 +359,6 @@
   padding: 14px 12px;
   box-sizing: border-box;
   overflow: hidden;
-  transition: width var(--erp-duration-normal) var(--erp-ease-standard),
-              padding var(--erp-duration-normal) var(--erp-ease-standard);
-  will-change: width, padding;
 }
 
 /* Submenu Collapsing Logic (Ultra-smooth with opacity and transform) */

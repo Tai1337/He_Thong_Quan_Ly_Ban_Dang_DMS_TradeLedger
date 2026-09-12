@@ -146,6 +146,32 @@ export const updateSalesOrderItemQty = async (orderId, itemId, payload) => {
   return data;
 };
 
+export const addSalesOrderItem = async (orderId, payload) => {
+  const response = await fetch(`${API_URL}/sales-orders/${orderId}/items`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi thêm sản phẩm vào đơn hàng');
+  }
+  return data;
+};
+
+export const removeSalesOrderItem = async (orderId, itemId, payload = {}) => {
+  const response = await fetch(`${API_URL}/sales-orders/${orderId}/items/${itemId}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi xoá sản phẩm khỏi đơn hàng');
+  }
+  return data;
+};
+
 // --- MASTER DATA ---
 
 export const getWarehouses = async (distributorId) => {

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { X, Truck, Calendar, MapPin, User, Scale, FileText } from 'lucide-react';
-import { getWarehouses, getSalesReps, createDeliveryTrip } from '../../services/api';
+import { getWarehouses, getSalesReps, createDeliveryTrip, dispatchOrdersToTrip } from '../../services/api';
 import './CreateTripModal.css';
 
-export default function CreateTripModal({ isOpen, onClose, onSuccess }) {
+export default function CreateTripModal({ isOpen, onClose, onSuccess, initialOrderIds = [] }) {
   const [warehouses, setWarehouses] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -58,7 +58,7 @@ export default function CreateTripModal({ isOpen, onClose, onSuccess }) {
 
     setLoading(true);
     try {
-      await createDeliveryTrip({
+      const res = await createDeliveryTrip({
         distributorId: 1,
         warehouseId: formData.warehouseId,
         driverId: formData.driverId || null,
@@ -67,6 +67,14 @@ export default function CreateTripModal({ isOpen, onClose, onSuccess }) {
         expectedDeliveryDate: formData.expectedDeliveryDate,
         notes: formData.notes
       });
+
+      if (initialOrderIds && initialOrderIds.length > 0 && res?.id) {
+        try {
+          await dispatchOrdersToTrip(res.id, initialOrderIds);
+        } catch (dispatchErr) {
+          console.error('Lỗi khi xếp đơn vào chuyến xe mới:', dispatchErr);
+        }
+      }
 
       onSuccess && onSuccess();
       onClose();

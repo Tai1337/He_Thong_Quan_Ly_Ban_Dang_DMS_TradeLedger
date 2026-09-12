@@ -331,25 +331,26 @@
   color: #0f172a;
 }
 
-/* KPI Cards Row */
+/* KPI Cards Row - Căn chỉnh cùng hàng, đầu - cuối với bộ lọc */
 .kpi-cards-row {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  padding-bottom: 4px;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .kpi-card {
   background: white;
   border-radius: 8px;
-  padding: 14px 16px;
+  padding: 12px 14px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  min-width: 170px;
-  flex: 1;
   display: flex;
   justify-content: space-between;
   align-items: center;
   border-left: 4px solid transparent;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .kpi-card.blue { border-left-color: #3b82f6; }
@@ -369,22 +370,47 @@
   box-shadow: 0 4px 10px rgba(234, 88, 12, 0.2);
 }
 
+.kpi-info {
+  min-width: 0;
+  overflow: hidden;
+}
+
 .kpi-info h4 {
   margin: 0 0 4px 0;
-  font-size: 12px;
+  font-size: 11px;
   color: #64748b;
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .kpi-info p {
   margin: 0;
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 700;
   color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .kpi-icon {
   color: #94a3b8;
+  flex-shrink: 0;
+  margin-left: 6px;
+}
+
+@media (max-width: 1300px) {
+  .kpi-cards-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .kpi-cards-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 /* Table Section */
@@ -397,12 +423,41 @@
 
 .table-toolbar {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
   padding: 12px 18px;
   border-bottom: 1px solid #e2e8f0;
-  flex-wrap: wrap;
   gap: 10px;
+}
+
+.table-toolbar-row-top {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  width: 100%;
+  gap: 10px;
+}
+
+.table-toolbar-row-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.table-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.table-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 /* Stock Tabs */
@@ -444,13 +499,11 @@
   flex-wrap: wrap;
 }
 
-.list-action-menu,
-.row-action-menu {
+.list-action-menu {
   position: relative;
 }
 
-.btn-list-actions,
-.btn-row-actions {
+.btn-list-actions {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -459,9 +512,6 @@
   color: #334155;
   cursor: pointer;
   transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
-}
-
-.btn-list-actions {
   gap: 5px;
   padding: 6px 10px;
   border-radius: 6px;
@@ -469,31 +519,20 @@
   font-weight: 600;
 }
 
-.btn-row-actions {
-  width: 30px;
-  height: 30px;
-  border-radius: 6px;
-}
-
 .btn-list-actions:hover,
-.btn-row-actions:hover,
-.btn-list-actions[aria-expanded="true"],
-.btn-row-actions[aria-expanded="true"] {
+.btn-list-actions[aria-expanded="true"] {
   background: #eff6ff;
   border-color: #93c5fd;
   color: #1d4ed8;
 }
 
 .btn-list-actions:focus-visible,
-.btn-row-actions:focus-visible,
-.list-action-dropdown button:focus-visible,
-.row-action-dropdown a:focus-visible {
+.list-action-dropdown button:focus-visible {
   outline: 2px solid #2563eb;
   outline-offset: 2px;
 }
 
-.list-action-dropdown,
-.row-action-dropdown {
+.list-action-dropdown {
   position: absolute;
   z-index: 20;
   min-width: 152px;
@@ -502,20 +541,12 @@
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.14);
-}
-
-.list-action-dropdown {
   top: calc(100% + 6px);
-  right: 0;
-}
-
-.row-action-dropdown {
-  top: calc(100% + 4px);
   left: 0;
+  right: auto;
 }
 
-.list-action-dropdown button,
-.row-action-dropdown a {
+.list-action-dropdown button {
   width: 100%;
   display: flex;
   align-items: center;
@@ -532,8 +563,7 @@
   cursor: pointer;
 }
 
-.list-action-dropdown button:hover,
-.row-action-dropdown a:hover {
+.list-action-dropdown button:hover {
   background: #f1f5f9;
   color: #0f172a;
 }
