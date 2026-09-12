@@ -525,7 +525,7 @@ const SalesOrderDetail = () => {
       </div>
 
       {/* Status History Timeline (Audit Trail) */}
-      <div className="detail-table-card">
+      <div id="order-history" className="detail-table-card">
         <div className="card-title-bar">
           <h3>Lịch sử chuyển trạng thái (Audit Trail)</h3>
         </div>

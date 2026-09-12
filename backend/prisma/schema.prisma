@@ -1,10 +1,17 @@
 generator client {
   provider = "prisma-client-js"
 }
+// Của Tài 
+//datasource db {
+//  provider = "mysql"
+//  url      = env("DATABASE_URL")
+//}
 
+
+// Của Lưu
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
+  url      = env("DATABASE_URL1")
 }
 
 // ENUMS

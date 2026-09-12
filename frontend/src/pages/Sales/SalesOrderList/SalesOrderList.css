@@ -444,6 +444,100 @@
   flex-wrap: wrap;
 }
 
+.list-action-menu,
+.row-action-menu {
+  position: relative;
+}
+
+.btn-list-actions,
+.btn-row-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.btn-list-actions {
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.btn-row-actions {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+}
+
+.btn-list-actions:hover,
+.btn-row-actions:hover,
+.btn-list-actions[aria-expanded="true"],
+.btn-row-actions[aria-expanded="true"] {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.btn-list-actions:focus-visible,
+.btn-row-actions:focus-visible,
+.list-action-dropdown button:focus-visible,
+.row-action-dropdown a:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.list-action-dropdown,
+.row-action-dropdown {
+  position: absolute;
+  z-index: 20;
+  min-width: 152px;
+  padding: 4px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.14);
+}
+
+.list-action-dropdown {
+  top: calc(100% + 6px);
+  right: 0;
+}
+
+.row-action-dropdown {
+  top: calc(100% + 4px);
+  left: 0;
+}
+
+.list-action-dropdown button,
+.row-action-dropdown a {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.list-action-dropdown button:hover,
+.row-action-dropdown a:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
 .btn-report {
   display: inline-flex;
   align-items: center;
@@ -587,6 +681,13 @@
 .checkbox-cell {
   width: 32px;
   text-align: center;
+}
+
+.order-code-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: max-content;
 }
 
 .order-link {

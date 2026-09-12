@@ -17,20 +17,21 @@ import {
   AlertCircle,
   RotateCcw,
   Check,
-  Ban,
-  Send,
   Download,
   Info,
   SlidersHorizontal,
   ChevronUp,
-  Plus
+  Plus,
+  MoreVertical,
+  Eye,
+  History,
+  Menu
 } from 'lucide-react';
 import { useSalesOrders } from '../../../hooks/useSalesOrders';
 import { 
   getWarehouses, 
   getSalesReps, 
-  getRetailers, 
-  getDeliveryTrips, 
+  getRetailers,
   exportReportExcel 
 } from '../../../services/api';
 import Rpt005Modal from './Rpt005Modal';
@@ -90,8 +91,6 @@ const SalesOrderList = () => {
   const [warehouses, setWarehouses] = useState([]);
   const [salesReps, setSalesReps] = useState([]);
   const [retailerSuggestions, setRetailerSuggestions] = useState([]);
-  const [deliveryTrips, setDeliveryTrips] = useState([]);
-
   // Autocomplete UI states
   const [showVnbhDropdown, setShowVnbhDropdown] = useState(false);
   const [showRetailerDropdown, setShowRetailerDropdown] = useState(false);
@@ -101,9 +100,8 @@ const SalesOrderList = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isRpt005Open, setIsRpt005Open] = useState(false);
-  const [cancelModal, setCancelModal] = useState({ isOpen: false, order: null, reason: '' });
-  const [tripModal, setTripModal] = useState({ isOpen: false, order: null, tripId: '' });
-  const [deliveryModal, setDeliveryModal] = useState({ isOpen: false, order: null, isSuccess: true, note: '' });
+  const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
+  const [openOrderMenuId, setOpenOrderMenuId] = useState(null);
 
   // Tự động mở modal nếu có query params (từ Home hoặc Header link)
   useEffect(() => {
@@ -152,12 +150,7 @@ const SalesOrderList = () => {
     applyFilters,
     setPage,
     setLimit,
-    handleConfirm,
     handleBulkConfirm,
-    handleCancel,
-    handleAssignTrip,
-    handleConfirmDelivery,
-    handleClose,
     refresh
   } = useSalesOrders(filterForm);
 
@@ -165,7 +158,6 @@ const SalesOrderList = () => {
   useEffect(() => {
     getWarehouses(1).then(setWarehouses).catch(console.error);
     getSalesReps({ distributorId: 1 }).then(setSalesReps).catch(console.error);
-    getDeliveryTrips({ distributorId: 1 }).then(setDeliveryTrips).catch(console.error);
   }, []);
 
   // Lấy gợi ý khách hàng khi gõ
@@ -218,39 +210,6 @@ const SalesOrderList = () => {
     applyFilters(updated);
   };
 
-  // Submit Modal Handlers
-  const submitCancel = async () => {
-    if (!cancelModal.reason.trim()) {
-      alert('Vui lòng nhập lý do huỷ đơn hàng');
-      return;
-    }
-    const success = await handleCancel(cancelModal.order.id, cancelModal.reason);
-    if (success) {
-      setCancelModal({ isOpen: false, order: null, reason: '' });
-    }
-  };
-
-  const submitAssignTrip = async () => {
-    if (!tripModal.tripId) {
-      alert('Vui lòng chọn chuyến xe giao hàng');
-      return;
-    }
-    const success = await handleAssignTrip(tripModal.order.id, tripModal.tripId);
-    if (success) {
-      setTripModal({ isOpen: false, order: null, tripId: '' });
-    }
-  };
-
-  const submitDelivery = async () => {
-    const success = await handleConfirmDelivery(
-      deliveryModal.order.id, 
-      deliveryModal.isSuccess, 
-      deliveryModal.note
-    );
-    if (success) {
-      setDeliveryModal({ isOpen: false, order: null, isSuccess: true, note: '' });
-    }
-  };
 
   // Export handlers
   const handleExportList = () => {
@@ -604,6 +563,24 @@ const SalesOrderList = () => {
           </div>
 
           <div className="quick-reports">
+            <div className="list-action-menu">
+              <button
+                type="button"
+                className="btn-list-actions"
+                onClick={() => setIsActionMenuOpen((isOpen) => !isOpen)}
+                aria-expanded={isActionMenuOpen}
+                aria-haspopup="menu"
+              >
+                <Menu size={15} /> Thao tác <ChevronDown size={14} />
+              </button>
+              {isActionMenuOpen && (
+                <div className="list-action-dropdown" role="menu">
+                  <button type="button" role="menuitem" onClick={() => setIsActionMenuOpen(false)}>
+                    <Truck size={15} /> Tạo chuyến xe
+                  </button>
+                </div>
+              )}
+            </div>
             <button className="btn-report highlight" onClick={() => setIsRpt005Open(true)}>
               <AlertCircle size={14} /> RPT005 - Kiểm tra thiếu tồn
             </button>
@@ -688,7 +665,6 @@ const SalesOrderList = () => {
                   </th>
                   <th>TT Tồn kho</th>
                   <th style={{ textAlign: 'right' }}>Tổng thành tiền</th>
-                  <th style={{ textAlign: 'center' }}>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -702,10 +678,33 @@ const SalesOrderList = () => {
                       />
                     </td>
                     <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                      <div className="order-code-cell">
                         <Link to={`/sales/sales-orders/${row.id}`} className="order-link">
                           {row.orderCode}
                         </Link>
+                        <div className="row-action-menu">
+                          <button
+                            type="button"
+                            className="btn-row-actions"
+                            onClick={() => setOpenOrderMenuId((currentId) => currentId === row.id ? null : row.id)}
+                            aria-label={`Thao tác cho đơn ${row.orderCode}`}
+                            aria-expanded={openOrderMenuId === row.id}
+                            aria-haspopup="menu"
+                            title="Thao tác"
+                          >
+                            <MoreVertical size={18} />
+                          </button>
+                          {openOrderMenuId === row.id && (
+                            <div className="row-action-dropdown" role="menu">
+                              <Link to={`/sales/sales-orders/${row.id}`} role="menuitem">
+                                <Eye size={15} /> Chi tiết
+                              </Link>
+                              <Link to={`/sales/sales-orders/${row.id}#order-history`} role="menuitem">
+                                <History size={15} /> Lịch sử
+                              </Link>
+                            </div>
+                          )}
+                        </div>
                         {row.orderCode?.startsWith('R-') && (
                           <span style={{
                             background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
@@ -769,74 +768,6 @@ const SalesOrderList = () => {
                     <td className="money-text">
                       {formatCurrency(row.totalAmount)} đ
                     </td>
-                    <td className="action-cell">
-                      <div className="action-buttons-group">
-                        <Link to={`/sales/sales-orders/${row.id}`} className="btn-action view" title="Xem chi tiết">
-                          Chi tiết
-                        </Link>
-
-                        {/* Thao tác tuỳ theo trạng thái vòng đời */}
-                        {row.status === 'PENDING' && (
-                          <>
-                            <button 
-                              className="btn-action confirm" 
-                              title="Xác nhận & Phân bổ lô FEFO"
-                              onClick={() => handleConfirm(row.id)}
-                              disabled={actionLoading}
-                            >
-                              Xác nhận
-                            </button>
-                            <button 
-                              className="btn-action cancel" 
-                              title="Huỷ đơn hàng"
-                              onClick={() => setCancelModal({ isOpen: true, order: row, reason: '' })}
-                            >
-                              Huỷ
-                            </button>
-                          </>
-                        )}
-
-                        {row.status === 'ALLOCATED' && (
-                          <>
-                            <button 
-                              className="btn-action trip" 
-                              title="Gán chuyến xe giao hàng"
-                              onClick={() => setTripModal({ isOpen: true, order: row, tripId: '' })}
-                            >
-                              Gán xe
-                            </button>
-                            <button 
-                              className="btn-action cancel" 
-                              title="Huỷ đơn hàng (Hoàn tồn kho giữ chỗ)"
-                              onClick={() => setCancelModal({ isOpen: true, order: row, reason: '' })}
-                            >
-                              Huỷ
-                            </button>
-                          </>
-                        )}
-
-                        {row.status === 'SHIPPED' && (
-                          <button 
-                            className="btn-action delivery" 
-                            title="Xác nhận giao hàng thành công"
-                            onClick={() => setDeliveryModal({ isOpen: true, order: row, isSuccess: true, note: '' })}
-                          >
-                            Giao hàng
-                          </button>
-                        )}
-
-                        {row.status === 'DELIVERED' && (
-                          <button 
-                            className="btn-action close" 
-                            title="Đối soát & Đóng đơn"
-                            onClick={() => handleClose(row.id)}
-                            disabled={actionLoading}
-                          >
-                            Đóng đơn
-                          </button>
-                        )}
-                      </div>
-                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -862,144 +793,7 @@ const SalesOrderList = () => {
         </div>
       </div>
 
-      {/* MODAL 1: Huỷ đơn hàng */}
-      {cancelModal.isOpen && (
-        <div className="modal-overlay">
-          <div className="action-modal-container">
-            <div className="modal-header">
-              <h3>Huỷ đơn hàng: {cancelModal.order?.orderCode}</h3>
-              <button className="btn-close" onClick={() => setCancelModal({ isOpen: false, order: null, reason: '' })}>
-                <X size={18} />
-              </button>
-            </div>
-            <div className="modal-body">
-              <p className="modal-desc">
-                {cancelModal.order?.status === 'ALLOCATED' 
-                  ? 'Đơn hàng đã được phân bổ lô (Reserved Stock). Khi huỷ đơn, toàn bộ lượng hàng giữ chỗ sẽ được tự động hoàn trả về kho khả dụng.' 
-                  : 'Vui lòng nhập lý do huỷ đơn hàng:'}
-              </p>
-              <div className="form-group">
-                <label>Lý do huỷ đơn <span style={{ color: 'red' }}>*</span></label>
-                <textarea 
-                  rows="3"
-                  className="modal-textarea"
-                  placeholder="Ví dụ: Đại lý yêu cầu hoãn đơn / Sai thông tin đặt hàng..."
-                  value={cancelModal.reason}
-                  onChange={(e) => setCancelModal(prev => ({ ...prev, reason: e.target.value }))}
-                  autoFocus
-                />
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn-secondary" onClick={() => setCancelModal({ isOpen: false, order: null, reason: '' })}>
-                Đóng
-              </button>
-              <button className="btn-danger" onClick={submitCancel} disabled={actionLoading}>
-                <Ban size={15} /> Xác nhận Huỷ đơn
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 2: Gán chuyến xe */}
-      {tripModal.isOpen && (
-        <div className="modal-overlay">
-          <div className="action-modal-container">
-            <div className="modal-header">
-              <h3>Gán chuyến xe: {tripModal.order?.orderCode}</h3>
-              <button className="btn-close" onClick={() => setTripModal({ isOpen: false, order: null, tripId: '' })}>
-                <X size={18} />
-              </button>
-            </div>
-            <div className="modal-body">
-              <p className="modal-desc">
-                Chọn chuyến xe vận chuyển để chuyển đơn hàng sang trạng thái <strong>"Đang giao" (SHIPPED)</strong>:
-              </p>
-              <div className="form-group">
-                <label>Chuyến xe giao hàng <span style={{ color: 'red' }}>*</span></label>
-                <select 
-                  className="modal-select"
-                  value={tripModal.tripId}
-                  onChange={(e) => setTripModal(prev => ({ ...prev, tripId: e.target.value }))}
-                >
-                  <option value="">-- Chọn chuyến xe --</option>
-                  {deliveryTrips.map(t => (
-                    <option key={t.id} value={t.id}>
-                      [{t.tripCode}] - Tài xế: {t.driverName} ({t.status})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn-secondary" onClick={() => setTripModal({ isOpen: false, order: null, tripId: '' })}>
-                Đóng
-              </button>
-              <button className="btn-primary" onClick={submitAssignTrip} disabled={actionLoading}>
-                <Truck size={15} /> Xác nhận Gán xe
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 3: Xác nhận giao hàng */}
-      {deliveryModal.isOpen && (
-        <div className="modal-overlay">
-          <div className="action-modal-container">
-            <div className="modal-header">
-              <h3>Xác nhận giao hàng: {deliveryModal.order?.orderCode}</h3>
-              <button className="btn-close" onClick={() => setDeliveryModal({ isOpen: false, order: null, isSuccess: true, note: '' })}>
-                <X size={18} />
-              </button>
-            </div>
-            <div className="modal-body">
-              <p className="modal-desc">
-                Xác nhận kết quả giao hàng đến đại lý. Khi thành công, hệ thống sẽ <strong>xuất kho vật lý</strong> và tạo giao dịch xuất kho:
-              </p>
-              <div className="form-group radio-group">
-                <label>
-                  <input 
-                    type="radio" 
-                    name="delivSuccess" 
-                    checked={deliveryModal.isSuccess} 
-                    onChange={() => setDeliveryModal(prev => ({ ...prev, isSuccess: true }))}
-                  /> Giao hàng thành công (Đã giao)
-                </label>
-                <label>
-                  <input 
-                    type="radio" 
-                    name="delivSuccess" 
-                    checked={!deliveryModal.isSuccess} 
-                    onChange={() => setDeliveryModal(prev => ({ ...prev, isSuccess: false }))}
-                  /> Giao hàng thất bại (Quay về Chờ giao)
-                </label>
-              </div>
-              <div className="form-group">
-                <label>Ghi chú đối soát</label>
-                <input 
-                  type="text"
-                  className="modal-input"
-                  placeholder="Ghi chú người nhận hàng hoặc lý do giao thất bại..."
-                  value={deliveryModal.note}
-                  onChange={(e) => setDeliveryModal(prev => ({ ...prev, note: e.target.value }))}
-                />
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn-secondary" onClick={() => setDeliveryModal({ isOpen: false, order: null, isSuccess: true, note: '' })}>
-                Đóng
-              </button>
-              <button className="btn-primary" onClick={submitDelivery} disabled={actionLoading}>
-                <CheckCircle2 size={15} /> Cập nhật kết quả giao
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 4: RPT005 Báo cáo thiếu tồn & Sửa số lượng */}
+      {/* MODAL 1: RPT005 Báo cáo thiếu tồn & Sửa số lượng */}
       <Rpt005Modal 
         isOpen={isRpt005Open}
         onClose={handleCloseRpt005Modal}
@@ -1007,7 +801,7 @@ const SalesOrderList = () => {
         onOrderUpdated={refresh}
       />
 
-      {/* MODAL 5: Biểu mẫu tạo đơn đặt hàng bán BH_BM1 */}
+      {/* MODAL 2: Biểu mẫu tạo đơn đặt hàng bán BH_BM1 */}
       <CreateSalesOrderModal
         isOpen={isCreateModalOpen}
         onClose={handleCloseCreateModal}
