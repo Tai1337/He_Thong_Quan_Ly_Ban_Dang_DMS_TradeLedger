@@ -58,14 +58,14 @@ const FrappeHeader = ({ user, onLogout }) => {
       return [
         { label: 'DMS-NPP TradeLedger', path: '/' },
         { label: 'Mua hàng', path: '/purchase/purchase-orders' },
-        { label: 'Đề xuất Mua hàng AI (PPO)', path: '/purchase/ppo' }
+        { label: 'Đề xuất Mua hàng (PPO)', path: '/purchase/ppo' }
       ];
     }
     if (path.startsWith('/purchase/receiving')) {
       return [
         { label: 'DMS-NPP TradeLedger', path: '/' },
         { label: 'Mua hàng', path: '/purchase/purchase-orders' },
-        { label: 'Nhập kho chuyến D+3', path: '/purchase/receiving' }
+        { label: 'Nhập kho mua hàng', path: '/purchase/receiving' }
       ];
     }
     if (path.startsWith('/purchase')) {

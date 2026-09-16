@@ -80,21 +80,21 @@ const PpoList = () => {
   // Handle select all
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      // Chỉ chọn các dòng chưa APPROVED và chưa REJECTED
-      const valid = items.filter(i => i.status !== 'APPROVED' && i.status !== 'REJECTED').map(i => i.id);
-      setSelectedIds(valid);
+      const validIds = items.filter(x => x.status === 'NEW' || x.status === 'REVIEWED').map(x => x.id);
+      setSelectedIds(validIds);
     } else {
       setSelectedIds([]);
     }
   };
 
+  // Toggle chọn một hàng
   const handleRowSelect = (id) => {
     setSelectedIds(prev => 
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
     );
   };
 
-  // Kích hoạt AI sinh đề xuất
+  // Kích hoạt tính toán đề xuất đặt hàng
   const handleRunAiAnalysis = async () => {
     setGenerating(true);
     try {
@@ -102,7 +102,7 @@ const PpoList = () => {
       alert(`Phân tích ROP hoàn tất!\nĐã quét ${res.totalEvaluated} sản phẩm, sinh ${res.suggestionsCount} đề xuất đặt hàng (Trong đó có ${res.highPriorityCount} mặt hàng cần đặt gấp).`);
       refetch();
     } catch (err) {
-      alert(err.message || 'Lỗi khi chạy đề xuất AI');
+      alert(err.message || 'Lỗi khi tính toán đề xuất đặt hàng');
     } finally {
       setGenerating(false);
     }
@@ -154,7 +154,7 @@ const PpoList = () => {
     if (isNaN(qty) || qty <= 0 || qty === origVal) return;
 
     if (qty > suggestedQty) {
-      alert(`Số lượng đặt (${qty}) không được lớn hơn số lượng AI đề xuất (${suggestedQty}).\nKế toán chỉ có thể giảm số lượng!`);
+      alert(`Số lượng đặt (${qty}) không được lớn hơn số lượng đề xuất (${suggestedQty}).\nKế toán chỉ có thể giảm số lượng!`);
       refetch();
       return;
     }
@@ -164,7 +164,6 @@ const PpoList = () => {
       refetch();
     } catch (err) {
       alert(err.message || 'Lỗi khi cập nhật số lượng');
-      refetch();
     }
   };
 
@@ -184,14 +183,15 @@ const PpoList = () => {
     }
   };
 
-  // Toggle status filter
-  const handleStatusToggle = (stCode) => {
-    let current = filters.status ? filters.status.split(',').filter(Boolean) : [];
-    if (current.includes(stCode)) {
-      current = current.filter(c => c !== stCode);
-    } else {
-      current.push(stCode);
+  // Toggle filter status
+  const handleStatusToggle = (st) => {
+    const current = filters.status ? filters.status.split(',') : [];
+    if (current.includes(st)) {
+      const next = current.filter(x => x !== st);
+      setFilters(prev => ({ ...prev, status: next.join(','), page: 1 }));
+      return;
     }
+    current.push(st);
     setFilters(prev => ({ ...prev, status: current.join(','), page: 1 }));
   };
 
@@ -203,8 +203,8 @@ const PpoList = () => {
       <div className="po-page-header">
         <div className="po-header-left">
           <h1>
-            <Sparkles size={26} color="#7c3aed" />
-            <span>PPO — Đề xuất Đơn đặt hàng mua bằng AI (Purchase Proposal)</span>
+            <Calculator size={26} color="#7c3aed" />
+            <span>PPO — Đề xuất Đơn đặt hàng mua (Purchase Proposal)</span>
           </h1>
           <p>Hệ thống tự động phân tích tốc độ bán, thời gian giao hàng và tồn kho an toàn (ROP) để đề xuất nhập hàng kịp thời</p>
         </div>
@@ -215,7 +215,7 @@ const PpoList = () => {
             className="btn-closing-11am"
             onClick={handleExecute11AmClosing}
             disabled={closing}
-            title="Đúng 11:00 hệ thống tự động chốt PPO, sinh PO & SO và gán Chuyến xe D+3"
+            title="Đúng 11:00 hệ thống tự động chốt PPO, sinh PO & SO và gán Chuyến xe giao hàng INBOUND (D+3)"
           >
             <Clock size={16} />
             <span>{closing ? 'Đang chốt đơn & tạo chuyến xe...' : '⏰ Chốt đơn 11:00 (Mô phỏng)'}</span>
@@ -227,8 +227,8 @@ const PpoList = () => {
             onClick={handleRunAiAnalysis}
             disabled={generating}
           >
-            <Sparkles size={16} />
-            <span>{generating ? 'Đang phân tích ROP...' : '🤖 Chạy Đề xuất AI'}</span>
+            <Calculator size={16} />
+            <span>{generating ? 'Đang phân tích ROP...' : 'Tính toán Đề xuất (ROP)'}</span>
           </button>
 
           {selectedIds.length > 0 && (
@@ -253,7 +253,7 @@ const PpoList = () => {
           </div>
           <div>
             <strong>Khung giờ kế toán duyệt đơn: 09:00 - 11:00 hàng ngày</strong>
-            <p>Quy tắc: Kế toán chỉ được phép <u>GIẢM</u> số lượng so với đề xuất AI. Đúng 11:00, hệ thống tự động chốt PPO, sinh đơn PO & SO và gán Chuyến xe giao đến kho NPP (D+3).</p>
+            <p>Quy tắc: Kế toán chỉ được phép <u>GIẢM</u> số lượng so với đề xuất hệ thống. Đúng 11:00, hệ thống tự động chốt PPO, sinh đơn PO & SO và gán Chuyến xe giao đến kho NPP (D+3).</p>
           </div>
         </div>
         <div className="window-banner-right">
@@ -445,7 +445,7 @@ const PpoList = () => {
               ) : items.length === 0 ? (
                 <tr>
                   <td colSpan={12} style={{ textAlign: 'center', padding: '50px', color: '#64748b' }}>
-                    Chưa có đề xuất đặt hàng nào. Nhấn <strong>"🤖 Chạy Đề xuất AI / Phân tích ROP"</strong> để hệ thống tự động quét kho và bán hàng!
+                    Chưa có đề xuất đặt hàng nào. Nhấn <strong>"Tính toán Đề xuất (ROP)"</strong> để hệ thống tự động quét kho và bán hàng!
                   </td>
                 </tr>
               ) : (

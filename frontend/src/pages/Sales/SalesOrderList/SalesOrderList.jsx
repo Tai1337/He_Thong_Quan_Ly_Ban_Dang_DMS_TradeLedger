@@ -266,7 +266,7 @@ const SalesOrderList = () => {
             className="btn-create-order"
             onClick={() => setIsCreateModalOpen(true)}
           >
-            <Plus size={16} /> + Tạo đơn hàng mới (BH_BM1)
+            <Plus size={16} /> Tạo đơn bán hàng (BH_BM1)
           </button>
           <button 
             className="filter-toggle"
@@ -712,16 +712,16 @@ const SalesOrderList = () => {
                         </Link>
                         {row.orderCode?.startsWith('R-') && (
                           <span style={{
-                            background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-                            color: '#b45309',
-                            border: '1px solid #f59e0b',
+                            background: '#fef3c7',
+                            color: '#92400e',
+                            border: '1px solid #fde68a',
                             fontSize: '10px',
-                            fontWeight: 700,
+                            fontWeight: 600,
                             padding: '1px 6px',
                             borderRadius: '4px',
                             whiteSpace: 'nowrap'
                           }} title="Đơn hàng trực tuyến từ Web Bán Hàng">
-                            🛒 Web R
+                            Web Retailer
                           </span>
                         )}
                       </div>

@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL1")
+  url      = env("DATABASE_URL")
 }
 
 // ENUMS
@@ -49,6 +49,11 @@ enum POStatus {
   PARTIALLY_RECEIVED
   COMPLETED
   CANCELLED
+}
+
+enum TripType {
+  INBOUND
+  OUTBOUND
 }
 
 enum TripStatus {
@@ -362,6 +367,8 @@ model StockLot {
 
   // [Cải tiến #5] Bỏ status khỏi UNIQUE key - đổi trạng thái bằng UPDATE thay vì tạo dòng mới
   @@unique([productId, warehouseId, lotNumber])
+  @@index([warehouseId, status, expiryDate])
+  @@index([productId])
   @@map("stock_lots")
 }
 
@@ -430,6 +437,7 @@ model SalesOrder {
   purchaseOrder   PurchaseOrder?     @relation("PoSoRelation")
 
   @@index([distributorId, status])
+  @@index([createdAt])
   @@map("sales_orders")
 }
 
@@ -509,6 +517,7 @@ model PurchaseOrder {
   statusHistory PurchaseOrderStatusHistory[]
   ppoSuggestions PpoSuggestion[]
 
+  @@index([distributorId, status])
   @@map("purchase_orders")
 }
 
@@ -545,7 +554,7 @@ model PurchaseOrderStatusHistory {
 model DeliveryTrip {
   id                   BigInt      @id @default(autoincrement())
   tripCode             String      @unique @db.VarChar(30) @map("trip_code")
-  tripType             String      @default("OUTBOUND") @db.VarChar(20) @map("trip_type") // INBOUND: Hàng NCC về NPP, OUTBOUND: NPP giao Đại lý
+  tripType             TripType    @default(OUTBOUND) @map("trip_type") // INBOUND: Hàng NCC về NPP, OUTBOUND: NPP giao Đại lý
   distributorId        BigInt      @map("distributor_id")
   warehouseId          BigInt      @map("warehouse_id")
   driverId             BigInt?     @map("driver_id")
@@ -574,6 +583,8 @@ model DeliveryTrip {
   salesOrders    SalesOrder[]
   purchaseOrders PurchaseOrder[]
 
+  @@index([distributorId, status])
+  @@index([warehouseId, expectedDeliveryDate])
   @@map("delivery_trips")
 }
 
@@ -594,6 +605,7 @@ model InventoryAdjustment {
 
   items          InventoryAdjustmentItem[]
 
+  @@index([distributorId, status])
   @@map("inventory_adjustments")
 }
 
@@ -629,6 +641,7 @@ model PurchaseReturn {
   
   items         PurchaseReturnItem[]
 
+  @@index([distributorId, status])
   @@map("purchase_returns")
 }
 
@@ -663,6 +676,7 @@ model StockTransfer {
 
   items               StockTransferItem[]
 
+  @@index([fromDistributorId, status])
   @@map("stock_transfers")
 }
 
@@ -692,6 +706,7 @@ model InventoryCount {
 
   items         InventoryCountItem[]
 
+  @@index([distributorId, status])
   @@map("inventory_counts")
 }
 

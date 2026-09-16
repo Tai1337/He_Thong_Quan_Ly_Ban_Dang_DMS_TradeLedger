@@ -72,7 +72,7 @@ const PurchaseReceivingList = () => {
 
         <div className="receiving-header-actions">
           <Link to="/purchase/ppo" className="btn-link-ppo">
-            <span>⚡ Đề xuất AI (PPO)</span>
+            <span>Đề xuất đặt hàng (PPO)</span>
           </Link>
           <Link to="/purchase/purchase-orders" className="btn-link-po">
             <span>Quản lý Đơn mua PO</span>
@@ -154,7 +154,7 @@ const PurchaseReceivingList = () => {
             value={filters.dateFilter} 
             onChange={(e) => setFilters(prev => ({ ...prev, dateFilter: e.target.value, page: 1 }))}
           >
-            <option value="TODAY_AND_PAST">⚡ Đã đến ngày nhận (Hôm nay & Quá hạn)</option>
+            <option value="TODAY_AND_PAST">Đã đến ngày nhận (Hôm nay & Quá hạn)</option>
             <option value="TODAY">Chỉ hôm nay</option>
             <option value="FUTURE">Chuyến tương lai (Sau hôm nay)</option>
             <option value="ALL">Tất cả thời gian</option>

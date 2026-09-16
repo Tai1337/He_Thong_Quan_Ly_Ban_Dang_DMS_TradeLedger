@@ -13,7 +13,6 @@ import {
   ShieldCheck, 
   Folder, 
   Headphones, 
-  Sparkles,
   PieChart,
   Truck,
   FileText,
@@ -41,7 +40,7 @@ const modulesData = {
       { label: 'Đơn hàng cần xử lý', path: '/sales/sales-orders', icon: FileText },
       { label: 'Chuyến xe nhập kho đến hạn', path: '/purchase/receiving', icon: Truck },
       { label: 'Báo cáo tài chính nhanh', path: '/reports/profit-and-loss', icon: PieChart },
-      { label: 'Review Khung Màu (4 Theme)', path: '/theme-review', icon: Palette, badge: 'Mới' },
+      { label: 'Review Khung Màu (4 Theme)', path: '/theme-review', icon: Palette },
     ]
   },
   buying: {
@@ -52,8 +51,8 @@ const modulesData = {
     path: '/purchase/purchase-orders',
     subItems: [
       { label: 'Đơn đặt hàng mua (PO)', path: '/purchase/purchase-orders', icon: FileText },
-      { label: 'Đề xuất đặt hàng AI (PPO)', path: '/purchase/ppo', icon: Sparkles, badge: 'AI' },
-      { label: 'Nhập kho chuyến D+3', path: '/purchase/receiving', icon: Truck, badge: 'D+3' },
+      { label: 'Đề xuất đặt hàng (PPO)', path: '/purchase/ppo', icon: FileText },
+      { label: 'Nhập kho mua hàng', path: '/purchase/receiving', icon: Truck },
       { label: 'Lập đơn đặt mua mới', path: '/purchase/purchase-orders?create=true', icon: PlusCircle },
       { label: 'Báo cáo tồn kho đặt hàng', path: '/inventory/rpt083', icon: BarChart3 },
     ]
@@ -66,7 +65,7 @@ const modulesData = {
     path: '/sales/sales-orders',
     subItems: [
       { label: 'Danh sách đơn bán (SO)', path: '/sales/sales-orders', icon: FileText },
-      { label: 'Chuyến xe & Điều phối giao', path: '/logistics/delivery-trips', icon: Truck, badge: 'Mới' },
+      { label: 'Chuyến xe & Điều phối giao', path: '/logistics/delivery-trips', icon: Truck },
       { label: 'Lập đơn bán hàng mới', path: '/sales/sales-orders?create=true', icon: PlusCircle },
       { label: 'Kiểm tra thiếu tồn (RPT005)', path: '/sales/sales-orders?rpt005=true', icon: CheckSquare },
       { label: 'Doanh số & Sản lượng (RPT057)', path: '/reports/rpt057', icon: BarChart3 },
@@ -91,7 +90,7 @@ const modulesData = {
     desc: 'Accounting & Profit and Loss',
     path: '/reports/profit-and-loss',
     subItems: [
-      { label: 'Profit and Loss Statement', path: '/reports/profit-and-loss', icon: PieChart, badge: 'Mới' },
+      { label: 'Báo cáo KQKD (Profit & Loss)', path: '/reports/profit-and-loss', icon: PieChart },
       { label: 'Theo dõi Thu - Chi', path: '/reports/profit-and-loss', icon: FileText },
       { label: 'Công nợ & Doanh thu NPP', path: '/reports/rpt057', icon: BarChart3 },
     ]
@@ -103,7 +102,7 @@ const modulesData = {
     desc: 'Job Card & Calendar Trips',
     path: '/operations/calendar',
     subItems: [
-      { label: 'Job Card Calendar (Lịch vận hành)', path: '/operations/calendar', icon: CalendarIcon, badge: 'Mới' },
+      { label: 'Lịch vận hành công việc', path: '/operations/calendar', icon: CalendarIcon },
       { label: 'Lịch chuyến xe giao hàng D+3', path: '/purchase/receiving', icon: Truck },
     ]
   },
@@ -114,7 +113,7 @@ const modulesData = {
     desc: 'Task Gantt & Dự án cung ứng',
     path: '/operations/gantt',
     subItems: [
-      { label: 'Task Gantt (Biểu đồ tiến độ)', path: '/operations/gantt', icon: GitPullRequest, badge: 'Mới' },
+      { label: 'Biểu đồ tiến độ (Gantt)', path: '/operations/gantt', icon: GitPullRequest },
       { label: 'Kế hoạch cung ứng Q1/2026', path: '/operations/gantt', icon: FileText },
     ]
   },

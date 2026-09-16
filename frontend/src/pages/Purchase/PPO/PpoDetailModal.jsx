@@ -10,12 +10,12 @@ const PpoDetailModal = ({ isOpen, onClose, ppo }) => {
         {/* Header */}
         <div className="modal-header">
           <div className="modal-title-group">
-            <div className="modal-icon-badge" style={{ background: '#f5f3ff', color: '#7c3aed' }}>
-              <Sparkles size={20} />
+            <div className="modal-icon-badge" style={{ background: '#eff6ff', color: '#2563eb' }}>
+              <Calculator size={20} />
             </div>
             <div>
-              <h2>Chi tiết & Phân tích Đề xuất AI: [{ppo.product?.sku}]</h2>
-              <p className="modal-subtitle">Minh bạch thuật toán dự báo nhu cầu và ngưỡng điểm đặt hàng lại (ROP)</p>
+              <h2>Chi tiết Đề xuất Đặt hàng: [{ppo.product?.sku}]</h2>
+              <p className="modal-subtitle">Minh bạch thuật toán tính toán nhu cầu và ngưỡng điểm đặt hàng lại (ROP)</p>
             </div>
           </div>
           <button className="modal-close-btn" onClick={onClose}>
@@ -45,11 +45,11 @@ const PpoDetailModal = ({ isOpen, onClose, ppo }) => {
             </div>
           </div>
 
-          {/* Diễn giải lý do AI */}
+          {/* Diễn giải lý do */}
           <div className="explain-text-box">
             <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
               <AlertTriangle size={16} />
-              <span>Diễn giải từ Hệ thống Đề xuất Thông minh:</span>
+              <span>Diễn giải căn cứ đề xuất đặt hàng:</span>
             </div>
             <div>{ppo.reason}</div>
           </div>
@@ -109,7 +109,7 @@ const PpoDetailModal = ({ isOpen, onClose, ppo }) => {
               <div className="formula-box highlight">
                 <span className="formula-label">Số lượng đề xuất</span>
                 <span className="formula-val" style={{ color: '#2563eb' }}>{ppo.suggestedQty}</span>
-                <span style={{ fontSize: '0.72rem', color: '#64748b' }}>AI tính toán</span>
+                <span style={{ fontSize: '0.72rem', color: '#64748b' }}>Hệ thống đề xuất</span>
               </div>
 
               <div className="formula-box" style={{ background: '#f0fdf4', borderColor: '#86efac' }}>

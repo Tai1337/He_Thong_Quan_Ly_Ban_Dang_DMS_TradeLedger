@@ -69,9 +69,9 @@ export const THEME_OPTIONS = [
     id: 'theme-modern-indigo',
     name: 'Phương án 2: Modern Slate & Indigo',
     tagline: 'Công nghệ cao • Next-Gen B2B SaaS • Linear / Frappe v15 Style',
-    badge: 'Hiện đại & AI',
+    badge: 'Hiện đại & Tinh tế',
     badgeClass: 'badge-modern',
-    description: 'Tông tím chàm Indigo kết hợp đen Obsidian huyền bí, làm nổi bật các tính năng trí tuệ nhân tạo (AI PPO) và mang đến trải nghiệm phần mềm thế hệ mới.',
+    description: 'Tông tím chàm Indigo kết hợp đen Obsidian huyền bí, mang đến trải nghiệm phần mềm quản lý doanh nghiệp chuyên nghiệp và hiện đại.',
     variables: {
       '--tr-primary': '#4f46e5',
       '--tr-primary-hover': '#4338ca',
@@ -229,7 +229,7 @@ const ThemeReview = () => {
           <h1 className="banner-title">Trung Tâm Đánh Giá Khung Màu (Theme Review)</h1>
           <p className="banner-desc">
             Trải nghiệm và so sánh trực tiếp 4 phương án phối màu doanh nghiệp cho hệ thống <strong>DMS-NPP TradeLedger</strong>. 
-            Mọi thành phần từ Header, Bento Dashboard, Bảng Sticky Column đến Widget AI PPO đều phản hồi tức thì theo chủ đề bạn chọn.
+            Mọi thành phần từ Header, Bento Dashboard, Bảng Sticky Column đến Widget PPO đều phản hồi tức thì theo chủ đề bạn chọn.
           </p>
         </div>
 
@@ -375,7 +375,7 @@ const ThemeReview = () => {
                   <span className="sim-tag tag-accent">Khung 09:00 - 11:00</span>
                 </div>
                 <div className="sim-card-value">12 Mã Đề xuất</div>
-                <div className="sim-card-label">Đề xuất Đặt hàng AI (PPO)</div>
+                <div className="sim-card-label">Đề xuất Đặt hàng (PPO)</div>
                 <div className="sim-card-hint">Thuật toán ROP tự động tính toán bù tồn kho</div>
               </div>
 

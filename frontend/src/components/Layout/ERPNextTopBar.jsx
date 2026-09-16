@@ -24,9 +24,9 @@ const ERPNextTopBar = ({ user }) => {
     } else if (path.startsWith('/purchase')) {
       crumbs.push({ label: 'Mua hàng', path: '/purchase/purchase-orders' });
       if (path.includes('/ppo')) {
-        crumbs.push({ label: 'Đề xuất đặt hàng AI (PPO)', path: '/purchase/ppo' });
+        crumbs.push({ label: 'Đề xuất đặt hàng (PPO)', path: '/purchase/ppo' });
       } else if (path.includes('/receiving')) {
-        crumbs.push({ label: 'Nhập kho đợt giao D+3', path: '/purchase/receiving' });
+        crumbs.push({ label: 'Nhập kho mua hàng', path: '/purchase/receiving' });
       } else if (path.includes('/purchase-orders/')) {
         crumbs.push({ label: 'Chi tiết Đơn đặt mua', path });
       } else {

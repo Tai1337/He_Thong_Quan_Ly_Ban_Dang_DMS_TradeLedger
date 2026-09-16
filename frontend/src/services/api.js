@@ -404,7 +404,7 @@ export const getInventoryRpt083 = async (filters) => {
   return data;
 };
 
-// --- PPO (PURCHASE PROPOSAL ORDERS - ĐỀ XUẤT AI) ---
+// --- PPO (PURCHASE PROPOSAL ORDERS - ĐỀ XUẤT ĐẶT HÀNG MUA) ---
 
 export const generatePpoSuggestions = async (distributorId = 1) => {
   const response = await fetch(`${API_URL}/ppo/generate`, {
@@ -414,7 +414,7 @@ export const generatePpoSuggestions = async (distributorId = 1) => {
   });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || 'Lỗi khi kích hoạt AI sinh đề xuất');
+    throw new Error(data.error || 'Lỗi khi tính toán đề xuất đặt hàng');
   }
   return data;
 };

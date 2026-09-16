@@ -93,7 +93,7 @@ export default function CreateTripModal({ isOpen, onClose, onSuccess, initialOrd
         <div className="modal-trip-header">
           <div className="modal-trip-header-title">
             <Truck size={20} color="#2563eb" />
-            <h3>Khởi Tạo Chuyến Xe Giao Hàng Mới</h3>
+            <h3>Khởi Tạo Chuyến Xe Giao Hàng</h3>
           </div>
           <button type="button" className="btn-close-trip-modal" onClick={onClose}>
             <X size={18} />

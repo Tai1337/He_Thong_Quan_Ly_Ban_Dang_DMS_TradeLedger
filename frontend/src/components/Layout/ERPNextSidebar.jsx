@@ -12,7 +12,6 @@ import {
   Layers, 
   ChevronRight, 
   ChevronLeft,
-  Sparkles, 
   Truck, 
   PlusCircle, 
   FileText, 
@@ -40,8 +39,8 @@ const moduleSubmenus = {
     description: 'Procurement & Inbound',
     items: [
       { id: 'po-list', label: 'Đơn đặt hàng mua (PO)', icon: FileText, path: '/purchase/purchase-orders' },
-      { id: 'ppo-ai', label: 'Đề xuất đặt hàng AI (PPO)', icon: Sparkles, path: '/purchase/ppo', badge: 'AI' },
-      { id: 'po-receiving', label: 'Nhập kho chuyến D+3', icon: Truck, path: '/purchase/receiving', badge: 'D+3' },
+      { id: 'ppo', label: 'Đề xuất đặt hàng (PPO)', icon: FileText, path: '/purchase/ppo' },
+      { id: 'po-receiving', label: 'Nhập kho mua hàng', icon: Truck, path: '/purchase/receiving' },
       { id: 'po-create', label: 'Lập đơn đặt mua mới', icon: PlusCircle, path: '/purchase/purchase-orders?create=true' },
       { id: 'po-report', label: 'Báo cáo tồn kho đặt hàng', icon: BarChart3, path: '/inventory/rpt083' },
     ]

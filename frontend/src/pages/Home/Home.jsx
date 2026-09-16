@@ -8,7 +8,7 @@ import {
   TrendingUp, 
   Layers, 
   Truck,
-  Sparkles,
+  FileText,
   CheckCircle2,
   Clock,
   BarChart3,
@@ -76,17 +76,17 @@ const Home = ({ user }) => {
           </div>
         </Link>
 
-        {/* Card 2: PPO AI & 09:00 - 11:00 Window */}
+        {/* Card 2: PPO & 09:00 - 11:00 Window */}
         <Link to="/purchase/ppo" className="bento-metric-card border-indigo">
           <div className="metric-header">
             <div className="metric-icon-box bg-indigo-light text-indigo">
-              <Sparkles size={20} />
+              <FileText size={20} />
             </div>
             <span className="metric-badge badge-indigo">Khung 09:00 - 11:00</span>
           </div>
           <div className="metric-body">
-            <div className="metric-value">PPO Đề xuất</div>
-            <div className="metric-title">Mua hàng Tự động (ROP)</div>
+            <div className="metric-value">Đề xuất mua hàng</div>
+            <div className="metric-title">Tính toán theo ROP</div>
             <p className="metric-sub">Kế toán rà soát (chỉ giảm), tự động sinh PO & SO lúc 11:00</p>
           </div>
           <div className="metric-footer text-indigo">
@@ -156,7 +156,7 @@ const Home = ({ user }) => {
           <div className="workflow-step-item">
             <div className="step-number">09:00</div>
             <div className="step-content">
-              <h4>Kích hoạt ROP AI</h4>
+              <h4>Tính toán định mức ROP</h4>
               <p>Hệ thống tự động quét tồn kho khả dụng $\le$ ROP để sinh các đề xuất mua hàng PPO.</p>
             </div>
           </div>
@@ -207,10 +207,10 @@ const Home = ({ user }) => {
 
           <Link to="/purchase/ppo" className="action-tile">
             <div className="action-tile-icon bg-indigo">
-              <Sparkles size={20} />
+              <FileText size={20} />
             </div>
             <div className="action-tile-info">
-              <span className="action-name">Duyệt Đề xuất PPO AI</span>
+              <span className="action-name">Rà soát Đề xuất PPO</span>
               <span className="action-desc">Rà soát và chốt đơn mua hàng lúc 11:00</span>
             </div>
           </Link>

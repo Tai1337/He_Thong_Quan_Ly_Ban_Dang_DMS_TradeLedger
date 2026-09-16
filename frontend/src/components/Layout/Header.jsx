@@ -9,7 +9,6 @@ import {
   TrendingUp, 
   ShoppingCart, 
   Box, 
-  Sparkles, 
   Truck, 
   FileText, 
   PlusCircle, 
@@ -65,7 +64,7 @@ const Header = ({ user, onLogout }) => {
               </Link>
               <Link to="/sales/sales-orders?create=true" className="dropdown-item">
                 <PlusCircle size={15} className="dropdown-icon" />
-                <span>Lập đơn bán hàng mới (BH_BM1)</span>
+                <span>Lập đơn bán hàng (BH_BM1)</span>
               </Link>
               <Link to="/sales/sales-orders?rpt005=true" className="dropdown-item">
                 <CheckSquare size={15} className="dropdown-icon" />
@@ -92,16 +91,16 @@ const Header = ({ user, onLogout }) => {
                 <span>Quản lý Đơn đặt hàng mua (PO)</span>
               </Link>
               <Link to="/purchase/ppo" className="dropdown-item dropdown-item-featured">
-                <Sparkles size={15} className="dropdown-icon text-blue" />
-                <span><strong>Đề xuất đặt hàng AI (PPO)</strong></span>
+                <FileText size={15} className="dropdown-icon text-blue" />
+                <span><strong>Đề xuất đặt hàng (PPO)</strong></span>
               </Link>
               <Link to="/purchase/receiving" className="dropdown-item dropdown-item-success">
                 <Truck size={15} className="dropdown-icon text-green" />
-                <span><strong>Nhập kho đặt hàng (Chuyến xe D+3)</strong></span>
+                <span><strong>Nhập kho mua hàng</strong></span>
               </Link>
               <Link to="/purchase/purchase-orders?create=true" className="dropdown-item">
                 <PlusCircle size={15} className="dropdown-icon" />
-                <span>Lập Đơn đặt hàng mua mới</span>
+                <span>Lập Đơn đặt hàng mua (PO)</span>
               </Link>
             </div>
           </div>
