@@ -15,7 +15,8 @@ import {
   Box,
   ChevronRight,
   ShieldCheck,
-  Calendar
+  Calendar,
+  DollarSign
 } from 'lucide-react';
 import './Home.css';
 
@@ -76,21 +77,21 @@ const Home = ({ user }) => {
           </div>
         </Link>
 
-        {/* Card 2: PPO & 09:00 - 11:00 Window */}
-        <Link to="/purchase/ppo" className="bento-metric-card border-indigo">
+        {/* Card 2: Purchase Orders (PO) */}
+        <Link to="/purchase/purchase-orders" className="bento-metric-card border-indigo">
           <div className="metric-header">
             <div className="metric-icon-box bg-indigo-light text-indigo">
               <FileText size={20} />
             </div>
-            <span className="metric-badge badge-indigo">Khung 09:00 - 11:00</span>
+            <span className="metric-badge badge-indigo">Mua hàng NCC</span>
           </div>
           <div className="metric-body">
-            <div className="metric-value">Đề xuất mua hàng</div>
-            <div className="metric-title">Tính toán theo ROP</div>
-            <p className="metric-sub">Kế toán rà soát (chỉ giảm), tự động sinh PO & SO lúc 11:00</p>
+            <div className="metric-value">Đơn mua hàng</div>
+            <div className="metric-title">Quản lý cung ứng</div>
+            <p className="metric-sub">Lập đơn đặt mua, theo dõi trạng thái và tiến độ giao hàng từ NCC</p>
           </div>
           <div className="metric-footer text-indigo">
-            <span>Rà soát PPO ngay</span>
+            <span>Quản lý PO ngay</span>
             <ArrowRight size={14} />
           </div>
         </Link>
@@ -104,31 +105,31 @@ const Home = ({ user }) => {
             <span className="metric-badge badge-emerald">Chuyến xe D+3</span>
           </div>
           <div className="metric-body">
-            <div className="metric-value">Nhập kho</div>
-            <div className="metric-title">Kiểm đếm Hàng về NPP</div>
-            <p className="metric-sub">Nhập số lượng thực nhận, cập nhật Lô (GOOD), NSX và HSD</p>
+            <div className="metric-value">Nhập kho mua hàng</div>
+            <div className="metric-title">Tiếp nhận & Kiểm đếm</div>
+            <p className="metric-sub">Theo dõi chuyến xe, ghi nhận số lượng thực nhận & tăng tồn kho</p>
           </div>
           <div className="metric-footer text-emerald">
-            <span>Xem chuyến xe hàng về</span>
+            <span>Xem điều phối xe</span>
             <ArrowRight size={14} />
           </div>
         </Link>
 
-        {/* Card 4: Inventory RPT083 */}
-        <Link to="/inventory/rpt083" className="bento-metric-card border-amber">
+        {/* Card 4: Accounting Profit Loss */}
+        <Link to="/accounting/pnl" className="bento-metric-card border-amber">
           <div className="metric-header">
             <div className="metric-icon-box bg-amber-light text-amber">
-              <Box size={20} />
+              <DollarSign size={20} />
             </div>
-            <span className="metric-badge badge-amber">Kho & Tồn kho</span>
+            <span className="metric-badge badge-amber">Sổ sách kế toán</span>
           </div>
           <div className="metric-body">
-            <div className="metric-value">RPT083</div>
-            <div className="metric-title">Báo cáo Tồn kho NPP</div>
-            <p className="metric-sub">Theo dõi SKU, tồn khả dụng, hạn sử dụng theo chuẩn FEFO</p>
+            <div className="metric-value">Báo cáo Lãi / Lỗ</div>
+            <div className="metric-title">Kết quả kinh doanh</div>
+            <p className="metric-sub">Doanh thu thuần, giá vốn FIFO/Bình quân và chi phí vận hành</p>
           </div>
           <div className="metric-footer text-amber">
-            <span>Tra cứu tồn kho</span>
+            <span>Xem báo cáo P&L</span>
             <ArrowRight size={14} />
           </div>
         </Link>
@@ -140,7 +141,7 @@ const Home = ({ user }) => {
           <div>
             <h3 className="card-heading">
               <Clock size={18} color="#2563eb" />
-              <span>Quy trình Vận hành Đặt hàng & Phân phối Hàng ngày</span>
+              <span>Quy trình Mua hàng & Phân phối Chuẩn hóa</span>
             </h3>
             <p className="card-subheading">
               Luồng tự động hóa đồng bộ giữa Nhà sản xuất / NCC và Nhà phân phối (NPP)
@@ -154,31 +155,31 @@ const Home = ({ user }) => {
 
         <div className="workflow-steps-grid">
           <div className="workflow-step-item">
-            <div className="step-number">09:00</div>
+            <div className="step-number">Bước 1</div>
             <div className="step-content">
-              <h4>Tính toán định mức ROP</h4>
-              <p>Hệ thống tự động quét tồn kho khả dụng $\le$ ROP để sinh các đề xuất mua hàng PPO.</p>
+              <h4>Lập Đơn mua hàng (PO)</h4>
+              <p>Xác định nhu cầu đặt hàng từ Nhà cung cấp dựa trên tồn kho thực tế và kế hoạch bán buôn.</p>
             </div>
           </div>
 
           <div className="workflow-step-item highlight-step">
-            <div className="step-number">09:00 - 11:00</div>
+            <div className="step-number">Bước 2</div>
             <div className="step-content">
-              <h4>Khung giờ Kế toán</h4>
-              <p>Rà soát số lượng đề xuất. <strong>Chỉ được phép giảm</strong> ($finalQty \le suggestedQty$).</p>
+              <h4>Xác nhận Đơn & Lịch giao</h4>
+              <p>Nhà cung cấp tiếp nhận PO, phê duyệt đơn hàng và sắp xếp chuyến xe giao hàng.</p>
             </div>
           </div>
 
           <div className="workflow-step-item">
-            <div className="step-number">11:00</div>
+            <div className="step-number">Bước 3</div>
             <div className="step-content">
-              <h4>Tự động Chốt đơn</h4>
-              <p>Gom nhóm theo NCC, tự động tạo đồng thời PO (`WAITING_RECEIVE`), SO (`ALLOCATED`) và Chuyến xe D+3.</p>
+              <h4>Vận chuyển Chuyến xe</h4>
+              <p>Điều phối chuyến xe giao hàng đến kho NPP theo đúng kế hoạch hẹn trước.</p>
             </div>
           </div>
 
           <div className="workflow-step-item">
-            <div className="step-number">Ngày D+3</div>
+            <div className="step-number">Bước 4</div>
             <div className="step-content">
               <h4>Nhập kho Đặt hàng</h4>
               <p>Chuyến xe đến kho, thủ kho nhập số lượng thực nhận, cập nhật Lô (GOOD), NSX, HSD và tăng tồn kho.</p>
@@ -205,13 +206,13 @@ const Home = ({ user }) => {
             </div>
           </Link>
 
-          <Link to="/purchase/ppo" className="action-tile">
+          <Link to="/purchase/purchase-orders?create=true" className="action-tile">
             <div className="action-tile-icon bg-indigo">
-              <FileText size={20} />
+              <PlusCircle size={20} />
             </div>
             <div className="action-tile-info">
-              <span className="action-name">Rà soát Đề xuất PPO</span>
-              <span className="action-desc">Rà soát và chốt đơn mua hàng lúc 11:00</span>
+              <span className="action-name">Lập Đơn mua hàng (PO)</span>
+              <span className="action-desc">Tạo đơn đặt mua hàng từ Nhà cung cấp</span>
             </div>
           </Link>
 

@@ -71,9 +71,6 @@ const PurchaseReceivingList = () => {
         </div>
 
         <div className="receiving-header-actions">
-          <Link to="/purchase/ppo" className="btn-link-ppo">
-            <span>Đề xuất đặt hàng (PPO)</span>
-          </Link>
           <Link to="/purchase/purchase-orders" className="btn-link-po">
             <span>Quản lý Đơn mua PO</span>
           </Link>
@@ -88,7 +85,7 @@ const PurchaseReceivingList = () => {
         <div className="workflow-text">
           <strong>Quy trình giao hàng & Nhập kho tiêu chuẩn (D+3):</strong>
           <p>
-            Đơn hàng sau khi chốt PPO lúc 11:00 được hệ thống tự động gán Chuyến xe giao đến kho NPP với lịch hẹn giao là <strong>3 ngày sau (D+3)</strong>. 
+            Đơn hàng mua sau khi được xác nhận được hệ thống sắp xếp Chuyến xe giao đến kho NPP với lịch hẹn giao tiêu chuẩn (D+3). 
             Khi chuyến xe đến kho đúng ngày hẹn, thủ kho / kế toán nhấp <u>"Tiến hành nhập kho"</u> để ghi nhận hàng thực tế và kích hoạt Lô hàng vào tồn kho sẵn sàng bán.
           </p>
         </div>

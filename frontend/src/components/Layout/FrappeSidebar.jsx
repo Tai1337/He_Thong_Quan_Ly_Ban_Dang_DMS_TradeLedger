@@ -51,7 +51,6 @@ const modulesData = {
     path: '/purchase/purchase-orders',
     subItems: [
       { label: 'Đơn đặt hàng mua (PO)', path: '/purchase/purchase-orders', icon: FileText },
-      { label: 'Đề xuất đặt hàng (PPO)', path: '/purchase/ppo', icon: FileText },
       { label: 'Nhập kho mua hàng', path: '/purchase/receiving', icon: Truck },
       { label: 'Lập đơn đặt mua mới', path: '/purchase/purchase-orders?create=true', icon: PlusCircle },
       { label: 'Báo cáo tồn kho đặt hàng', path: '/inventory/rpt083', icon: BarChart3 },

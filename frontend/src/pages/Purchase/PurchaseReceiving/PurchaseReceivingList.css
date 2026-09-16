@@ -36,7 +36,6 @@
   gap: 12px;
 }
 
-.btn-link-ppo,
 .btn-link-po {
   padding: 8px 14px;
   border-radius: 6px;
@@ -47,16 +46,6 @@
   background: #ffffff;
   color: #334155;
   transition: all 0.15s;
-}
-
-.btn-link-ppo {
-  color: #7c3aed;
-  border-color: #ddd6fe;
-  background: #f5f3ff;
-}
-
-.btn-link-ppo:hover {
-  background: #ede9fe;
 }
 
 .btn-link-po:hover {

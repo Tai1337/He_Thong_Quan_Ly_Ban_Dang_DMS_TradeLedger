@@ -254,8 +254,6 @@ await prisma.$transaction([
 | Cập nhật | PUT | `/api/sales-orders/:id` |
 | Cập nhật trạng thái | PATCH | `/api/sales-orders/:id/status` |
 | Xóa mềm | DELETE | `/api/sales-orders/:id` |
-| Trạng thái khung giờ PPO (09:00 - 11:00) | GET | `/api/ppo/window-status` |
-| Chốt PPO tự động / mô phỏng 11:00 | POST | `/api/ppo/execute-closing` |
 | Danh sách chuyến xe hàng về (D+3) | GET | `/api/purchase/receiving/trips` |
 | Chi tiết chuyến xe hàng về | GET | `/api/purchase/receiving/trips/:tripId` |
 | Nhập kho thực tế chuyến xe | POST | `/api/purchase/receiving/trips/:tripId/receive` |

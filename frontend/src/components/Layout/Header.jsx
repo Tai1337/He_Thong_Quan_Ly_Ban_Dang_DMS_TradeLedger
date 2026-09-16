@@ -90,10 +90,6 @@ const Header = ({ user, onLogout }) => {
                 <FileText size={15} className="dropdown-icon" />
                 <span>Quản lý Đơn đặt hàng mua (PO)</span>
               </Link>
-              <Link to="/purchase/ppo" className="dropdown-item dropdown-item-featured">
-                <FileText size={15} className="dropdown-icon text-blue" />
-                <span><strong>Đề xuất đặt hàng (PPO)</strong></span>
-              </Link>
               <Link to="/purchase/receiving" className="dropdown-item dropdown-item-success">
                 <Truck size={15} className="dropdown-icon text-green" />
                 <span><strong>Nhập kho mua hàng</strong></span>

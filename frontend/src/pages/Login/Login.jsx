@@ -19,6 +19,9 @@ const Login = ({ onLogin }) => {
       setLoading(true);
       try {
         const data = await login(username, password);
+        if (data.accessToken) {
+          localStorage.setItem('access_token', data.accessToken);
+        }
         onLogin(data.user);
       } catch (error) {
         setErrorMsg(error.message || 'Không thể kết nối đến máy chủ Backend.');
@@ -39,7 +42,7 @@ const Login = ({ onLogin }) => {
             <Layers size={26} className="login-brand-icon" />
             <h1 className="login-title">DMS-NPP TradeLedger</h1>
           </div>
-          <p className="login-subtitle">Hệ thống Quản lý Phân phối, Đặt hàng PPO & Tồn kho NPP</p>
+          <p className="login-subtitle">Hệ thống Quản lý Bán hàng, Mua hàng & Tồn kho NPP</p>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">

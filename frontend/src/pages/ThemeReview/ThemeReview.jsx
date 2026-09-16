@@ -190,8 +190,8 @@ const ThemeReview = () => {
   });
 
   const [copiedCode, setCopiedCode] = useState(false);
-  const [isApprovingPpo, setIsApprovingPpo] = useState(false);
-  const [ppoApproved, setPpoApproved] = useState(false);
+  const [isProcessingBatch, setIsProcessingBatch] = useState(false);
+  const [batchProcessed, setBatchProcessed] = useState(false);
 
   const currentTheme = THEME_OPTIONS.find(t => t.id === activeThemeId) || THEME_OPTIONS[0];
 
@@ -209,12 +209,12 @@ const ThemeReview = () => {
     setTimeout(() => setCopiedCode(false), 2500);
   };
 
-  const handleSimulatePpoApprove = () => {
-    setIsApprovingPpo(true);
+  const handleSimulateBatchApprove = () => {
+    setIsProcessingBatch(true);
     setTimeout(() => {
-      setIsApprovingPpo(false);
-      setPpoApproved(true);
-      setTimeout(() => setPpoApproved(false), 4000);
+      setIsProcessingBatch(false);
+      setBatchProcessed(true);
+      setTimeout(() => setBatchProcessed(false), 4000);
     }, 1200);
   };
 
@@ -229,7 +229,7 @@ const ThemeReview = () => {
           <h1 className="banner-title">Trung Tâm Đánh Giá Khung Màu (Theme Review)</h1>
           <p className="banner-desc">
             Trải nghiệm và so sánh trực tiếp 4 phương án phối màu doanh nghiệp cho hệ thống <strong>DMS-NPP TradeLedger</strong>. 
-            Mọi thành phần từ Header, Bento Dashboard, Bảng Sticky Column đến Widget PPO đều phản hồi tức thì theo chủ đề bạn chọn.
+            Mọi thành phần từ Header, Bento Dashboard, Bảng Sticky Column đến các Widget điều hành đều phản hồi tức thì theo chủ đề bạn chọn.
           </p>
         </div>
 
@@ -366,17 +366,17 @@ const ThemeReview = () => {
                 <div className="sim-card-hint">Đạt 85% chỉ tiêu tháng của Nhà phân phối</div>
               </div>
 
-              {/* Card 2: AI PPO Window */}
+              {/* Card 2: Đơn mua hàng (PO) */}
               <div className="sim-bento-card featured-ai-card">
                 <div className="sim-card-header">
                   <div className="sim-icon-box bg-accent-soft">
                     <Sparkles size={18} />
                   </div>
-                  <span className="sim-tag tag-accent">Khung 09:00 - 11:00</span>
+                  <span className="sim-tag tag-accent">Mua hàng NCC</span>
                 </div>
-                <div className="sim-card-value">12 Mã Đề xuất</div>
-                <div className="sim-card-label">Đề xuất Đặt hàng (PPO)</div>
-                <div className="sim-card-hint">Thuật toán ROP tự động tính toán bù tồn kho</div>
+                <div className="sim-card-value">8 Đơn mua hàng</div>
+                <div className="sim-card-label">Đơn đặt hàng mua (PO)</div>
+                <div className="sim-card-hint">Theo dõi tiến độ duyệt và giao hàng từ NCC</div>
               </div>
 
               {/* Card 3: Chuyến xe D+3 */}
@@ -420,10 +420,10 @@ const ThemeReview = () => {
                   <button 
                     type="button" 
                     className="sim-btn-primary"
-                    onClick={handleSimulatePpoApprove}
-                    disabled={isApprovingPpo}
+                    onClick={handleSimulateBatchApprove}
+                    disabled={isProcessingBatch}
                   >
-                    {isApprovingPpo ? (
+                    {isProcessingBatch ? (
                       <span>Đang xử lý…</span>
                     ) : (
                       <>
@@ -434,7 +434,7 @@ const ThemeReview = () => {
                 </div>
               </div>
 
-              {ppoApproved && (
+              {batchProcessed && (
                 <div className="sim-toast-success" role="status" aria-live="polite">
                   <CheckCircle2 size={16} />
                   <span>Đã duyệt và phân bổ thành công các đơn hàng được chọn theo thuật toán FEFO!</span>

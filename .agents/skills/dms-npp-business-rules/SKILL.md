@@ -36,7 +36,7 @@ PENDING → SUBMITTED → ALLOCATED → SHIPPED → DELIVERED → INVOICED → P
 ## 2. Quy trình Đơn mua hàng & Nhập kho đặt hàng (Purchase Order & Inbound Receiving Flow)
 
 ```
-[11:00 Chốt PPO] → PO (WAITING_RECEIVE) + DeliveryTrip INBOUND (SHIPPING, D+3)
+[Lập Đơn mua hàng PO] → PO (WAITING_RECEIVE) + DeliveryTrip INBOUND (SHIPPING, D+3)
                          ↓
 [Ngày D+3 Hàng về] → Kế toán/Thủ kho kiểm đếm thực tế
                          ↓
@@ -87,39 +87,25 @@ DRAFT → WAITING_APPROVAL → APPROVED → COMPLETED
 
 ---
 
-## 5. Quy trình Đề xuất Mua hàng Tự động & Chốt đơn (Automated PPO Flow)
+## 5. Quy trình Mua Hàng & Nhập Kho Đặt Hàng (Purchase Order Flow)
 
-Quy trình vận hành hàng ngày của hệ thống quản lý mua hàng PPO (Purchase Plan Order):
+Quy trình vận hành mua hàng từ Nhà cung cấp:
 
 ```
-09:00                     09:00 - 11:00                      11:00                     D+3
-[ROP Engine Phân Tích] → [Khung Giờ Vàng Kế Toán] → [Hệ Thống Tự Động Chốt Đơn] → [Hàng Về NPP]
-  - Tự động sinh PPO       - Chỉ được GIẢM số lượng   - Gom nhóm theo NCC & Kho    - Nhập kho thực tế
-  - Priority HIGH/MED/LOW  - CẤM TĂNG trên hệ thống   - Tạo PO (WAITING_RECEIVE)   - Cập nhật Lô/HSD
-                           - Ngoài khung giờ: Khóa     - Tạo SO (ALLOCATED)         - Tăng tồn kho
-                                                      - Tạo Chuyến xe D+3 (INBOUND)
+[Lập Đơn PO] → [Xác nhận & Điều phối Chuyến xe] → [Vận chuyển D+3] → [Hàng Về Kho NPP]
+  - Tạo PO theo NCC & Kho    - Lập lịch giao hàng      - Theo dõi hành trình      - Kiểm đếm thực tế
+  - Trạng thái WAITING_RECEIVE - Gắn chuyến xe INBOUND - Trạng thái SHIPPING      - Cập nhật Lô/HSD & Tăng tồn
 ```
 
-### Chi tiết các mốc thời gian & Quy tắc bắt buộc:
-1. **09:00 Hàng ngày – Kích hoạt ROP Engine:**
-   - Hệ thống tự động quét các SKU có tồn khả dụng (Available = On Hand - Reserved) $\le$ Điểm đặt hàng lại (ROP = Safety Stock + Demand * LeadTime).
-   - Tự động tạo các đề xuất mua hàng `ppo_suggestions` với trạng thái `NEW`, tính toán `suggested_qty` và xếp mức ưu tiên (`HIGH`, `MEDIUM`, `LOW`).
+### Chi tiết các bước:
+1. **Lập Đơn mua hàng (Purchase Order):**
+   - NPP lập đơn mua hàng từ Nhà cung cấp, chỉ định kho nhận và danh sách SKU cần nhập.
+   - PO được khởi tạo với trạng thái `WAITING_RECEIVE` cùng thông tin điều phối chuyến xe.
 
-2. **09:00 - 11:00 – Khung giờ vàng Kế toán rà soát (Review Window):**
-   - Kế toán NPP truy cập màn hình `/purchase/ppo` để kiểm tra các mặt hàng đề xuất.
-   - **QUY TẮC BẤT BIẾN:** Kế toán **CHỈ ĐƯỢC PHÉP GIẢM** số lượng đặt hàng (`finalQty <= suggestedQty`).
-   - Hệ thống chặn cứng: Nếu cố tình nhập $finalQty > suggestedQty$ $\to$ Ném lỗi validation 400 và UI không cho phép lưu.
-   - **Lý do nghiệp vụ:** Mọi nhu cầu mua tăng thêm so với thuật toán ROP định mức phải được thỏa thuận ngoài hệ thống trước khi đặt bổ sung.
-   - Ngoài khung giờ 09:00 - 11:00: Hệ thống tự động khóa tính năng chỉnh sửa số lượng (`windowStatus.isWindowActive = false`).
-
-3. **11:00 Hàng ngày – Hệ thống tự động Chốt đơn (Auto Closing Engine):**
-   - Hệ thống thu thập toàn bộ các đề xuất PPO đang ở trạng thái `NEW` hoặc `VIEWED`.
-   - Gom nhóm (Group by) các đề xuất theo **Nhà cung cấp (`supplierId`)** và **Kho nhận (`warehouseId`)**.
-   - Với mỗi nhóm, hệ thống tạo đồng bộ:
-     * **01 Chuyến xe giao hàng INBOUND (`delivery_trips`):** `tripType = 'INBOUND'`, `status = 'SHIPPING'`, ngày dự kiến giao `expectedDeliveryDate = Today + 3 ngày` (Mô hình giao hàng $D+3$).
-     * **01 Đơn đặt mua hàng (`purchase_orders`):** `status = 'WAITING_RECEIVE'`, gắn khóa ngoại `deliveryTripId` trỏ đến chuyến xe vừa tạo.
-     * **01 Đơn bán hàng đối ứng (`sales_orders`):** `status = 'ALLOCATED'`, đại diện cho đơn xuất từ NCC sang NPP.
-   - Chuyển toàn bộ các bản ghi `ppo_suggestions` đã chốt sang trạng thái `APPROVED` và gắn `purchaseOrderId`.
+2. **Tiếp nhận & Nhập kho (Inbound Goods Receiving):**
+   - Khi chuyến xe giao hàng đến kho NPP, thủ kho / kế toán kiểm đếm thực tế.
+   - Nhập số lượng thực nhận cho từng SKU, cập nhật Lô hàng (Batch Code), Ngày sản xuất (MFG Date), Hạn sử dụng (EXP Date).
+   - Hệ thống tự động tạo `inventory_transaction` loại `IN` và tăng tồn kho khả dụng theo lô (FEFO).
 
 
 ## 6. Phân quyền người dùng
@@ -131,7 +117,7 @@ Quy trình vận hành hàng ngày của hệ thống quản lý mua hàng PPO (
 | SALES | Tạo đơn hàng, xem báo cáo NPP của mình |
 | WAREHOUSE_KEEPER | Quản lý kho, nhận hàng, kiểm kê |
 | DRIVER | Xem chuyến giao hàng của mình, xác nhận giao hàng |
-| ASM | Xem và duyệt PPO, xem báo cáo toàn vùng |
+| ASM | Xem và duyệt đơn mua/bán hàng, xem báo cáo toàn vùng |
 
 **Quy tắc data isolation (cực kỳ quan trọng):**
 - User có `distributor_id` chỉ được xem/thao tác dữ liệu của NPP đó
@@ -161,7 +147,6 @@ Tất cả mã chứng từ phải unique và theo format:
 | Stock Transfer | `TRANS-YYYYMMDD-XXXXX` | TRANS-20260808-00001 |
 | Inventory Adjustment | `ADJ-YYYYMMDD-XXXXX` | ADJ-20260808-00001 |
 | Inventory Count | `COUNT-YYYYMMDD-XXXXX` | COUNT-20260808-00001 |
-| Purchase Plan Order | `PPO-YYYYMMDD-XXXXX` | PPO-20260808-00001 |
 
 ```js
 // Helper function tạo mã chứng từ

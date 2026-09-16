@@ -1,4 +1,4 @@
-import prisma from '../server/config/prisma.js';
+import prisma from '../src/prisma/prisma.client.js';
 
 async function fixOrderConstraints() {
   console.log('--- BẮT ĐẦU CHUẨN HÓA VÀ THẮT CHẶT RÀNG BUỘC ĐƠN HÀNG TRONG DATABASE ---');

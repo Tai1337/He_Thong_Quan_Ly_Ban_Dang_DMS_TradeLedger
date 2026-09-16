@@ -9,7 +9,6 @@ import SalesOrderList from './pages/Sales/SalesOrderList/SalesOrderList';
 import SalesOrderDetail from './pages/Sales/SalesOrderList/SalesOrderDetail';
 import PurchaseOrderList from './pages/Purchase/PurchaseOrderList/PurchaseOrderList';
 import PurchaseOrderDetail from './pages/Purchase/PurchaseOrderDetail/PurchaseOrderDetail';
-import PpoList from './pages/Purchase/PPO/PpoList';
 import PurchaseReceivingList from './pages/Purchase/PurchaseReceiving/PurchaseReceivingList';
 import ProfitLossStatement from './pages/Accounting/ProfitLossStatement/ProfitLossStatement';
 import JobCardCalendar from './pages/Operations/JobCardCalendar/JobCardCalendar';
@@ -19,6 +18,7 @@ import DeliveryTripList from './pages/Logistics/DeliveryTripList';
 import ShopHome from './pages/Shop/ShopHome';
 import ShopProductDetail from './pages/Shop/ShopProductDetail';
 import Layout from './components/Layout/Layout';
+import ErrorBoundary from './components/Common/ErrorBoundary';
 import './index.css';
 
 function App() {
@@ -35,6 +35,7 @@ function App() {
   const handleLogout = () => {
     setUser(null);
     localStorage.removeItem('current_user');
+    localStorage.removeItem('access_token');
   };
 
   useEffect(() => {
@@ -55,7 +56,8 @@ function App() {
 
   return (
     <BrowserRouter>
-      <Routes>
+      <ErrorBoundary>
+        <Routes>
         {/* Cổng Đặt Hàng Trực Tuyến (Public Web Bán Hàng) */}
         <Route path="/shop" element={<ShopHome />} />
         <Route path="/shop/product/:id" element={<ShopProductDetail />} />
@@ -153,18 +155,6 @@ function App() {
           } 
         />
         <Route 
-          path="/purchase/ppo" 
-          element={
-            user ? (
-              <Layout user={user} onLogout={handleLogout}>
-                <PpoList />
-              </Layout>
-            ) : (
-              <Navigate to="/login" />
-            )
-          } 
-        />
-        <Route 
           path="/purchase/receiving" 
           element={
             user ? (
@@ -251,7 +241,8 @@ function App() {
         {/* Catch-all route: Redirect everything else to Home (which then checks login) */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </BrowserRouter>
+    </ErrorBoundary>
+  </BrowserRouter>
   );
 }
 

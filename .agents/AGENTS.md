@@ -15,7 +15,7 @@ description: >
 4. **Data Isolation:** Mọi query đọc dữ liệu phải filter theo `distributorId` (trừ ADMIN role).
 5. **API qua services:** KHÔNG gọi `fetch()` trực tiếp trong React component. Phải tạo hàm trong `src/services/api.js`.
 6. **CSS riêng:** Mỗi page/component có file CSS riêng. KHÔNG viết style inline dài hoặc CSS global cho component.
-7. **Không dùng TypeScript:** Frontend dùng `.jsx`. Backend dùng `.js`. KHÔNG tạo file `.ts` hay `.tsx`.
+7. **Công nghệ ngôn ngữ:** Frontend dùng `.jsx` (React SPA). Backend dùng `.ts` (TypeScript với NestJS theo kiến trúc phân lớp).
 8. **Không dùng Tailwind:** KHÔNG dùng class Tailwind. Dùng Vanilla CSS thuần.
 
 ## Quy tắc lập trình

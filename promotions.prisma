@@ -1,0 +1,166 @@
+// =========================================================================
+// MODULE KHUYẾN MÃI — dms_npp
+// Thay thế cho model `Promotion` (bản cũ chỉ có discount_percent) và
+// model `PromotionProduct` hiện tại trong schema.prisma của bạn.
+//
+// Cách áp dụng:
+// 1. Xóa model `Promotion` cũ và `PromotionProduct` cũ trong schema.prisma.
+// 2. Dán toàn bộ nội dung dưới đây vào schema.prisma.
+// 3. Thêm các trường/relation đã đánh dấu "// >>> THÊM VÀO" ở cuối file
+//    vào đúng model Product / SalesOrderItem / Invoice đã có sẵn.
+// 4. Chạy: npx prisma migrate dev --name add_promotion_module
+// =========================================================================
+
+enum PromotionType {
+  PERCENTAGE
+  COMBO
+  BUY_N_GET_M
+  INVOICE_DISCOUNT
+}
+
+/// Bảng gốc — mọi khuyến mãi đều có 1 dòng ở đây, bất kể loại nào
+model Promotion {
+  id            BigInt        @id @default(autoincrement())
+  distributorId BigInt        @map("distributor_id")
+  promotionType PromotionType @map("promotion_type")
+  name          String        @db.VarChar(200)
+  description   String?       @db.Text
+  startDate     DateTime      @map("start_date") @db.Date
+  endDate       DateTime      @map("end_date") @db.Date
+  status        Boolean       @default(true)
+  createdAt     DateTime      @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt     DateTime      @updatedAt @map("updated_at") @db.DateTime(3)
+
+  distributor Distributor @relation(fields: [distributorId], references: [id])
+
+  // Quan hệ 1-1 tới đúng 1 trong 4 bảng con, tùy promotionType
+  percentageDiscount PromotionPercentageDiscount?
+  combo              PromotionCombo?
+  buyNGetM           PromotionBuyNGetM?
+  invoiceDiscount    PromotionInvoiceDiscount?
+
+  // Nơi khuyến mãi được "chốt" vào dữ liệu giao dịch thật
+  salesOrderItems SalesOrderItem[]
+  invoices        Invoice[]
+
+  @@index([distributorId, status])
+  @@map("promotions")
+}
+
+/// Loại PERCENTAGE: giảm % trên từng sản phẩm
+model PromotionPercentageDiscount {
+  promotionId         BigInt   @id @map("promotion_id")
+  discountPercent     Decimal  @map("discount_percent") @db.Decimal(5, 2)
+  maxQuantityPerOrder Decimal? @map("max_quantity_per_order") @db.Decimal(14, 2)
+
+  promotion Promotion                    @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  products  PromotionPercentageProduct[]
+
+  @@map("promotion_percentage_discounts")
+}
+
+/// Phạm vi áp dụng của khuyến mãi PERCENTAGE: áp cho những sản phẩm nào
+model PromotionPercentageProduct {
+  promotionId BigInt @map("promotion_id")
+  productId   BigInt @map("product_id")
+
+  percentageDiscount PromotionPercentageDiscount @relation(fields: [promotionId], references: [promotionId], onDelete: Cascade)
+  product            Product                     @relation("PromotionPercentageProduct", fields: [productId], references: [id])
+
+  @@id([promotionId, productId])
+  @@map("promotion_percentage_products")
+}
+
+/// Loại COMBO: bán combo giá cố định
+model PromotionCombo {
+  promotionId BigInt  @id @map("promotion_id")
+  comboPrice  Decimal @map("combo_price") @db.Decimal(14, 2)
+
+  promotion Promotion            @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  items     PromotionComboItem[]
+
+  @@map("promotion_combos")
+}
+
+/// Combo gồm những sản phẩm nào, số lượng bao nhiêu
+model PromotionComboItem {
+  id          BigInt  @id @default(autoincrement())
+  promotionId BigInt  @map("promotion_id")
+  productId   BigInt  @map("product_id")
+  quantity    Decimal @default(1) @db.Decimal(14, 2)
+
+  combo   PromotionCombo @relation(fields: [promotionId], references: [promotionId], onDelete: Cascade)
+  product Product        @relation("PromotionComboItem", fields: [productId], references: [id])
+
+  @@map("promotion_combo_items")
+}
+
+/// Loại BUY_N_GET_M: mua N tặng M
+model PromotionBuyNGetM {
+  promotionId  BigInt @id @map("promotion_id")
+  buyQuantity  Int    @map("buy_quantity")
+  freeQuantity Int    @map("free_quantity")
+
+  promotion Promotion               @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  items     PromotionBuyNGetMItem[]
+
+  @@map("promotion_buy_n_get_m")
+}
+
+/// Mua sản phẩm A (buyProduct) tặng sản phẩm B (freeProduct)
+model PromotionBuyNGetMItem {
+  id            BigInt @id @default(autoincrement())
+  promotionId   BigInt @map("promotion_id")
+  buyProductId  BigInt @map("buy_product_id")
+  freeProductId BigInt @map("free_product_id")
+
+  buyNGetM    PromotionBuyNGetM @relation(fields: [promotionId], references: [promotionId], onDelete: Cascade)
+  buyProduct  Product           @relation("PromotionBuyProduct", fields: [buyProductId], references: [id])
+  freeProduct Product           @relation("PromotionFreeProduct", fields: [freeProductId], references: [id])
+
+  @@map("promotion_buy_n_get_m_items")
+}
+
+/// Loại INVOICE_DISCOUNT: giảm giá trên tổng hóa đơn — không cần bảng phạm vi riêng
+model PromotionInvoiceDiscount {
+  promotionId     BigInt   @id @map("promotion_id")
+  minOrderAmount  Decimal  @map("min_order_amount") @db.Decimal(14, 2)
+  discountPercent Decimal? @map("discount_percent") @db.Decimal(5, 2)
+  discountAmount  Decimal? @map("discount_amount") @db.Decimal(14, 2)
+
+  promotion Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+
+  @@map("promotion_invoice_discounts")
+}
+
+// =========================================================================
+// >>> THÊM VÀO model Product (đã có sẵn trong schema.prisma của bạn):
+//
+//   percentagePromotions  PromotionPercentageProduct[] @relation("PromotionPercentageProduct")
+//   comboItems            PromotionComboItem[]         @relation("PromotionComboItem")
+//   buyPromotionItems     PromotionBuyNGetMItem[]       @relation("PromotionBuyProduct")
+//   freePromotionItems    PromotionBuyNGetMItem[]       @relation("PromotionFreeProduct")
+// =========================================================================
+
+// =========================================================================
+// >>> THÊM VÀO model SalesOrderItem (đã có sẵn), để "chốt" khuyến mãi
+//     vào từng dòng đơn hàng — thay cho cột `is_promotion` boolean đơn thuần:
+//
+//   appliedPromotionId BigInt?  @map("applied_promotion_id")
+//   discountAmount     Decimal  @default(0.00) @map("discount_amount") @db.Decimal(14, 2)
+//
+//   appliedPromotion   Promotion? @relation(fields: [appliedPromotionId], references: [id], onDelete: SetNull)
+//
+//   (giữ nguyên cột is_promotion hiện có nếu bạn chỉ dùng nó để lọc nhanh
+//   "dòng này có khuyến mãi hay không" mà không cần biết khuyến mãi nào)
+// =========================================================================
+
+// =========================================================================
+// >>> THÊM VÀO model Invoice (đã có sẵn), để chốt khuyến mãi loại
+//     INVOICE_DISCOUNT vào hóa đơn:
+//
+//   invoiceDiscountAmount     Decimal    @default(0.00) @map("invoice_discount_amount") @db.Decimal(14, 2)
+//   appliedInvoicePromotionId BigInt?    @map("applied_invoice_promotion_id")
+//
+//   appliedInvoicePromotion  Promotion? @relation(fields: [appliedInvoicePromotionId], references: [id], onDelete: SetNull)
+// =========================================================================

@@ -103,14 +103,6 @@ enum CountType {
   BY_SKU
 }
 
-enum PPOStatus {
-  PROPOSED
-  NPP_CONFIRMED
-  ASM_CONFIRMED
-  PO_CREATED
-  CANCELLED
-}
-
 // [Cải tiến #4] Enum thay thế reference_type VARCHAR tự do
 enum InventoryReferenceType {
   SALES_ORDER
@@ -177,10 +169,8 @@ model Distributor {
   transfersFrom           StockTransfer[] @relation("TransferFromDistributor")
   transfersTo             StockTransfer[] @relation("TransferToDistributor")
   inventoryCounts         InventoryCount[]
-  purchasePlanOrders      PurchasePlanOrder[]
   invoices                Invoice[]
   promotions              Promotion[]
-  ppoSuggestions          PpoSuggestion[]
 
   @@map("distributors")
 }
@@ -208,7 +198,6 @@ model User {
   statusHistories         OrderStatusHistory[]
   purchaseOrdersCreated   PurchaseOrder[]
   poStatusHistories       PurchaseOrderStatusHistory[]
-  ppoReviewed             PpoSuggestion[]              @relation("PpoReviewedBy")
 
   @@map("users")
 }
@@ -252,9 +241,10 @@ model Product {
   purchaseReturnItems       PurchaseReturnItem[]
   stockTransferItems        StockTransferItem[]
   adjustmentItemsNewProduct InventoryAdjustmentItem[] @relation("AdjustmentNewProduct")
-  purchasePlanOrderItems    PurchasePlanOrderItem[]
-  promotions                PromotionProduct[]
-  ppoSuggestions            PpoSuggestion[]
+  percentagePromotions      PromotionPercentageProduct[] @relation("PromotionPercentageProduct")
+  comboItems                PromotionComboItem[]         @relation("PromotionComboItem")
+  buyPromotionItems         PromotionBuyNGetMItem[]       @relation("PromotionBuyProduct")
+  freePromotionItems        PromotionBuyNGetMItem[]       @relation("PromotionFreeProduct")
 
   @@map("products")
 }
@@ -270,7 +260,6 @@ model Supplier {
   purchaseReturns PurchaseReturn[]
   // [Cải tiến #2] relation ngược từ Supplier → PurchaseOrder
   purchaseOrders  PurchaseOrder[]
-  ppoSuggestions  PpoSuggestion[]
   deliveryTrips   DeliveryTrip[]
 
   @@map("suppliers")
@@ -336,7 +325,6 @@ model Warehouse {
   transfersFrom         StockTransfer[] @relation("TransferFromWarehouse")
   transfersTo           StockTransfer[] @relation("TransferToWarehouse")
   inventoryCounts       InventoryCount[]
-  ppoSuggestions        PpoSuggestion[]
 
   latitude              Decimal? @db.Decimal(10, 7)
   longitude             Decimal? @db.Decimal(10, 7)
@@ -404,7 +392,7 @@ model StockBalance {
   updatedAt          DateTime @updatedAt @map("updated_at")
 
   // quantityAvailable = quantityOnHand - quantityReserved (tính trong app)
-  stockLot  StockLot @relation(fields: [lotId], references: [id])
+  stockLot  StockLot @relation(fields: [lotId], references: [id], onDelete: Cascade)
 
   @@map("stock_balances")
 }
@@ -450,9 +438,12 @@ model SalesOrderItem {
   failedQuantity    Decimal?   @default(0) @map("failed_quantity") @db.Decimal(14, 2)
   unitPrice         Decimal    @db.Decimal(14, 2) @map("unit_price")
   isPromotion       Boolean    @default(false) @map("is_promotion")
+  appliedPromotionId BigInt?   @map("applied_promotion_id")
+  discountAmount     Decimal   @default(0.00) @map("discount_amount") @db.Decimal(14, 2)
 
   salesOrder      SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
   product         Product    @relation(fields: [productId], references: [id])
+  appliedPromotion Promotion? @relation(fields: [appliedPromotionId], references: [id], onDelete: SetNull)
   allocations     SalesOrderItemAllocation[]
 
   @@unique([salesOrderId, productId])
@@ -515,7 +506,6 @@ model PurchaseOrder {
   
   items         PurchaseOrderItem[]
   statusHistory PurchaseOrderStatusHistory[]
-  ppoSuggestions PpoSuggestion[]
 
   @@index([distributorId, status])
   @@map("purchase_orders")
@@ -724,36 +714,6 @@ model InventoryCountItem {
   @@map("inventory_count_items")
 }
 
-model PurchasePlanOrder {
-  id              BigInt      @id @default(autoincrement())
-  ppoCode         String      @unique @db.VarChar(30) @map("ppo_code")
-  distributorId   BigInt      @map("distributor_id")
-  status          PPOStatus   @default(PROPOSED)
-  proposedAt      DateTime    @default(now()) @map("proposed_at")
-  nppConfirmedAt  DateTime?   @map("npp_confirmed_at")
-  asmConfirmedAt  DateTime?   @map("asm_confirmed_at")
-  expireAt        DateTime    @map("expire_at")
-
-  distributor     Distributor @relation(fields: [distributorId], references: [id])
-  
-  items           PurchasePlanOrderItem[]
-
-  @@map("purchase_plan_orders")
-}
-
-model PurchasePlanOrderItem {
-  id               BigInt            @id @default(autoincrement())
-  ppoId            BigInt            @map("ppo_id")
-  productId        BigInt            @map("product_id")
-  proposedQuantity Decimal           @db.Decimal(14, 2) @map("proposed_quantity")
-  adjustedQuantity Decimal?          @db.Decimal(14, 2) @map("adjusted_quantity")
-
-  ppo              PurchasePlanOrder @relation(fields: [ppoId], references: [id], onDelete: Cascade)
-  product          Product           @relation(fields: [productId], references: [id])
-
-  @@map("purchase_plan_order_items")
-}
-
 // ============================================================
 // [Cải tiến #3] MODULE HOÁ ĐƠN & THANH TOÁN (Invoice / AR)
 // ============================================================
@@ -771,11 +731,14 @@ model Invoice {
   totalAmount    Decimal       @db.Decimal(14, 2) @map("total_amount")
   paidAmount     Decimal       @default(0) @db.Decimal(14, 2) @map("paid_amount")
   status         InvoiceStatus @default(UNPAID)
+  invoiceDiscountAmount     Decimal    @default(0.00) @map("invoice_discount_amount") @db.Decimal(14, 2)
+  appliedInvoicePromotionId BigInt?    @map("applied_invoice_promotion_id")
   createdAt      DateTime      @default(now()) @map("created_at")
   updatedAt      DateTime      @updatedAt @map("updated_at")
 
   salesOrder     SalesOrder    @relation(fields: [salesOrderId], references: [id])
   distributor    Distributor   @relation(fields: [distributorId], references: [id])
+  appliedInvoicePromotion Promotion? @relation(fields: [appliedInvoicePromotionId], references: [id], onDelete: SetNull)
   payments       Payment[]
 
   @@index([distributorId, status])
@@ -791,7 +754,7 @@ model Payment {
   note          String?       @db.VarChar(255)
   createdAt     DateTime      @default(now()) @map("created_at")
 
-  invoice       Invoice       @relation(fields: [invoiceId], references: [id])
+  invoice       Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   @@map("payments")
 }
@@ -800,81 +763,126 @@ model Payment {
 // [Cải tiến #7] MODULE KHUYẾN MÃI / CHIẾT KHẤU
 // ============================================================
 
+enum PromotionType {
+  PERCENTAGE
+  COMBO
+  BUY_N_GET_M
+  INVOICE_DISCOUNT
+}
+
+/// Bảng gốc — mọi khuyến mãi đều có 1 dòng ở đây, bất kể loại nào
 model Promotion {
-  id              BigInt    @id @default(autoincrement())
-  distributorId   BigInt    @map("distributor_id")
-  name            String    @db.VarChar(200)
-  discountPercent Decimal   @db.Decimal(5, 2) @map("discount_percent")
-  startDate       DateTime  @db.Date @map("start_date")
-  endDate         DateTime  @db.Date @map("end_date")
-  status          Boolean   @default(true)
-  createdAt       DateTime  @default(now()) @map("created_at")
+  id            BigInt        @id @default(autoincrement())
+  distributorId BigInt        @map("distributor_id")
+  promotionType PromotionType @map("promotion_type")
+  name          String        @db.VarChar(200)
+  description   String?       @db.Text
+  startDate     DateTime      @map("start_date") @db.Date
+  endDate       DateTime      @map("end_date") @db.Date
+  status        Boolean       @default(true)
+  createdAt     DateTime      @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt     DateTime      @updatedAt @map("updated_at") @db.DateTime(3)
 
-  distributor     Distributor      @relation(fields: [distributorId], references: [id])
-  products        PromotionProduct[]
+  distributor Distributor @relation(fields: [distributorId], references: [id])
 
+  // Quan hệ 1-1 tới đúng 1 trong 4 bảng con, tùy promotionType
+  percentageDiscount PromotionPercentageDiscount?
+  combo              PromotionCombo?
+  buyNGetM           PromotionBuyNGetM?
+  invoiceDiscount    PromotionInvoiceDiscount?
+
+  // Nơi khuyến mãi được "chốt" vào dữ liệu giao dịch thật
+  salesOrderItems SalesOrderItem[]
+  invoices        Invoice[]
+
+  @@index([distributorId, status])
   @@map("promotions")
 }
 
-model PromotionProduct {
-  promotionId BigInt    @map("promotion_id")
-  productId   BigInt    @map("product_id")
+/// Loại PERCENTAGE: giảm % trên từng sản phẩm
+model PromotionPercentageDiscount {
+  promotionId         BigInt   @id @map("promotion_id")
+  discountPercent     Decimal  @map("discount_percent") @db.Decimal(5, 2)
+  maxQuantityPerOrder Decimal? @map("max_quantity_per_order") @db.Decimal(14, 2)
 
-  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
-  product     Product   @relation(fields: [productId], references: [id])
+  promotion Promotion                    @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  products  PromotionPercentageProduct[]
+
+  @@map("promotion_percentage_discounts")
+}
+
+/// Phạm vi áp dụng của khuyến mãi PERCENTAGE: áp cho những sản phẩm nào
+model PromotionPercentageProduct {
+  promotionId BigInt @map("promotion_id")
+  productId   BigInt @map("product_id")
+
+  percentageDiscount PromotionPercentageDiscount @relation(fields: [promotionId], references: [promotionId], onDelete: Cascade)
+  product            Product                     @relation("PromotionPercentageProduct", fields: [productId], references: [id])
 
   @@id([promotionId, productId])
-  @@map("promotion_products")
+  @@map("promotion_percentage_products")
 }
 
-// ============================================================
-// MODULE PPO — ĐỀ XUẤT ĐẶT HÀNG MUA BẰNG AI (PURCHASE PROPOSAL ORDER)
-// ============================================================
+/// Loại COMBO: bán combo giá cố định
+model PromotionCombo {
+  promotionId BigInt  @id @map("promotion_id")
+  comboPrice  Decimal @map("combo_price") @db.Decimal(14, 2)
 
-enum PpoPriority {
-  HIGH
-  MEDIUM
-  LOW
+  promotion Promotion            @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  items     PromotionComboItem[]
+
+  @@map("promotion_combos")
 }
 
-enum PpoSuggestionStatus {
-  NEW
-  VIEWED
-  APPROVED
-  REJECTED
+/// Combo gồm những sản phẩm nào, số lượng bao nhiêu
+model PromotionComboItem {
+  id          BigInt  @id @default(autoincrement())
+  promotionId BigInt  @map("promotion_id")
+  productId   BigInt  @map("product_id")
+  quantity    Decimal @default(1) @db.Decimal(14, 2)
+
+  combo   PromotionCombo @relation(fields: [promotionId], references: [promotionId], onDelete: Cascade)
+  product Product        @relation("PromotionComboItem", fields: [productId], references: [id])
+
+  @@map("promotion_combo_items")
 }
 
-model PpoSuggestion {
-  id                         BigInt              @id @default(autoincrement())
-  distributorId              BigInt              @map("distributor_id")
-  productId                  BigInt              @map("product_id")
-  supplierId                 BigInt?             @map("supplier_id")
-  warehouseId                BigInt?             @map("warehouse_id")
-  avgDailyDemand             Decimal             @db.Decimal(14, 2) @map("avg_daily_demand")
-  leadTimeDays               Int                 @default(3) @map("lead_time_days")
-  safetyStock                Decimal             @default(0) @db.Decimal(14, 2) @map("safety_stock")
-  reorderPoint               Decimal             @default(0) @db.Decimal(14, 2) @map("reorder_point")
-  quantityAvailableSnapshot  Decimal             @db.Decimal(14, 2) @map("quantity_available_snapshot")
-  suggestedQty               Decimal             @db.Decimal(14, 2) @map("suggested_qty")
-  finalQty                   Decimal?            @db.Decimal(14, 2) @map("final_qty")
-  priority                   PpoPriority         @default(MEDIUM)
-  reason                     String              @db.VarChar(500)
-  status                     PpoSuggestionStatus @default(NEW)
-  rejectedReason             String?             @db.VarChar(255) @map("rejected_reason")
-  purchaseOrderId            BigInt?             @map("purchase_order_id")
-  generatedAt                DateTime            @default(now()) @map("generated_at")
-  reviewedById               BigInt?             @map("reviewed_by_id")
-  reviewedAt                 DateTime?           @map("reviewed_at")
+/// Loại BUY_N_GET_M: mua N tặng M
+model PromotionBuyNGetM {
+  promotionId  BigInt @id @map("promotion_id")
+  buyQuantity  Int    @map("buy_quantity")
+  freeQuantity Int    @map("free_quantity")
 
-  distributor                Distributor         @relation(fields: [distributorId], references: [id])
-  product                    Product             @relation(fields: [productId], references: [id])
-  supplier                   Supplier?           @relation(fields: [supplierId], references: [id])
-  warehouse                  Warehouse?          @relation(fields: [warehouseId], references: [id])
-  purchaseOrder              PurchaseOrder?      @relation(fields: [purchaseOrderId], references: [id])
-  reviewedBy                 User?               @relation("PpoReviewedBy", fields: [reviewedById], references: [id])
+  promotion Promotion               @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  items     PromotionBuyNGetMItem[]
 
-  @@index([distributorId, status])
-  @@index([productId])
-  @@map("ppo_suggestions")
+  @@map("promotion_buy_n_get_m")
 }
+
+/// Mua sản phẩm A (buyProduct) tặng sản phẩm B (freeProduct)
+model PromotionBuyNGetMItem {
+  id            BigInt @id @default(autoincrement())
+  promotionId   BigInt @map("promotion_id")
+  buyProductId  BigInt @map("buy_product_id")
+  freeProductId BigInt @map("free_product_id")
+
+  buyNGetM    PromotionBuyNGetM @relation(fields: [promotionId], references: [promotionId], onDelete: Cascade)
+  buyProduct  Product           @relation("PromotionBuyProduct", fields: [buyProductId], references: [id])
+  freeProduct Product           @relation("PromotionFreeProduct", fields: [freeProductId], references: [id])
+
+  @@map("promotion_buy_n_get_m_items")
+}
+
+/// Loại INVOICE_DISCOUNT: giảm giá trên tổng hóa đơn — không cần bảng phạm vi riêng
+model PromotionInvoiceDiscount {
+  promotionId     BigInt   @id @map("promotion_id")
+  minOrderAmount  Decimal  @map("min_order_amount") @db.Decimal(14, 2)
+  discountPercent Decimal? @map("discount_percent") @db.Decimal(5, 2)
+  discountAmount  Decimal? @map("discount_amount") @db.Decimal(14, 2)
+
+  promotion Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+
+  @@map("promotion_invoice_discounts")
+}
+
 

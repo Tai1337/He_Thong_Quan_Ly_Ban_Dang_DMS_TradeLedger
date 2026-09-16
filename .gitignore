@@ -24,3 +24,5 @@ dist-ssr
 scratch/
 __pycache__/
 *.pyc
+*.backup-*
+src.backup-*

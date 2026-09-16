@@ -2,7 +2,7 @@
  * Script cập nhật ảnh sản phẩm FMCG thực tế cho cơ sở dữ liệu DMS-NPP
  * Hỗ trợ ảnh Thùng Chẵn (imageUrl) và ảnh Gói/Chai Lẻ (retailImageUrl)
  */
-import prisma from '../server/config/prisma.js';
+import prisma from '../src/prisma/prisma.client.js';
 
 // Sử dụng đường dẫn hình ảnh cục bộ (Local Static Assets) đặt tại frontend/public/images/products/
 // Đảm bảo 100% không bao giờ bị lỗi 404, không phụ thuộc vào internet, tốc độ tải 0ms!

@@ -8,8 +8,8 @@ description: >
 
 # DMS-NPP Database Schema Reference
 
-Toàn bộ schema được định nghĩa tại: `prisma/schema.prisma`  
-Database: MySQL, db name: `dms_npp`
+Toàn bộ schema được định nghĩa tại: `backend/prisma/schema.prisma`  
+Database: MySQL, db name: `dms_npp` (Tổng cộng 39 bảng)
 
 ---
 
@@ -183,30 +183,7 @@ Database: MySQL, db name: `dms_npp`
 
 ---
 
-## Nhóm 4: Mua hàng (Purchase) & Đề xuất PPO
-
-### `ppo_suggestions` – Đề xuất mua hàng tự động (ROP Engine & Khung giờ 9h-11h)
-| Cột | Kiểu | Ghi chú |
-|-----|------|---------|
-| id | BigInt PK | Auto increment |
-| distributor_id | BigInt FK | → distributors.id |
-| product_id | BigInt FK | → products.id |
-| supplier_id | BigInt? FK | → suppliers.id |
-| warehouse_id | BigInt? FK | → warehouses.id |
-| avg_daily_demand | Decimal(14,2) | Nhu cầu trung bình ngày |
-| lead_time_days | Int | Thời gian giao hàng (ngày) |
-| safety_stock | Decimal(14,2) | Tồn kho an toàn |
-| reorder_point | Decimal(14,2) | Điểm đặt hàng lại (ROP) |
-| quantity_available_snapshot | Decimal(14,2) | Tồn khả dụng tại thời điểm tính |
-| suggested_qty | Decimal(14,2) | Số lượng đề xuất ban đầu |
-| final_qty | Decimal(14,2)? | Số lượng kế toán duyệt (QUY TẮC: $\le$ suggested_qty) |
-| priority | String | HIGH, MEDIUM, LOW |
-| reason | String? | Lý do đề xuất |
-| status | PPOSuggestionStatus | NEW, VIEWED, APPROVED, REJECTED |
-| purchase_order_id | BigInt? FK | → purchase_orders.id (gắn khi chốt 11:00) |
-| reviewed_by_id | BigInt? FK | → users.id |
-| reviewed_at | DateTime? | |
-| generated_at | DateTime | Mặc định 09:00 hàng ngày |
+## Nhóm 4: Mua hàng (Purchase)
 
 ### `purchase_orders` – Lệnh mua hàng (PO)
 | Cột | Kiểu | Ghi chú |
@@ -250,14 +227,6 @@ Database: MySQL, db name: `dms_npp`
 | product_id | BigInt FK | |
 | quantity | Decimal(14,2) | |
 | confirmed_price | Decimal(14,2)? | |
-
-### `purchase_plan_orders` – Đề nghị đặt hàng cũ (Legacy)
-| Cột | Kiểu | Ghi chú |
-|-----|------|---------|
-| id | BigInt PK | |
-| ppo_code | VarChar(30) UNIQUE | |
-| distributor_id | BigInt FK | |
-| status | PPOStatus | PROPOSED → PO_CREATED |
 
 ---
 
@@ -377,24 +346,30 @@ Database: MySQL, db name: `dms_npp`
 
 ---
 
-## Nhóm 8: Khuyến mãi [CẢI TIẾN]
+## Nhóm 8: Khuyến mãi [Đa Hình 4 Chiến Lược]
 
-### `promotions` – Chương trình khuyến mãi
+Hỗ trợ 4 loại chương trình khuyến mãi theo `promotion_type`: `PERCENTAGE`, `COMBO`, `BUY_N_GET_M`, `INVOICE_DISCOUNT`.
+
+### `promotions` – Bảng khuyến mãi gốc
 | Cột | Kiểu | Ghi chú |
 |-----|------|---------|
 | id | BigInt PK | |
 | distributor_id | BigInt FK | → distributors.id |
+| promotion_type | PromotionType | PERCENTAGE, COMBO, BUY_N_GET_M, INVOICE_DISCOUNT |
 | name | VarChar(200) | Tên chương trình KM |
-| discount_percent | Decimal(5,2) | % chiết khấu |
+| description | Text? | Mô tả chi tiết |
 | start_date / end_date | Date | Thời gian áp dụng |
 | status | Boolean | |
-| created_at | DateTime | |
+| created_at / updated_at | DateTime | |
 
-### `promotion_products` – Sản phẩm trong chương trình KM
-| Cột | Kiểu | Ghi chú |
-|-----|------|---------|
-| promotion_id | BigInt FK PK | → promotions.id |
-| product_id | BigInt FK PK | → products.id |
+### Các bảng chi tiết theo từng loại khuyến mãi:
+- `promotion_percentage_discounts`: Giảm `%` theo dòng sản phẩm (kèm `max_quantity_per_order`).
+- `promotion_percentage_products`: Phạm vi sản phẩm áp dụng giảm `%`.
+- `promotion_combos`: Bán combo với giá cố định `combo_price`.
+- `promotion_combo_items`: Danh sách sản phẩm & số lượng trong combo.
+- `promotion_buy_n_get_m`: Mua N tặng M (`buy_quantity`, `free_quantity`).
+- `promotion_buy_n_get_m_items`: Cặp sản phẩm mua và sản phẩm tặng kèm.
+- `promotion_invoice_discounts`: Giảm giá trên tổng đơn hàng (`min_order_amount`, `discount_percent`, `discount_amount`).
 
 ---
 

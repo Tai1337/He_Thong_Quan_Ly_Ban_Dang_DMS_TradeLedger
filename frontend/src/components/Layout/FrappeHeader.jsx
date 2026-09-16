@@ -9,7 +9,8 @@ import {
   User,
   Shield,
   Layers,
-  ShoppingCart
+  ShoppingCart,
+  Palette
 } from 'lucide-react';
 import './Layout.css';
 
@@ -54,13 +55,7 @@ const FrappeHeader = ({ user, onLogout }) => {
         { label: 'Tiến độ Chuyến hàng D+3', path: '/operations/gantt' }
       ];
     }
-    if (path.startsWith('/purchase/ppo')) {
-      return [
-        { label: 'DMS-NPP TradeLedger', path: '/' },
-        { label: 'Mua hàng', path: '/purchase/purchase-orders' },
-        { label: 'Đề xuất Mua hàng (PPO)', path: '/purchase/ppo' }
-      ];
-    }
+
     if (path.startsWith('/purchase/receiving')) {
       return [
         { label: 'DMS-NPP TradeLedger', path: '/' },
