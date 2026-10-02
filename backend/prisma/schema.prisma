@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
+  url      = env("DATABASE_URL1")
 }
 
 // ENUMS
@@ -195,6 +195,7 @@ model User {
   salesOrdersCreated      SalesOrder[]
   deliveryTrips           DeliveryTrip[]
   adjustmentsCreated      InventoryAdjustment[]
+  inventoryCountsCreated  InventoryCount[]
   statusHistories         OrderStatusHistory[]
   purchaseOrdersCreated   PurchaseOrder[]
   poStatusHistories       PurchaseOrderStatusHistory[]
@@ -689,10 +690,13 @@ model InventoryCount {
   warehouseId   BigInt      @map("warehouse_id")
   countType     CountType   @default(MONTHLY) @map("count_type")
   status        DocStatus   @default(DRAFT)
+  notes         String?     @db.Text
+  createdById   BigInt?     @map("created_by")
   createdAt     DateTime    @default(now()) @map("created_at")
 
   distributor   Distributor @relation(fields: [distributorId], references: [id])
   warehouse     Warehouse   @relation(fields: [warehouseId], references: [id])
+  createdBy     User?       @relation(fields: [createdById], references: [id])
 
   items         InventoryCountItem[]
 
@@ -707,6 +711,7 @@ model InventoryCountItem {
   systemQuantity Decimal        @default(0) @db.Decimal(14, 2) @map("system_quantity")
   actualQuantity Decimal?       @db.Decimal(14, 2) @map("actual_quantity")
   variance       Decimal?       @db.Decimal(14, 2) 
+  reason         String?        @db.VarChar(255)
 
   inventoryCount InventoryCount @relation(fields: [countId], references: [id], onDelete: Cascade)
   stockLot       StockLot       @relation(fields: [lotId], references: [id])

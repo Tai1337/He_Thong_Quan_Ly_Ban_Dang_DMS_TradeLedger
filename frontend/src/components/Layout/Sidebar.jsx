@@ -37,7 +37,7 @@ const salesSubMenu = [
 const inventorySubMenu = [
   { id: 'inv-adj', label: 'Điều chỉnh tồn kho' },
   { id: 'inv-transfer', label: 'Điều chuyển hàng' },
-  { id: 'inv-count', label: 'Kiểm kê' },
+  { id: 'inv-count', label: 'Kiểm kê', path: '/inventory/counts' },
   { id: 'inv-history', label: 'Danh sách giao dịch kho' },
   { id: 'inv-detail', label: 'Tra cứu tồn kho chi tiết' },
   { id: 'rpt083', label: 'RPT083 - Báo cáo tồn kho NPP', path: '/inventory/rpt083' },
