@@ -1,28 +1,17 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import { Inject, Injectable } from '@nestjs/common';
+import { CATALOG_REPOSITORY, ICatalogRepository } from './catalog.repository.interface';
+import { CreateProductDto } from './dto/create-product.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
 
 @Injectable()
 export class CatalogService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    @Inject(CATALOG_REPOSITORY)
+    private readonly catalogRepo: ICatalogRepository,
+  ) {}
 
   async getWarehouses(distributorId?: string) {
-    const where: any = { status: true };
-    if (distributorId) {
-      where.distributorId = BigInt(distributorId);
-    }
-
-    const warehouses = await this.prisma.warehouse.findMany({
-      where,
-      select: {
-        id: true,
-        code: true,
-        name: true,
-        type: true,
-        category: true,
-      },
-      orderBy: { id: 'asc' },
-    });
-
+    const warehouses = await this.catalogRepo.findWarehouses(distributorId);
     return warehouses.map((w) => ({
       id: w.id.toString(),
       code: w.code,
@@ -33,22 +22,7 @@ export class CatalogService {
   }
 
   async getRetailers(distributorId?: string, search?: string) {
-    const where: any = { status: true };
-    if (distributorId) {
-      where.distributorId = BigInt(distributorId);
-    }
-    if (search && search.trim()) {
-      where.OR = [
-        { code: { contains: search.trim() } },
-        { name: { contains: search.trim() } },
-      ];
-    }
-
-    const retailers = await this.prisma.retailer.findMany({
-      where,
-      orderBy: { name: 'asc' },
-    });
-
+    const retailers = await this.catalogRepo.findRetailers(distributorId, search);
     return retailers.map((r) => ({
       id: r.id.toString(),
       code: r.code,
@@ -59,17 +33,7 @@ export class CatalogService {
   }
 
   async getDeliveryTrips(distributorId?: string) {
-    const where: any = {};
-    if (distributorId) {
-      where.distributorId = BigInt(distributorId);
-    }
-
-    const trips = await this.prisma.deliveryTrip.findMany({
-      where,
-      include: { driver: true },
-      orderBy: { createdAt: 'desc' },
-    });
-
+    const trips = await this.catalogRepo.findDeliveryTrips(distributorId);
     return trips.map((t) => ({
       id: t.id.toString(),
       tripCode: t.tripCode,
@@ -80,19 +44,7 @@ export class CatalogService {
   }
 
   async getSalesReps(distributorId?: string) {
-    const salesRole = await this.prisma.role.findUnique({ where: { code: 'SALES' } });
-    if (!salesRole) return [];
-
-    const where: any = { roleId: salesRole.id, status: true };
-    if (distributorId) {
-      where.distributorId = BigInt(distributorId);
-    }
-
-    const users = await this.prisma.user.findMany({
-      where,
-      orderBy: { fullName: 'asc' },
-    });
-
+    const users = await this.catalogRepo.findSalesReps(distributorId);
     return users.map((u) => ({
       id: u.id.toString(),
       username: u.username,
@@ -103,20 +55,7 @@ export class CatalogService {
   }
 
   async getProducts(search?: string) {
-    const where: any = { status: true };
-    if (search && search.trim()) {
-      where.OR = [
-        { sku: { contains: search.trim() } },
-        { name: { contains: search.trim() } },
-      ];
-    }
-
-    const products = await this.prisma.product.findMany({
-      where,
-      orderBy: { name: 'asc' },
-      take: 100,
-    });
-
+    const products = await this.catalogRepo.findProducts(search);
     return products.map((p) => ({
       id: p.id.toString(),
       sku: p.sku,
@@ -130,19 +69,7 @@ export class CatalogService {
   }
 
   async getSuppliers(search?: string) {
-    const where: any = { status: true };
-    if (search && search.trim()) {
-      where.OR = [
-        { code: { contains: search.trim() } },
-        { name: { contains: search.trim() } },
-      ];
-    }
-
-    const suppliers = await this.prisma.supplier.findMany({
-      where,
-      orderBy: { name: 'asc' },
-    });
-
+    const suppliers = await this.catalogRepo.findSuppliers(search);
     return suppliers.map((s) => ({
       id: s.id.toString(),
       code: s.code,
@@ -150,5 +77,23 @@ export class CatalogService {
       address: s.address,
       phone: s.phone,
     }));
+  }
+
+  async createProduct(dto: CreateProductDto) {
+    const product = await this.catalogRepo.createProduct(dto);
+    return {
+      ...product,
+      id: product.id.toString(),
+      basePrice: Number(product.basePrice),
+    };
+  }
+
+  async updateProduct(id: string, dto: UpdateProductDto) {
+    const product = await this.catalogRepo.updateProduct(id, dto);
+    return {
+      ...product,
+      id: product.id.toString(),
+      basePrice: Number(product.basePrice),
+    };
   }
 }

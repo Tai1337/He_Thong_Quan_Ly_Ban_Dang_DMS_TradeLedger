@@ -1,6 +1,8 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Query } from '@nestjs/common';
 import { CatalogService } from './catalog.service';
 import { Public } from '../../common/decorators/public.decorator';
+import { CreateProductDto } from './dto/create-product.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
 
 @Public()
 @Controller(['catalog', 'master'])
@@ -38,5 +40,18 @@ export class CatalogController {
   @Get('suppliers')
   async getSuppliers(@Query('search') search?: string) {
     return this.catalogService.getSuppliers(search);
+  }
+
+  @Post('products')
+  async createProduct(@Body() createProductDto: CreateProductDto) {
+    return this.catalogService.createProduct(createProductDto);
+  }
+
+  @Put('products/:id')
+  async updateProduct(
+    @Param('id') id: string,
+    @Body() updateProductDto: UpdateProductDto,
+  ) {
+    return this.catalogService.updateProduct(id, updateProductDto);
   }
 }
