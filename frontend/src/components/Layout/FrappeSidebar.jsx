@@ -23,7 +23,8 @@ import {
   Pin,
   PinOff,
   Search,
-  Palette
+  Palette,
+  ClipboardCheck
 } from 'lucide-react';
 import './Layout.css';
 
@@ -37,6 +38,7 @@ const modulesData = {
     path: '/',
     subItems: [
       { label: 'Bàn làm việc (Dashboard)', path: '/', icon: Home },
+      { label: 'Kiểm kê kho hàng (KKxxxxxx)', path: '/inventory/counts', icon: ClipboardCheck },
       { label: 'Đơn hàng cần xử lý', path: '/sales/sales-orders', icon: FileText },
       { label: 'Chuyến xe nhập kho đến hạn', path: '/purchase/receiving', icon: Truck },
       { label: 'Báo cáo tài chính nhanh', path: '/reports/profit-and-loss', icon: PieChart },
@@ -75,8 +77,9 @@ const modulesData = {
     icon: Box,
     label: 'Tồn kho',
     desc: 'Inventory & Điều phối kho',
-    path: '/inventory/rpt083',
+    path: '/inventory/counts',
     subItems: [
+      { label: 'Kiểm kê kho hàng (KKxxxxxx)', path: '/inventory/counts', icon: ClipboardCheck },
       { label: 'RPT083 - Báo cáo tồn kho NPP', path: '/inventory/rpt083', icon: BarChart3 },
       { label: 'Kiểm soát phân bổ FEFO', path: '/sales/sales-orders?rpt005=true', icon: SlidersHorizontal },
       { label: 'Lịch nhập xuất kho', path: '/operations/calendar', icon: CalendarIcon },

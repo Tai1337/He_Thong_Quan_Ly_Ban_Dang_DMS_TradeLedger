@@ -674,6 +674,113 @@ export const closeDeliveryTrip = async (tripId, payload) => {
   return data;
 };
 
+// --- KIỂM KÊ KHO (INVENTORY COUNT) ---
+
+export const getInventoryCounts = async (filters = {}) => {
+  const cleanFilters = {};
+  Object.keys(filters).forEach(k => {
+    if (filters[k] !== undefined && filters[k] !== null && filters[k] !== '') {
+      cleanFilters[k] = filters[k];
+    }
+  });
+  const queryParams = new URLSearchParams(cleanFilters).toString();
+  const response = await fetch(`${API_URL}/inventory/counts?${queryParams}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi tải danh sách phiếu kiểm kê');
+  }
+  return data;
+};
+
+export const getInventoryCountById = async (id, distributorId = 1) => {
+  const response = await fetch(`${API_URL}/inventory/counts/${id}?distributorId=${distributorId}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi tải chi tiết phiếu kiểm kê');
+  }
+  return data;
+};
+
+export const createInventoryCount = async (payload, distributorId = 1) => {
+  const response = await fetch(`${API_URL}/inventory/counts?distributorId=${distributorId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi tạo phiếu kiểm kê mới');
+  }
+  return data;
+};
+
+export const updateInventoryCountItems = async (id, payload, distributorId = 1) => {
+  const response = await fetch(`${API_URL}/inventory/counts/${id}/items?distributorId=${distributorId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi lưu kết quả kiểm kê');
+  }
+  return data;
+};
+
+export const submitInventoryCount = async (id, distributorId = 1) => {
+  const response = await fetch(`${API_URL}/inventory/counts/${id}/submit?distributorId=${distributorId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' }
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi gửi duyệt phiếu kiểm kê');
+  }
+  return data;
+};
+
+export const approveInventoryCount = async (id, payload = {}, distributorId = 1) => {
+  const response = await fetch(`${API_URL}/inventory/counts/${id}/approve?distributorId=${distributorId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi phê duyệt & cân kho');
+  }
+  return data;
+};
+
+export const rejectInventoryCount = async (id, reason = '', distributorId = 1) => {
+  const response = await fetch(`${API_URL}/inventory/counts/${id}/reject?distributorId=${distributorId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reason })
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi từ chối duyệt phiếu kiểm kê');
+  }
+  return data;
+};
+
+export const cancelInventoryCount = async (id, distributorId = 1) => {
+  const response = await fetch(`${API_URL}/inventory/counts/${id}/cancel?distributorId=${distributorId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' }
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi hủy phiếu kiểm kê');
+  }
+  return data;
+};
+
+export const exportInventoryCountExcel = (id, distributorId = 1) => {
+  window.open(`${API_URL}/inventory/counts/${id}/export?distributorId=${distributorId}`, '_blank');
+};
+
 
 
 

@@ -16,7 +16,8 @@ import {
   ChevronRight,
   ShieldCheck,
   Calendar,
-  DollarSign
+  DollarSign,
+  ClipboardCheck
 } from 'lucide-react';
 import './Home.css';
 
@@ -233,6 +234,16 @@ const Home = ({ user }) => {
             <div className="action-tile-info">
               <span className="action-name">Báo cáo Doanh số (RPT057)</span>
               <span className="action-desc">Đối soát sản lượng và xuất file Excel</span>
+            </div>
+          </Link>
+
+          <Link to="/inventory/counts" className="action-tile">
+            <div className="action-tile-icon bg-blue">
+              <ClipboardCheck size={20} />
+            </div>
+            <div className="action-tile-info">
+              <span className="action-name">Kiểm kê kho hàng (KKxxxxxx)</span>
+              <span className="action-desc">Mở đợt kiểm kho, giải trình chênh lệch & cân kho</span>
             </div>
           </Link>
         </div>
