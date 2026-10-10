@@ -19,6 +19,7 @@ import ThemeReview from './pages/ThemeReview/ThemeReview';
 import DeliveryTripList from './pages/Logistics/DeliveryTripList';
 import ShopHome from './pages/Shop/ShopHome';
 import ShopProductDetail from './pages/Shop/ShopProductDetail';
+import ProductManagement from './pages/Catalog/ProductManagement/ProductManagement';
 import Layout from './components/Layout/Layout';
 import ErrorBoundary from './components/Common/ErrorBoundary';
 import './index.css';
@@ -74,6 +75,18 @@ function App() {
             user ? (
               <Layout user={user} onLogout={handleLogout}>
                 <Home user={user} />
+              </Layout>
+            ) : (
+              <Navigate to="/login" />
+            )
+          } 
+        />
+        <Route 
+          path="/catalog/products" 
+          element={
+            user ? (
+              <Layout user={user} onLogout={handleLogout}>
+                <ProductManagement />
               </Layout>
             ) : (
               <Navigate to="/login" />

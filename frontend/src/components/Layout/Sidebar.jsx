@@ -45,14 +45,19 @@ const inventorySubMenu = [
   { id: 'oos-track', label: 'Báo cáo OOS tracking' },
 ];
 
+const catalogSubMenu = [
+  { id: 'cat-products', label: 'Quản lý sản phẩm & Mẫu thử [S]', path: '/catalog/products' },
+];
+
 const menuItems = [
   { id: 'home', icon: Home, label: 'Trang chủ', path: '/' },
+  { id: 'catalog', icon: Package, label: 'Quản lý sản phẩm [S]', hasSub: true, subItems: catalogSubMenu },
   { id: 'sales', icon: TrendingUp, label: 'Quản lý bán hàng', hasSub: true, subItems: salesSubMenu },
   { id: 'inventory', icon: Box, label: 'Quản lý tồn kho', hasSub: true, subItems: inventorySubMenu },
 ];
 
 const Sidebar = () => {
-  const [expandedMenus, setExpandedMenus] = useState({ 'sales': true });
+  const [expandedMenus, setExpandedMenus] = useState({ 'catalog': true, 'sales': false });
   const navigate = useNavigate();
   const location = useLocation();
 

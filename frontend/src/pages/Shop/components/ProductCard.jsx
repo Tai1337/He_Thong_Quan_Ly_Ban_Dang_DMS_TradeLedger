@@ -103,7 +103,11 @@ export default function ProductCard({
             </span>
           )}
 
-          {isStore ? (
+          {product.isSample ? (
+            <span style={{ background: '#7c3aed', color: '#ffffff', padding: '3px 7px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+              <Sparkles size={10} /> [S] Hàng Dùng Thử
+            </span>
+          ) : isStore ? (
             <span className="b2b-badge">
               <Sparkles size={11} /> Sỉ -12%
             </span>
@@ -229,22 +233,34 @@ export default function ProductCard({
             </button>
           </div>
 
-          <button
-            type="button"
-            className={`btn-add-to-cart ${isAdding ? 'active-add' : ''}`}
-            onClick={handleAdd}
-            disabled={!product.inStock}
-          >
-            {isAdding ? (
-              <>
-                <Check size={14} /> <span>Đã thêm</span>
-              </>
-            ) : (
-              <>
-                <Plus size={14} /> <span>Chọn mua</span>
-              </>
-            )}
-          </button>
+          {isStore && product.isSample ? (
+            <button
+              type="button"
+              className="btn-add-to-cart"
+              style={{ background: '#f1f5f9', color: '#64748b', borderColor: '#cbd5e1', cursor: 'not-allowed', width: '100%' }}
+              disabled
+              title="Sản phẩm đang trong giai đoạn thử nghiệm thị trường, chưa mở bán sỉ số lượng lớn."
+            >
+              <span>Đang thử nghiệm (Chưa bán sỉ)</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              className={`btn-add-to-cart ${isAdding ? 'active-add' : ''}`}
+              onClick={handleAdd}
+              disabled={!product.inStock}
+            >
+              {isAdding ? (
+                <>
+                  <Check size={14} /> <span>Đã thêm</span>
+                </>
+              ) : (
+                <>
+                  <Plus size={14} /> <span>{product.isSample ? 'Thử mẫu' : 'Chọn mua'}</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
     </div>

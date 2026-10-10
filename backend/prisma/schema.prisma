@@ -235,6 +235,8 @@ model Product {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
+  rejectionReason           String?  @map("rejection_reason") @db.Text
+
   category                  ProductCategory? @relation(fields: [categoryId], references: [id])
   stockLots                 StockLot[]
   salesOrderItems           SalesOrderItem[]
@@ -246,6 +248,7 @@ model Product {
   comboItems                PromotionComboItem[]         @relation("PromotionComboItem")
   buyPromotionItems         PromotionBuyNGetMItem[]       @relation("PromotionBuyProduct")
   freePromotionItems        PromotionBuyNGetMItem[]       @relation("PromotionFreeProduct")
+  sampleAllocations         ProductSampleAllocation[]
 
   @@map("products")
 }
@@ -281,6 +284,7 @@ model Retailer {
   distributor      Distributor       @relation(fields: [distributorId], references: [id])
   salesOrders      SalesOrder[]
   customerAccounts CustomerAccount[]
+  sampleAllocations ProductSampleAllocation[]
 
   @@unique([distributorId, code])
   @@map("retailers")
@@ -889,5 +893,28 @@ model PromotionInvoiceDiscount {
 
   @@map("promotion_invoice_discounts")
 }
+
+/// Bảng theo dõi Phân bổ hàng mẫu [S] & Khảo sát Dùng thử tại Cửa hàng
+model ProductSampleAllocation {
+  id               BigInt    @id @default(autoincrement())
+  productId        BigInt    @map("product_id")
+  retailerId       BigInt    @map("retailer_id")
+  allocatedQty     Int       @default(1) @map("allocated_qty")
+  receivedDate     DateTime? @map("received_date")
+  testedCount      Int       @default(0) @map("tested_count")
+  likedCount       Int       @default(0) @map("liked_count")
+  storePreorderQty Int       @default(0) @map("store_preorder_qty")
+  feedbackNotes    String?   @db.Text @map("feedback_notes")
+  status           String    @default("ALLOCATED") @db.VarChar(30)
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  product          Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  retailer         Retailer  @relation(fields: [retailerId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, retailerId])
+  @@map("product_sample_allocations")
+}
+
 
 
