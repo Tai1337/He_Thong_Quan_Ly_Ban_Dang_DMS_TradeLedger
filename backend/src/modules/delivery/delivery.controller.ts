@@ -76,6 +76,16 @@ export class DeliveryController {
     return { data: orders };
   }
 
+  @Get('drivers/availability')
+  async getDriverAvailability(@Query() query: any) {
+    const { distributorId = 1, date } = query;
+    const drivers = await this.deliveryService.getDriverAvailability(
+      distributorId,
+      date,
+    );
+    return { data: drivers };
+  }
+
   @Get(':id')
   async getDeliveryTripDetail(
     @Param('id') id: string,

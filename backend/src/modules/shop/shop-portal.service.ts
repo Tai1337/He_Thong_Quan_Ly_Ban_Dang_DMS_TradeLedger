@@ -304,6 +304,9 @@ export class ShopPortalService {
         basePrice,
         wholesalePrice,
         activePrice,
+        productType: p.productType || 'COMMERCIAL',
+        isSample: p.productType === 'SAMPLE',
+        isAvailableForStore: p.productType === 'COMMERCIAL',
         availableQty: totalAvailable,
         inStock: totalAvailable > 0,
       };

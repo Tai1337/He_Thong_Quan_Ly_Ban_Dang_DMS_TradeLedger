@@ -578,6 +578,17 @@ export const getDispatchableOrders = async (warehouseId = '', distributorId = 1)
   return data.data || [];
 };
 
+export const getDriverAvailability = async (distributorId = 1, date = '') => {
+  const params = new URLSearchParams({ distributorId });
+  if (date) params.append('date', date);
+  const response = await fetch(`${API_URL}/delivery-trips/drivers/availability?${params.toString()}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || data.message || 'Lỗi khi tải trạng thái tài xế');
+  }
+  return data.data || [];
+};
+
 export const createDeliveryTrip = async (payload) => {
   const response = await fetch(`${API_URL}/delivery-trips`, {
     method: 'POST',
@@ -780,6 +791,115 @@ export const cancelInventoryCount = async (id, distributorId = 1) => {
 export const exportInventoryCountExcel = (id, distributorId = 1) => {
   window.open(`${API_URL}/inventory/counts/${id}/export?distributorId=${distributorId}`, '_blank');
 };
+
+// ==========================================
+// --- ADMIN CATALOG & SAMPLING WORKFLOW ---
+// ==========================================
+
+export const getAdminProducts = async (filters = {}) => {
+  const clean = {};
+  Object.keys(filters).forEach((k) => {
+    if (filters[k] !== undefined && filters[k] !== null && filters[k] !== '') {
+      clean[k] = filters[k];
+    }
+  });
+  const query = new URLSearchParams(clean).toString();
+  const response = await fetch(`${API_URL}/catalog/admin/products?${query}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi tải danh sách sản phẩm');
+  }
+  return data;
+};
+
+export const getCatalogCategories = async () => {
+  const response = await fetch(`${API_URL}/catalog/categories`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi tải danh mục sản phẩm');
+  }
+  return data;
+};
+
+export const getCatalogRetailers = async (distributorId = '1', search = '') => {
+  const params = new URLSearchParams();
+  if (distributorId) params.append('distributorId', distributorId);
+  if (search) params.append('search', search);
+  const response = await fetch(`${API_URL}/catalog/retailers?${params.toString()}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi tải danh sách cửa hàng');
+  }
+  return data;
+};
+
+export const createAdminProduct = async (payload) => {
+  const response = await fetch(`${API_URL}/catalog/admin/products`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+  if (!response.ok || !data.success) {
+    throw new Error(data.error || 'Lỗi khi tạo sản phẩm mới');
+  }
+  return data;
+};
+
+export const allocateSampleToStores = async (productId, allocations) => {
+  const response = await fetch(`${API_URL}/catalog/admin/products/${productId}/sample-allocations`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ allocations }),
+  });
+  const data = await response.json();
+  if (!response.ok || !data.success) {
+    throw new Error(data.error || 'Lỗi khi phân bổ hàng mẫu về cửa hàng');
+  }
+  return data;
+};
+
+export const updateSampleFeedback = async (allocationId, payload) => {
+  const response = await fetch(
+    `${API_URL}/catalog/admin/products/sample-allocations/${allocationId}/feedback`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    },
+  );
+  const data = await response.json();
+  if (!response.ok || !data.success) {
+    throw new Error(data.error || 'Lỗi khi cập nhật phản hồi dùng thử');
+  }
+  return data;
+};
+
+export const approveSampleToCommercial = async (productId) => {
+  const response = await fetch(`${API_URL}/catalog/admin/products/${productId}/approve-commercial`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  const data = await response.json();
+  if (!response.ok || !data.success) {
+    throw new Error(data.error || 'Lỗi khi duyệt mở bán chính thức');
+  }
+  return data;
+};
+
+export const rejectSample = async (productId, reason = '') => {
+  const response = await fetch(`${API_URL}/catalog/admin/products/${productId}/reject-sample`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reason }),
+  });
+  const data = await response.json();
+  if (!response.ok || !data.success) {
+    throw new Error(data.error || 'Lỗi khi từ chối mẫu');
+  }
+  return data;
+};
+
 
 
 
