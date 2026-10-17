@@ -16,9 +16,12 @@ import {
   ChevronRight,
   SlidersHorizontal,
   Send,
-  Lock
+  Lock,
+  User,
+  Users
 } from 'lucide-react';
 import { useDeliveryTrips } from '../../hooks/useDeliveryTrips';
+import { getDriverAvailability } from '../../services/api';
 import CreateTripModal from './CreateTripModal';
 import TripDispatchConsoleModal from './TripDispatchConsoleModal';
 import './DeliveryTripList.css';
@@ -40,6 +43,22 @@ export default function DeliveryTripList() {
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(() => autoCreate && incomingOrderIds.length > 0);
   const [selectedTripId, setSelectedTripId] = useState(null);
+
+  // Trạng thái đội ngũ tài xế
+  const [driverFleet, setDriverFleet] = useState([]);
+  const [loadingFleet, setLoadingFleet] = useState(false);
+
+  useEffect(() => {
+    setLoadingFleet(true);
+    getDriverAvailability(1)
+      .then(data => setDriverFleet(data || []))
+      .catch(console.error)
+      .finally(() => setLoadingFleet(false));
+  }, [trips]);
+
+  const availableDriversCount = driverFleet.filter(d => d.availabilityStatus === 'AVAILABLE').length;
+  const busyDriversCount = driverFleet.filter(d => d.availabilityStatus === 'SHIPPING').length;
+  const waitingDriversCount = driverFleet.filter(d => d.availabilityStatus === 'WAITING_SHIP').length;
 
   // KPI Calculations
   const waitingShipCount = trips.filter(t => t.status === 'WAITING_SHIP' || t.status === 'WAITING_CONFIRM').length;
@@ -126,6 +145,38 @@ export default function DeliveryTripList() {
             <Plus size={16} />
             <span>Khởi Tạo Chuyến Xe</span>
           </button>
+        </div>
+      </div>
+
+      {/* Fleet Driver Availability Strip (UI-UX Pro Max) */}
+      <div className="fleet-availability-strip">
+        <div className="fleet-strip-left">
+          <div className="fleet-strip-icon">
+            <Users size={16} />
+          </div>
+          <div className="fleet-strip-info">
+            <span className="fleet-strip-title">Năng lực đội xe hôm nay:</span>
+            <span className="fleet-strip-desc">
+              Tổng số {driverFleet.length} tài xế đăng ký trong NPP
+            </span>
+          </div>
+        </div>
+
+        <div className="fleet-strip-badges">
+          <div className="fleet-badge-chip available" title="Tài xế sẵn sàng nhận chuyến mới">
+            <span className="dot-pulse green"></span>
+            <strong>{availableDriversCount}</strong> Tài xế rảnh
+          </div>
+
+          <div className="fleet-badge-chip shipping" title="Tài xế đang chở hàng trên đường">
+            <span className="dot-pulse red"></span>
+            <strong>{busyDriversCount}</strong> Đang giao hàng
+          </div>
+
+          <div className="fleet-badge-chip waiting" title="Tài xế đã nhận lịch, chờ bốc xếp">
+            <span className="dot-pulse amber"></span>
+            <strong>{waitingDriversCount}</strong> Chờ xuất bến
+          </div>
         </div>
       </div>
 

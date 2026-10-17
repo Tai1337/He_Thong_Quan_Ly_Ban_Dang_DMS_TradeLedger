@@ -578,6 +578,17 @@ export const getDispatchableOrders = async (warehouseId = '', distributorId = 1)
   return data.data || [];
 };
 
+export const getDriverAvailability = async (distributorId = 1, date = '') => {
+  const params = new URLSearchParams({ distributorId });
+  if (date) params.append('date', date);
+  const response = await fetch(`${API_URL}/delivery-trips/drivers/availability?${params.toString()}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || data.message || 'Lỗi khi tải trạng thái tài xế');
+  }
+  return data.data || [];
+};
+
 export const createDeliveryTrip = async (payload) => {
   const response = await fetch(`${API_URL}/delivery-trips`, {
     method: 'POST',

@@ -299,6 +299,182 @@ export class DeliveryTripService {
   }
 
   /**
+   * Lấy danh sách tài xế kèm trạng thái rảnh/bận, chuyến xe đang chạy và thông số xe/tải trọng
+   */
+  async getDriverAvailability(distributorId: any = 1, queryDate?: string) {
+    const distId = BigInt(distributorId || 1);
+
+    // 1. Tìm role DRIVER
+    const driverRole = await this.prismaService.role.findUnique({
+      where: { code: 'DRIVER' },
+    });
+
+    // 2. Tìm danh sách nhân viên: ưu tiên role DRIVER, nếu chưa có thì lấy tất cả user của NPP
+    let drivers = await this.prismaService.user.findMany({
+      where: {
+        distributorId: distId,
+        status: true,
+        ...(driverRole ? { roleId: driverRole.id } : {}),
+      },
+      select: {
+        id: true,
+        fullName: true,
+        phone: true,
+        username: true,
+      },
+      orderBy: { fullName: 'asc' },
+    });
+
+    if (!drivers || drivers.length === 0) {
+      drivers = await this.prismaService.user.findMany({
+        where: {
+          distributorId: distId,
+          status: true,
+        },
+        select: {
+          id: true,
+          fullName: true,
+          phone: true,
+          username: true,
+        },
+        orderBy: { fullName: 'asc' },
+      });
+    }
+
+    // 3. Lấy tất cả các chuyến xe chưa đóng hoặc đang chạy của NPP
+    const activeTrips = await this.prismaService.deliveryTrip.findMany({
+      where: {
+        distributorId: distId,
+        status: {
+          in: ['WAITING_CONFIRM', 'WAITING_SHIP', 'SHIPPING'] as any,
+        },
+        driverId: { not: null },
+      },
+      include: {
+        salesOrders: {
+          include: {
+            items: {
+              include: {
+                product: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // 4. Lấy chuyến xe gần nhất của mỗi tài xế để biết phương tiện thường dùng
+    const latestTrips = await this.prismaService.deliveryTrip.findMany({
+      where: {
+        distributorId: distId,
+        driverId: { in: drivers.map((d) => d.id) },
+        licensePlate: { not: null },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const defaultVehicleMap = new Map<string, { licensePlate: string; maxWeightKg: number }>();
+    latestTrips.forEach((t) => {
+      if (t.driverId && !defaultVehicleMap.has(t.driverId.toString())) {
+        defaultVehicleMap.set(t.driverId.toString(), {
+          licensePlate: t.licensePlate || '',
+          maxWeightKg: Number(t.maxWeightKg) || 1500,
+        });
+      }
+    });
+
+    // 5. Tính toán trạng thái cho từng tài xế
+    const driverResults = drivers.map((driver) => {
+      const driverIdStr = driver.id.toString();
+
+      const driverActiveTrips = activeTrips.filter(
+        (t) => t.driverId && t.driverId.toString() === driverIdStr,
+      );
+
+      const shippingTrip = driverActiveTrips.find((t) => t.status === 'SHIPPING');
+      const waitingTrip = driverActiveTrips.find(
+        (t) => t.status === 'WAITING_SHIP' || t.status === 'WAITING_CONFIRM',
+      );
+
+      let availabilityStatus: 'AVAILABLE' | 'WAITING_SHIP' | 'SHIPPING' = 'AVAILABLE';
+      let activeTripInfo: any = null;
+
+      if (shippingTrip) {
+        availabilityStatus = 'SHIPPING'; // Đang giao trên đường
+        let totalWeight = 0;
+        (shippingTrip.salesOrders || []).forEach((order: any) => {
+          totalWeight += calculateOrderWeight(order);
+        });
+        activeTripInfo = {
+          id: shippingTrip.id.toString(),
+          tripCode: shippingTrip.tripCode,
+          status: shippingTrip.status,
+          licensePlate: shippingTrip.licensePlate || '',
+          currentWeightKg: Math.round(totalWeight * 10) / 10,
+          maxWeightKg: Number(shippingTrip.maxWeightKg) || 1500,
+          orderCount: shippingTrip.salesOrders?.length || 0,
+          expectedDeliveryDate: shippingTrip.expectedDeliveryDate
+            ? shippingTrip.expectedDeliveryDate.toISOString().slice(0, 10)
+            : null,
+        };
+      } else if (waitingTrip) {
+        availabilityStatus = 'WAITING_SHIP'; // Đã gán xe, chờ xuất bến
+        let totalWeight = 0;
+        (waitingTrip.salesOrders || []).forEach((order: any) => {
+          totalWeight += calculateOrderWeight(order);
+        });
+        activeTripInfo = {
+          id: waitingTrip.id.toString(),
+          tripCode: waitingTrip.tripCode,
+          status: waitingTrip.status,
+          licensePlate: waitingTrip.licensePlate || '',
+          currentWeightKg: Math.round(totalWeight * 10) / 10,
+          maxWeightKg: Number(waitingTrip.maxWeightKg) || 1500,
+          orderCount: waitingTrip.salesOrders?.length || 0,
+          expectedDeliveryDate: waitingTrip.expectedDeliveryDate
+            ? waitingTrip.expectedDeliveryDate.toISOString().slice(0, 10)
+            : null,
+        };
+      }
+
+      const vehicle = defaultVehicleMap.get(driverIdStr) || {
+        licensePlate: '',
+        maxWeightKg: 1500,
+      };
+
+      return {
+        id: driverIdStr,
+        fullName: driver.fullName,
+        username: driver.username,
+        phone: driver.phone || '',
+        availabilityStatus, // 'AVAILABLE' | 'WAITING_SHIP' | 'SHIPPING'
+        isAvailable: availabilityStatus === 'AVAILABLE',
+        activeTrip: activeTripInfo,
+        defaultVehicle: {
+          licensePlate: activeTripInfo?.licensePlate || vehicle.licensePlate,
+          maxWeightKg: activeTripInfo?.maxWeightKg || vehicle.maxWeightKg,
+        },
+      };
+    });
+
+    const statusOrder: Record<string, number> = {
+      AVAILABLE: 1,
+      WAITING_SHIP: 2,
+      SHIPPING: 3,
+    };
+
+    driverResults.sort((a, b) => {
+      const orderA = statusOrder[a.availabilityStatus] || 99;
+      const orderB = statusOrder[b.availabilityStatus] || 99;
+      if (orderA !== orderB) return orderA - orderB;
+      return a.fullName.localeCompare(b.fullName, 'vi');
+    });
+
+    return driverResults;
+  }
+
+  /**
    * 3. Lấy danh sách các đơn hàng ALLOCATED sẵn sàng xếp lên xe
    */
   async getDispatchableOrders(distributorId: string | number | bigint = 1, warehouseId: string | number | bigint = null) {

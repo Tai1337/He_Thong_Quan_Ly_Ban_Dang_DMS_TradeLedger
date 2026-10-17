@@ -21,6 +21,10 @@ export class DeliveryService {
     return this.deliveryTripService.getDispatchableOrders(distributorId, warehouseId);
   }
 
+  async getDriverAvailability(distributorId: any, date?: string) {
+    return this.deliveryTripService.getDriverAvailability(distributorId, date);
+  }
+
   async createDeliveryTrip(params: any) {
     return this.deliveryTripService.createDeliveryTrip(params);
   }
