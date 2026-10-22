@@ -1,12 +1,12 @@
 import { Link } from 'react-router-dom';
-import { 
-  ArrowRight, 
-  User, 
-  ShoppingCart, 
-  PlusCircle, 
-  AlertTriangle, 
-  TrendingUp, 
-  Layers, 
+import {
+  ArrowRight,
+  User,
+  ShoppingCart,
+  PlusCircle,
+  AlertTriangle,
+  TrendingUp,
+  Layers,
   Truck,
   FileText,
   CheckCircle2,
@@ -195,7 +195,7 @@ const Home = ({ user }) => {
           <Layers size={18} color="#0f172a" />
           <span>Lối tắt Thao tác Nhanh (Quick Actions)</span>
         </h3>
-        
+
         <div className="quick-actions-grid">
           <Link to="/sales/sales-orders?create=true" className="action-tile">
             <div className="action-tile-icon bg-blue">
@@ -242,8 +242,18 @@ const Home = ({ user }) => {
               <ClipboardCheck size={20} />
             </div>
             <div className="action-tile-info">
-              <span className="action-name">Kiểm kê kho hàng (KKxxxxxx)</span>
+              <span className="action-name">Kiểm kê kho hàng </span>
               <span className="action-desc">Mở đợt kiểm kho, giải trình chênh lệch & cân kho</span>
+            </div>
+          </Link>
+
+          <Link to="/catalog/products" className="action-tile">
+            <div className="action-tile-icon bg-purple">
+              <Box size={20} />
+            </div>
+            <div className="action-tile-info">
+              <span className="action-name">Quản lý sản phẩm & SKU</span>
+              <span className="action-desc">Thêm mới sản phẩm, cấu hình đơn vị sỉ / lẻ và giá bán</span>
             </div>
           </Link>
         </div>

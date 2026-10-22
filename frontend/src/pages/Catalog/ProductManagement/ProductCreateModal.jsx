@@ -129,7 +129,7 @@ export default function ProductCreateModal({ isOpen, onClose, onCreated, categor
                     />
                     {productType === 'SAMPLE' && (
                       <small style={{ color: '#7c3aed', fontSize: '11px', fontWeight: 600 }}>
-                        * Tự động gán tiền tố S- cho hàng mẫu
+                        * Hàng mẫu - Mã S-
                       </small>
                     )}
                   </div>

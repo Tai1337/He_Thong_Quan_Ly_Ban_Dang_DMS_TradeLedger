@@ -171,7 +171,7 @@ export default function SampleFeedbackModal({ isOpen, onClose, product, onFeedba
 
               <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
                 <span>Tiêu chuẩn tối thiểu duyệt sỉ: <strong>70%</strong></span>
-                <span>{popularityRate >= 70 ? '🎯 Đủ điều kiện duyệt mở bán sỉ' : '⚠️ Cần cải thiện hoặc thêm mẫu thử'}</span>
+                <span>{popularityRate >= 70 ? 'Đủ điều kiện duyệt mở bán sỉ' : 'Cần cải thiện hoặc thêm mẫu thử'}</span>
               </div>
             </div>
 

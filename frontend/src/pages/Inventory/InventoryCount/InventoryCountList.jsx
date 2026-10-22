@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  ClipboardCheck, 
-  Plus, 
-  Search, 
-  Filter, 
-  Calendar, 
-  Warehouse as WarehouseIcon, 
-  AlertCircle, 
-  CheckCircle2, 
-  Clock, 
-  FileText, 
+import {
+  ClipboardCheck,
+  Plus,
+  Search,
+  Filter,
+  Calendar,
+  Warehouse as WarehouseIcon,
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  FileText,
   ArrowRight,
   RotateCcw,
   Layers,
@@ -145,7 +145,7 @@ const InventoryCountList = () => {
         </div>
 
         <div className="header-actions">
-          <button 
+          <button
             className="btn-create-count"
             onClick={() => setShowCreateModal(true)}
           >
@@ -203,7 +203,7 @@ const InventoryCountList = () => {
         <form onSubmit={handleSearchSubmit} className="search-form">
           <div className="search-input-wrapper">
             <Search size={18} className="search-icon" />
-            <input 
+            <input
               type="text"
               placeholder="Tìm theo mã phiếu KKxxxxxx..."
               value={filters.search}
@@ -257,8 +257,8 @@ const InventoryCountList = () => {
             </select>
           </div>
 
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="btn-refresh"
             onClick={fetchCounts}
             title="Tải lại danh sách"
@@ -351,7 +351,7 @@ const InventoryCountList = () => {
                       )}
                     </td>
                     <td>
-                      <span 
+                      <span
                         className="status-badge"
                         style={{ color: cfg.color, backgroundColor: cfg.bg }}
                       >
@@ -359,7 +359,7 @@ const InventoryCountList = () => {
                       </span>
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      <button 
+                      <button
                         className="btn-view-detail"
                         onClick={() => navigate(`/inventory/counts/${c.id}`)}
                       >
@@ -381,14 +381,14 @@ const InventoryCountList = () => {
               Hiển thị {counts.length} / {total} phiếu
             </span>
             <div className="pagination-controls">
-              <button 
+              <button
                 disabled={filters.page <= 1}
                 onClick={() => setFilters({ ...filters, page: filters.page - 1 })}
               >
                 <ChevronLeft size={16} />
               </button>
               <span className="page-current">Trang {filters.page} / {totalPages}</span>
-              <button 
+              <button
                 disabled={filters.page >= totalPages}
                 onClick={() => setFilters({ ...filters, page: filters.page + 1 })}
               >
@@ -408,7 +408,7 @@ const InventoryCountList = () => {
                 <ClipboardCheck size={22} color="#0b3d70" />
                 <h3>Mở Đợt Kiểm Kê Kho Mới</h3>
               </div>
-              <button 
+              <button
                 className="btn-close-modal"
                 onClick={() => setShowCreateModal(false)}
               >
@@ -419,7 +419,7 @@ const InventoryCountList = () => {
             <form onSubmit={handleCreateSubmit} className="modal-body">
               <div className="form-group">
                 <label>Kho hàng cần kiểm kê <span className="required">*</span></label>
-                <select 
+                <select
                   required
                   value={createForm.warehouseId}
                   onChange={(e) => setCreateForm({ ...createForm, warehouseId: e.target.value })}
@@ -438,9 +438,9 @@ const InventoryCountList = () => {
                 <label>Hình thức kiểm kê</label>
                 <div className="count-type-options">
                   <label className={`type-option ${createForm.countType === 'MONTHLY' ? 'active' : ''}`}>
-                    <input 
-                      type="radio" 
-                      name="countType" 
+                    <input
+                      type="radio"
+                      name="countType"
                       value="MONTHLY"
                       checked={createForm.countType === 'MONTHLY'}
                       onChange={() => setCreateForm({ ...createForm, countType: 'MONTHLY' })}
@@ -452,9 +452,9 @@ const InventoryCountList = () => {
                   </label>
 
                   <label className={`type-option ${createForm.countType === 'BY_SKU' ? 'active' : ''}`}>
-                    <input 
-                      type="radio" 
-                      name="countType" 
+                    <input
+                      type="radio"
+                      name="countType"
                       value="BY_SKU"
                       checked={createForm.countType === 'BY_SKU'}
                       onChange={() => setCreateForm({ ...createForm, countType: 'BY_SKU' })}
@@ -469,7 +469,7 @@ const InventoryCountList = () => {
 
               <div className="form-group">
                 <label>Ghi chú kiểm kê</label>
-                <textarea 
+                <textarea
                   rows={3}
                   placeholder="Nhập mục đích hoặc lý do đợt kiểm kho (ví dụ: Kiểm kê cuối tháng 10/2026)..."
                   value={createForm.notes}
@@ -478,20 +478,20 @@ const InventoryCountList = () => {
               </div>
 
               <div className="modal-footer">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="btn-cancel"
                   onClick={() => setShowCreateModal(false)}
                   disabled={creating}
                 >
                   Hủy
                 </button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="btn-submit"
                   disabled={creating}
                 >
-                  {creating ? 'Đang khởi tạo...' : 'Tạo Phiếu Kiểm Kê (Mã KKxxxxxx)'}
+                  {creating ? 'Đang khởi tạo...' : 'Tạo Phiếu Kiểm Kê '}
                 </button>
               </div>
             </form>

@@ -19,6 +19,7 @@ import {
   Check,
   Copy,
   Info,
+  TestTube,
 } from 'lucide-react';
 import {
   getAdminProducts,
@@ -191,8 +192,8 @@ export default function ProductManagement() {
           Thêm Sản Phẩm Mới
         </button>
       </div>
-
-      {/* Interactive Sampling Workflow Stepper Panel */}
+      {/*
+      Interactive Sampling Workflow Stepper Panel
       <div className="workflow-stepper-panel">
         <div className="stepper-header-row">
           <div className="stepper-headline">
@@ -238,7 +239,7 @@ export default function ProductManagement() {
             </div>
           </div>
         </div>
-      </div>
+      </div> */ }
 
       {/* KPI Metrics Dashboard Grid */}
       <div className="mgmt-kpi-grid">
@@ -266,7 +267,7 @@ export default function ProductManagement() {
           aria-label="Xem hàng mẫu đang thử nghiệm"
         >
           <div className="mgmt-kpi-icon icon-purple">
-            <Sparkles size={24} />
+            <TestTube size={24} />
           </div>
           <div className="mgmt-kpi-meta">
             <span className="mgmt-kpi-val">{kpis.totalSampleProducts || 0}</span>
@@ -432,9 +433,8 @@ export default function ProductManagement() {
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <span
-                            className={`sku-badge ${
-                              isSample ? 'sku-sample' : isCommercial ? 'sku-commercial' : 'sku-rejected'
-                            }`}
+                            className={`sku-badge ${isSample ? 'sku-sample' : isCommercial ? 'sku-commercial' : 'sku-rejected'
+                              }`}
                             title="Mã định danh sản phẩm"
                           >
                             {isSample && <Sparkles size={11} />}
@@ -504,13 +504,12 @@ export default function ProductManagement() {
 
                             <div className="metric-bar-wrap">
                               <div
-                                className={`metric-bar-fill ${
-                                  stats.overallPopularityRate >= 70
-                                    ? 'fill-emerald'
-                                    : stats.overallPopularityRate > 0
+                                className={`metric-bar-fill ${stats.overallPopularityRate >= 70
+                                  ? 'fill-emerald'
+                                  : stats.overallPopularityRate > 0
                                     ? 'fill-amber'
                                     : 'fill-slate'
-                                }`}
+                                  }`}
                                 style={{ width: `${Math.min(100, Math.max(6, stats.overallPopularityRate))}%` }}
                               />
                             </div>

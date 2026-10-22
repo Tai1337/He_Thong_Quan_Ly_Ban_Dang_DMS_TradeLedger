@@ -1,18 +1,18 @@
 import { useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
+import {
   Home,
-  TrendingUp, 
-  ShoppingCart, 
-  Box, 
-  BarChart3, 
-  Calendar as CalendarIcon, 
-  GitPullRequest, 
-  Settings, 
-  Building2, 
-  ShieldCheck, 
-  Folder, 
-  Headphones, 
+  TrendingUp,
+  ShoppingCart,
+  Box,
+  BarChart3,
+  Calendar as CalendarIcon,
+  GitPullRequest,
+  Settings,
+  Building2,
+  ShieldCheck,
+  Folder,
+  Headphones,
   PieChart,
   Truck,
   FileText,
@@ -38,7 +38,8 @@ const modulesData = {
     path: '/',
     subItems: [
       { label: 'Bàn làm việc (Dashboard)', path: '/', icon: Home },
-      { label: 'Kiểm kê kho hàng (KKxxxxxx)', path: '/inventory/counts', icon: ClipboardCheck },
+      { label: 'Quản lý sản phẩm & SKU', path: '/catalog/products', icon: Box },
+      { label: 'Kiểm kê kho hàng ', path: '/inventory/counts', icon: ClipboardCheck },
       { label: 'Đơn hàng cần xử lý', path: '/sales/sales-orders', icon: FileText },
       { label: 'Chuyến xe nhập kho đến hạn', path: '/purchase/receiving', icon: Truck },
       { label: 'Báo cáo tài chính nhanh', path: '/reports/profit-and-loss', icon: PieChart },
@@ -75,11 +76,12 @@ const modulesData = {
   stock: {
     id: 'stock',
     icon: Box,
-    label: 'Tồn kho',
-    desc: 'Inventory & Điều phối kho',
-    path: '/inventory/counts',
+    label: 'Tồn kho & Sản phẩm',
+    desc: 'Inventory & Quản lý SKU',
+    path: '/catalog/products',
     subItems: [
-      { label: 'Kiểm kê kho hàng (KKxxxxxx)', path: '/inventory/counts', icon: ClipboardCheck },
+      { label: 'Quản lý sản phẩm & SKU', path: '/catalog/products', icon: Box },
+      { label: 'Kiểm kê kho hàng ', path: '/inventory/counts', icon: ClipboardCheck },
       { label: 'RPT083 - Báo cáo tồn kho NPP', path: '/inventory/rpt083', icon: BarChart3 },
       { label: 'Kiểm soát phân bổ FEFO', path: '/sales/sales-orders?rpt005=true', icon: SlidersHorizontal },
       { label: 'Lịch nhập xuất kho', path: '/operations/calendar', icon: CalendarIcon },
@@ -216,7 +218,7 @@ const FrappeSidebar = () => {
   };
 
   return (
-    <div 
+    <div
       className="frappe-sidebar-root"
       onMouseLeave={handleMouseLeaveSidebar}
     >
@@ -235,14 +237,14 @@ const FrappeSidebar = () => {
             const item = modulesData[key];
             if (!item) return null;
             const Icon = item.icon;
-            const isRouteActive = 
+            const isRouteActive =
               (item.path === '/' && location.pathname === '/') ||
               (item.path !== '/' && item.path !== '#' && location.pathname.startsWith(item.path));
             const isHovered = hoveredModuleId === item.id;
 
             return (
-              <div 
-                key={item.id} 
+              <div
+                key={item.id}
                 className="frappe-nav-item-wrapper"
                 onMouseEnter={() => handleMouseEnterIcon(item.id)}
               >
@@ -262,7 +264,7 @@ const FrappeSidebar = () => {
 
       {/* 2. KHUNG PHÂN HỆ CON (HOVER FLYOUT DRAWER) */}
       {activeModule && (
-        <div 
+        <div
           className="frappe-sub-flyout-drawer"
           onMouseEnter={handleMouseEnterDrawer}
         >
@@ -279,8 +281,8 @@ const FrappeSidebar = () => {
             </div>
 
             {/* Nút Ghim (Pin / Unpin) */}
-            <button 
-              type="button" 
+            <button
+              type="button"
               className={`frappe-pin-btn ${isPinned ? 'pinned' : ''}`}
               onClick={() => setIsPinned(!isPinned)}
               title={isPinned ? 'Bỏ ghim (tự đóng khi rời chuột)' : 'Ghim menu này cố định'}
@@ -292,8 +294,8 @@ const FrappeSidebar = () => {
           {/* Ô tìm kiếm nhanh trong phân hệ */}
           <div className="frappe-flyout-search">
             <Search size={13} className="flyout-search-icon" />
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder={`Tìm trong ${activeModule.label}...`}
               value={subSearch}
               onChange={(e) => setSubSearch(e.target.value)}

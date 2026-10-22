@@ -1,18 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  ClipboardCheck, 
-  ArrowLeft, 
-  Save, 
-  Send, 
-  CheckCircle2, 
-  AlertTriangle, 
-  XCircle, 
-  Download, 
-  Clock, 
-  Calendar, 
-  Warehouse as WarehouseIcon, 
-  User, 
+import {
+  ClipboardCheck,
+  ArrowLeft,
+  Save,
+  Send,
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
+  Download,
+  Clock,
+  Calendar,
+  Warehouse as WarehouseIcon,
+  User,
   AlertCircle,
   FileSpreadsheet,
   RotateCcw,
@@ -25,14 +25,14 @@ import {
   FileText,
   Search
 } from 'lucide-react';
-import { 
-  getInventoryCountById, 
-  updateInventoryCountItems, 
-  submitInventoryCount, 
-  approveInventoryCount, 
-  rejectInventoryCount, 
+import {
+  getInventoryCountById,
+  updateInventoryCountItems,
+  submitInventoryCount,
+  approveInventoryCount,
+  rejectInventoryCount,
   cancelInventoryCount,
-  exportInventoryCountExcel 
+  exportInventoryCountExcel
 } from '../../../services/api';
 import './InventoryCountDetail.css';
 
@@ -428,7 +428,7 @@ const InventoryCountDetail = () => {
           {isDraft && (
             <>
               {/* Nút Lưu số liệu */}
-              <button 
+              <button
                 className="btn-action-save"
                 onClick={() => handleSave(true)}
                 disabled={saving}
@@ -438,7 +438,7 @@ const InventoryCountDetail = () => {
               </button>
 
               {/* Nút Gửi duyệt */}
-              <button 
+              <button
                 className="btn-action-submit"
                 onClick={handleSubmitApproval}
                 disabled={saving}
@@ -448,7 +448,7 @@ const InventoryCountDetail = () => {
               </button>
 
               {/* Nút Hủy phiếu */}
-              <button 
+              <button
                 className="btn-action-cancel-top"
                 onClick={handleCancel}
                 disabled={saving}
@@ -461,7 +461,7 @@ const InventoryCountDetail = () => {
           )}
 
           {isCompleted && (
-            <button 
+            <button
               className="btn-action-excel"
               onClick={() => exportInventoryCountExcel(count.id, 1)}
             >
@@ -483,7 +483,7 @@ const InventoryCountDetail = () => {
           <div className="doc-code-block">
             <span className="doc-prefix">Phiếu kiểm kê:</span>
             <h1 className="doc-code">{count.countCode}</h1>
-            <span 
+            <span
               className="doc-status-badge"
               style={{ color: statusCfg.color, backgroundColor: statusCfg.bg }}
             >
@@ -551,7 +551,7 @@ const InventoryCountDetail = () => {
           </div>
 
           <div className="approval-buttons">
-            <button 
+            <button
               className="btn-action-reject"
               onClick={() => setShowRejectModal(true)}
               disabled={saving}
@@ -560,7 +560,7 @@ const InventoryCountDetail = () => {
               <span>Từ chối duyệt</span>
             </button>
 
-            <button 
+            <button
               className="btn-action-approve"
               onClick={handleApprove}
               disabled={saving}
@@ -579,8 +579,8 @@ const InventoryCountDetail = () => {
           <div className="toolbar-left">
             <div className="search-in-table">
               <Search size={16} color="#94a3b8" />
-              <input 
-                type="text" 
+              <input
+                type="text"
                 placeholder="Tìm mã SKU, tên SP, số lô..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -593,17 +593,16 @@ const InventoryCountDetail = () => {
             {isDraft && (
               <>
                 {/* Nút Điền khớp tồn tự động */}
-                <button 
+                <button
                   className="btn-secondary"
                   onClick={handleAutoFillMatch}
                   title="Điền nhanh tồn hệ thống cho các mặt hàng chưa kiểm"
                 >
-                  <Sparkles size={15} />
-                  <span>Điền khớp tồn tự động</span>
+                  <span> Test nhanh </span>
                 </button>
 
                 {/* Nút Upload lý do chênh lệch đưa xuống toolbar bảng bên cạnh Chỉ xem dòng chênh lệch */}
-                <button 
+                <button
                   className="btn-action-upload"
                   onClick={() => setShowUploadModal(true)}
                   title="Upload file giải trình hoặc áp dụng lý do chênh lệch hàng loạt"
@@ -617,7 +616,7 @@ const InventoryCountDetail = () => {
               </>
             )}
 
-            <button 
+            <button
               className={`btn-filter-pill ${filterVarianceOnly ? 'active' : ''}`}
               onClick={() => setFilterVarianceOnly(!filterVarianceOnly)}
             >
@@ -686,7 +685,7 @@ const InventoryCountDetail = () => {
                         {isReadOnly ? (
                           <span className="readonly-qty">{item.actualQuantity !== '' ? item.actualQuantity : '---'}</span>
                         ) : (
-                          <input 
+                          <input
                             type="number"
                             min="0"
                             step="any"
@@ -713,7 +712,7 @@ const InventoryCountDetail = () => {
                           <span className="readonly-reason">{item.reason || (hasVariance ? 'Chưa có lý do' : 'Khớp')}</span>
                         ) : hasVariance ? (
                           <div className="table-reason-cell">
-                            <input 
+                            <input
                               type="text"
                               className="input-reason-inline"
                               placeholder="Nhập lý do chênh lệch..."
@@ -721,7 +720,7 @@ const InventoryCountDetail = () => {
                               onChange={(e) => handleReasonChange(item.lotId, e.target.value)}
                             />
                             {/* Preset gợi ý nhanh */}
-                            <select 
+                            <select
                               className="select-preset-inline"
                               value=""
                               onChange={(e) => {
@@ -761,7 +760,7 @@ const InventoryCountDetail = () => {
           {isReadOnly ? (
             <p className="readonly-notes">{generalNotes || 'Không có ghi chú'}</p>
           ) : (
-            <textarea 
+            <textarea
               rows={2}
               placeholder="Nhập ghi chú hoặc kiến nghị xử lý chênh lệch..."
               value={generalNotes}
@@ -780,7 +779,7 @@ const InventoryCountDetail = () => {
                 <Upload size={22} color="#0b3d70" />
                 <h3>Upload / Cập Nhật Lý Do Chênh Lệch</h3>
               </div>
-              <button 
+              <button
                 className="btn-close-modal"
                 onClick={() => setShowUploadModal(false)}
               >
@@ -804,15 +803,15 @@ const InventoryCountDetail = () => {
                 <p className="section-subtext">
                   File chứa cột mã SKU hoặc Số Lô và cột Lý do chênh lệch
                 </p>
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  accept=".csv,.txt,.xlsx,.xls" 
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept=".csv,.txt,.xlsx,.xls"
                   style={{ display: 'none' }}
                   onChange={handleFileChange}
                 />
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="btn-select-file"
                   onClick={() => fileInputRef.current?.click()}
                 >
@@ -842,7 +841,7 @@ const InventoryCountDetail = () => {
                   ))}
                 </div>
 
-                <input 
+                <input
                   type="text"
                   className="input-bulk-reason"
                   placeholder="Hoặc tự gõ lý do áp dụng chung cho các dòng lệch..."
@@ -850,8 +849,8 @@ const InventoryCountDetail = () => {
                   onChange={(e) => setBulkReason(e.target.value)}
                 />
 
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="btn-apply-bulk"
                   onClick={handleApplyBulkReason}
                   disabled={!bulkReason}
@@ -862,8 +861,8 @@ const InventoryCountDetail = () => {
             </div>
 
             <div className="modal-footer">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="btn-cancel"
                 onClick={() => setShowUploadModal(false)}
               >
@@ -880,7 +879,7 @@ const InventoryCountDetail = () => {
           <div className="reject-modal-card">
             <h3>Từ Chối Duyệt Phiếu Kiểm Kê</h3>
             <p>Vui lòng nhập lý do từ chối để thủ kho kiểm tra và đếm lại:</p>
-            <textarea 
+            <textarea
               rows={4}
               placeholder="Nhập lý do từ chối (ví dụ: Số lượng lệch quá lớn, kiểm đếm lại lô hàng X)..."
               value={rejectReason}
