@@ -29,12 +29,28 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: any) {
     const user = await this.prisma.user.findUnique({
       where: { id: BigInt(payload.sub) },
-      include: { distributor: true, role: true },
+      include: {
+        distributor: true,
+        role: {
+          include: {
+            rolePermissions: {
+              include: {
+                permission: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!user || !user.status) {
       throw new UnauthorizedException('Tài khoản không tồn tại, đã bị vô hiệu hóa hoặc phiên hết hạn');
     }
+
+    const permissions =
+      user.role?.rolePermissions?.map(
+        (rp) => `${rp.permission.resource}:${rp.permission.action}`,
+      ) || [];
 
     return {
       ...user,
@@ -44,6 +60,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       email: user.username,
       username: user.username,
       roleName: user.role?.name,
+      roleCode: user.role?.code,
+      permissions,
     };
   }
 }

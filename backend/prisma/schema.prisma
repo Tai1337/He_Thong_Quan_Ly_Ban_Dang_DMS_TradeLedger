@@ -136,15 +136,43 @@ enum CustomerAccountType {
 // MODELS
 
 model Role {
-  id         BigInt   @id @default(autoincrement())
-  code       String   @unique @db.VarChar(30)
-  name       String   @db.VarChar(100)
-  createdAt  DateTime @default(now()) @map("created_at")
+  id              BigInt           @id @default(autoincrement())
+  code            String           @unique @db.VarChar(30)
+  name            String           @db.VarChar(100)
+  createdAt       DateTime         @default(now()) @map("created_at")
   
-  users      User[]
+  users           User[]
+  rolePermissions RolePermission[]
 
   @@map("roles")
 }
+
+model Permission {
+  id              BigInt           @id @default(autoincrement())
+  resource        String           @db.VarChar(50)
+  action          String           @db.VarChar(50)
+  name            String           @db.VarChar(100)
+  description     String?          @db.VarChar(255)
+  createdAt       DateTime         @default(now()) @map("created_at")
+
+  rolePermissions RolePermission[]
+
+  @@unique([resource, action])
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           BigInt     @id @default(autoincrement())
+  roleId       BigInt     @map("role_id")
+  permissionId BigInt     @map("permission_id")
+
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
 
 model Distributor {
   id         BigInt   @id @default(autoincrement())

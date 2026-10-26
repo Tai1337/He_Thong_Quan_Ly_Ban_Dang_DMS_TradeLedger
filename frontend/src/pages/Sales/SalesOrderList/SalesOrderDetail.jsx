@@ -36,6 +36,7 @@ import {
   removeSalesOrderItem,
   getProducts
 } from '../../../services/api';
+import { MiniDeliveryMap } from '../../../components/Map/DeliveryMap';
 import './SalesOrderDetail.css';
 
 const formatCurrency = (val) => new Intl.NumberFormat('vi-VN').format(val || 0);
@@ -540,6 +541,16 @@ const SalesOrderDetail = () => {
               <span className="label">Địa chỉ giao:</span>
               <span className="value">{order.retailerAddress}</span>
             </div>
+            {/* Mini-map vị trí cửa hàng */}
+            <div style={{ marginTop: 12 }}>
+              <MiniDeliveryMap
+                lat={order.retailerLatitude}
+                lng={order.retailerLongitude}
+                retailerName={order.retailerName}
+                address={order.retailerAddress}
+                phone={order.retailerPhone}
+              />
+            </div>
           </div>
         </div>
 
@@ -1031,6 +1042,112 @@ const SalesOrderDetail = () => {
           </div>
         </div>
       )}
+
+      {/* ============================================================ */}
+      {/* KHUNG IN PHIẾU BÁN HÀNG CHUẨN A4 (CHỈ HIỂN THỊ KHI IN) */}
+      {/* ============================================================ */}
+      <div className="printable-order-sheet">
+        <div className="print-header">
+          <div className="print-company-info">
+            <h2 className="company-name">HỆ THỐNG PHÂN PHỐI DMS - TRADE LEDGER</h2>
+            <p>Địa chỉ kho: {order.warehouseName || 'Kho chính'}</p>
+            <p>Hotline: 1900-0000 | Email: support@tradeledger.dms</p>
+          </div>
+          <div className="print-order-badge">
+            <h1 className="print-title">PHIẾU BÁN HÀNG & GIAO HÀNG</h1>
+            <p className="print-code">Mã đơn: <strong>{order.orderCode}</strong></p>
+            <p className="print-date">Ngày tạo: {new Date(order.createdAt).toLocaleDateString('vi-VN')} {new Date(order.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</p>
+          </div>
+        </div>
+
+        <div className="print-divider"></div>
+
+        <div className="print-meta-grid">
+          <div className="print-meta-col">
+            <p><strong>Khách hàng / Đại lý:</strong> {order.retailerName} ({order.retailerCode})</p>
+            <p><strong>Người liên hệ:</strong> {order.retailerPhone || 'N/A'}</p>
+            <p><strong>Địa chỉ giao:</strong> {order.retailerAddress || 'Tại kho'}</p>
+          </div>
+          <div className="print-meta-col">
+            <p><strong>Hình thức đơn:</strong> {order.orderType === 'IMMEDIATE' ? 'Giao ngay' : 'Giao sau'}</p>
+            <p><strong>Chuyến xe:</strong> {order.deliveryTrip?.tripCode || 'Chưa gán xe'}</p>
+            <p><strong>Tài xế/NVGH:</strong> {order.deliveryTrip?.driverName || 'N/A'}</p>
+            <p><strong>Trạng thái đơn:</strong> {STATUS_LABELS[order.status] || order.status}</p>
+          </div>
+        </div>
+
+        <table className="print-items-table">
+          <thead>
+            <tr>
+              <th style={{ width: '40px', textAlign: 'center' }}>STT</th>
+              <th style={{ width: '100px' }}>Mã SKU</th>
+              <th>Tên sản phẩm</th>
+              <th style={{ width: '60px', textAlign: 'center' }}>ĐVT</th>
+              <th style={{ width: '80px', textAlign: 'right' }}>Số lượng</th>
+              <th style={{ width: '110px', textAlign: 'right' }}>Đơn giá</th>
+              <th style={{ width: '120px', textAlign: 'right' }}>Thành tiền</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(order.items || []).filter(item => !item.isDeleted && Number(item.quantity) > 0).map((item, idx) => (
+              <tr key={item.id || idx}>
+                <td style={{ textAlign: 'center' }}>{idx + 1}</td>
+                <td><code>{item.productSku}</code></td>
+                <td><strong>{item.productName}</strong></td>
+                <td style={{ textAlign: 'center' }}>{item.unit}</td>
+                <td style={{ textAlign: 'right', fontWeight: 600 }}>{item.quantity}</td>
+                <td style={{ textAlign: 'right' }}>{formatCurrency(item.unitPrice)} đ</td>
+                <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatCurrency(Number(item.quantity) * Number(item.unitPrice))} đ</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colSpan="4" style={{ textAlign: 'right', fontWeight: 700 }}>Tổng số lượng:</td>
+              <td style={{ textAlign: 'right', fontWeight: 700 }}>
+                {(order.items || []).filter(i => !i.isDeleted).reduce((acc, it) => acc + (Number(it.quantity) || 0), 0)}
+              </td>
+              <td style={{ textAlign: 'right', fontWeight: 700 }}>Tổng tiền:</td>
+              <td style={{ textAlign: 'right', fontWeight: 700, fontSize: '14px', color: '#000' }}>
+                {formatCurrency(order.totalAmount)} đ
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+
+        {order.notes && (
+          <div className="print-notes">
+            <strong>Ghi chú đơn hàng:</strong> {order.notes}
+          </div>
+        )}
+
+        <div className="print-signatures">
+          <div className="sig-block">
+            <p className="sig-title">Người lập phiếu</p>
+            <p className="sig-sub">(Ký, ghi rõ họ tên)</p>
+            <div className="sig-space"></div>
+          </div>
+          <div className="sig-block">
+            <p className="sig-title">Thủ kho xuất</p>
+            <p className="sig-sub">(Ký, ghi rõ họ tên)</p>
+            <div className="sig-space"></div>
+          </div>
+          <div className="sig-block">
+            <p className="sig-title">Nhân viên giao nhận</p>
+            <p className="sig-sub">(Ký, ghi rõ họ tên)</p>
+            <div className="sig-space"></div>
+          </div>
+          <div className="sig-block">
+            <p className="sig-title">Người nhận hàng</p>
+            <p className="sig-sub">(Ký, ghi rõ họ tên)</p>
+            <div className="sig-space"></div>
+          </div>
+        </div>
+
+        <div className="print-footer">
+          <p>Chứng từ in tự động từ Hệ thống DMS-TradeLedger - Ngày in: {new Date().toLocaleString('vi-VN')}</p>
+        </div>
+      </div>
     </div>
   );
 };

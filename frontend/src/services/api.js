@@ -650,6 +650,17 @@ export const getTripCargoManifest = async (tripId, distributorId = 1) => {
   return data;
 };
 
+export const getTripMapData = async (tripId, distributorId = 1) => {
+  const response = await fetch(`${API_URL}/delivery-trips/${tripId}/map?distributorId=${distributorId}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi tải dữ liệu bản đồ chuyến xe');
+  }
+  return data;
+};
+
+
+
 export const confirmStopDelivery = async (tripId, payload) => {
   const response = await fetch(`${API_URL}/delivery-trips/${tripId}/confirm-delivery`, {
     method: 'POST',
@@ -899,6 +910,139 @@ export const rejectSample = async (productId, reason = '') => {
   }
   return data;
 };
+
+// --- ROLES & PERMISSIONS RBAC ---
+
+export const getRoles = async () => {
+  const token = localStorage.getItem('access_token');
+  const response = await fetch(`${API_URL}/auth/roles`, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi lấy danh sách vai trò');
+  }
+  return data;
+};
+
+export const getPermissions = async () => {
+  const token = localStorage.getItem('access_token');
+  const response = await fetch(`${API_URL}/auth/permissions`, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi lấy danh mục quyền');
+  }
+  return data;
+};
+
+export const getRolePermissions = async (roleId) => {
+  const token = localStorage.getItem('access_token');
+  const response = await fetch(`${API_URL}/auth/roles/${roleId}/permissions`, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi lấy quyền của vai trò');
+  }
+  return data;
+};
+
+export const updateRolePermissions = async (roleId, permissionIds) => {
+  const token = localStorage.getItem('access_token');
+  const response = await fetch(`${API_URL}/auth/roles/${roleId}/permissions`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+    body: JSON.stringify({ permissionIds }),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi cập nhật quyền vai trò');
+  }
+  return data;
+};
+
+// --- USER MANAGEMENT & PROFILE ---
+
+export const getUsers = async () => {
+  const token = localStorage.getItem('access_token');
+  const response = await fetch(`${API_URL}/auth/users`, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi tải danh sách người dùng');
+  }
+  return data;
+};
+
+export const createUser = async (payload) => {
+  const token = localStorage.getItem('access_token');
+  const response = await fetch(`${API_URL}/auth/users`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi tạo người dùng mới');
+  }
+  return data;
+};
+
+export const toggleUserStatus = async (userId) => {
+  const token = localStorage.getItem('access_token');
+  const response = await fetch(`${API_URL}/auth/users/${userId}/toggle-status`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi thay đổi trạng thái tài khoản');
+  }
+  return data;
+};
+
+export const changePassword = async (oldPassword, newPassword) => {
+  const token = localStorage.getItem('access_token');
+  const response = await fetch(`${API_URL}/auth/change-password`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+    body: JSON.stringify({ oldPassword, newPassword }),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi đổi mật khẩu');
+  }
+  return data;
+};
+
+
 
 
 

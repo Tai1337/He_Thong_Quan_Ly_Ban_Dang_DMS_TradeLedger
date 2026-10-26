@@ -536,3 +536,188 @@
   align-items: center;
   gap: 12px;
 }
+
+/* ============================================================ */
+/* MẪU IN PHIẾU BÁN HÀNG CHUẨN A4 */
+/* ============================================================ */
+
+/* Mặc định trên màn hình: Ẩn khung in */
+.printable-order-sheet {
+  display: none;
+}
+
+/* KHI BẤM IN (WINDOW.PRINT) HOẶC CTRL + P */
+@media print {
+  /* 1. Ẩn toàn bộ header, sidebar, topbar, modal, breadcrumb của ứng dụng web */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Reset toàn bộ margin và padding của trang in */
+  @page {
+    size: A4 portrait;
+    margin: 12mm 15mm 12mm 15mm;
+  }
+
+  /* 2. Chỉ hiển thị duy nhất khung in printable-order-sheet */
+  .printable-order-sheet,
+  .printable-order-sheet * {
+    visibility: visible;
+  }
+
+  .printable-order-sheet {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    color: #000;
+    background: #fff;
+    font-family: 'Times New Roman', Times, serif, 'Inter', sans-serif;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .print-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+
+  .company-name {
+    font-size: 15px;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin: 0 0 4px 0;
+    color: #111;
+  }
+
+  .print-company-info p {
+    margin: 2px 0;
+    font-size: 12px;
+    color: #333;
+  }
+
+  .print-order-badge {
+    text-align: right;
+  }
+
+  .print-title {
+    font-size: 18px;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin: 0 0 6px 0;
+    color: #000;
+  }
+
+  .print-code {
+    font-size: 14px;
+    margin: 2px 0;
+  }
+
+  .print-date {
+    font-size: 12px;
+    color: #444;
+    margin: 2px 0;
+  }
+
+  .print-divider {
+    border-bottom: 2px solid #000;
+    margin: 10px 0 14px 0;
+  }
+
+  .print-meta-grid {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    border: 1px solid #ccc;
+    padding: 10px 14px;
+    border-radius: 4px;
+  }
+
+  .print-meta-col {
+    width: 48%;
+  }
+
+  .print-meta-col p {
+    margin: 3px 0;
+    font-size: 13px;
+  }
+
+  /* Bảng sản phẩm */
+  .print-items-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 14px;
+  }
+
+  .print-items-table th,
+  .print-items-table td {
+    border: 1px solid #000;
+    padding: 6px 8px;
+    font-size: 12.5px;
+  }
+
+  .print-items-table th {
+    background-color: #f2f2f2 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    font-weight: bold;
+  }
+
+  .print-items-table tfoot td {
+    background-color: #f9f9f9 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-notes {
+    border: 1px dashed #666;
+    padding: 8px 12px;
+    font-size: 12px;
+    margin-bottom: 25px;
+    font-style: italic;
+  }
+
+  /* Chữ ký 4 bên */
+  .print-signatures {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 25px;
+    margin-bottom: 40px;
+    text-align: center;
+    page-break-inside: avoid;
+  }
+
+  .sig-block {
+    width: 23%;
+  }
+
+  .sig-title {
+    font-weight: bold;
+    font-size: 13px;
+    margin: 0;
+  }
+
+  .sig-sub {
+    font-size: 11px;
+    font-style: italic;
+    color: #555;
+    margin: 2px 0 0 0;
+  }
+
+  .sig-space {
+    height: 60px;
+  }
+
+  .print-footer {
+    text-align: center;
+    font-size: 11px;
+    color: #666;
+    border-top: 1px solid #ddd;
+    padding-top: 6px;
+    font-style: italic;
+  }
+}
+

@@ -20,6 +20,8 @@ import DeliveryTripList from './pages/Logistics/DeliveryTripList';
 import ShopHome from './pages/Shop/ShopHome';
 import ShopProductDetail from './pages/Shop/ShopProductDetail';
 import ProductManagement from './pages/Catalog/ProductManagement/ProductManagement';
+import RolesPermissions from './pages/Admin/RolesPermissions/RolesPermissions';
+import UserManagement from './pages/Admin/UserManagement/UserManagement';
 import Layout from './components/Layout/Layout';
 import ErrorBoundary from './components/Common/ErrorBoundary';
 import './index.css';
@@ -274,6 +276,30 @@ function App() {
               </Layout>
             ) : (
               <ThemeReview />
+            )
+          } 
+        />
+        <Route 
+          path="/admin/roles-permissions" 
+          element={
+            user ? (
+              <Layout user={user} onLogout={handleLogout}>
+                <RolesPermissions />
+              </Layout>
+            ) : (
+              <Navigate to="/login" />
+            )
+          } 
+        />
+        <Route 
+          path="/admin/users" 
+          element={
+            user ? (
+              <Layout user={user} onLogout={handleLogout}>
+                <UserManagement />
+              </Layout>
+            ) : (
+              <Navigate to="/login" />
             )
           } 
         />

@@ -5,7 +5,7 @@ import './Layout.css';
 const Layout = ({ children, user, onLogout }) => {
   return (
     <div className="frappe-app-shell">
-      <FrappeSidebar />
+      <FrappeSidebar user={user} />
       <div className="frappe-main-wrapper">
         <FrappeHeader user={user} onLogout={onLogout} />
         <main className="frappe-page-viewport">

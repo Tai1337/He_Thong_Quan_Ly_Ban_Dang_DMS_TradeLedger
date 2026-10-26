@@ -244,6 +244,9 @@ export class SalesOrderService {
       retailerName: order.retailer?.name || '',
       retailerPhone: order.retailer?.phone || '',
       retailerAddress: order.retailer?.address || '',
+      retailerLatitude: order.retailer?.latitude ? Number(order.retailer.latitude) : null,
+      retailerLongitude: order.retailer?.longitude ? Number(order.retailer.longitude) : null,
+
       vnbhCode: order.createdBy?.username || '',
       vnbhName: order.createdBy?.fullName || '',
       createdAt: order.createdAt,

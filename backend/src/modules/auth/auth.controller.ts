@@ -2,6 +2,9 @@ import {
   Controller,
   Post,
   Get,
+  Put,
+  Patch,
+  Param,
   Body,
   Req,
   Res,
@@ -112,4 +115,78 @@ export class AuthController {
   async getProfile(@CurrentUser() user: any) {
     return user;
   }
+
+  /**
+   * Lấy danh sách tất cả các vai trò
+   */
+  @Get('roles')
+  async getRoles() {
+    return this.authService.getAllRoles();
+  }
+
+  /**
+   * Lấy toàn bộ danh mục Permission
+   */
+  @Get('permissions')
+  async getPermissions() {
+    return this.authService.getAllPermissions();
+  }
+
+  /**
+   * Lấy danh sách ID quyền của một vai trò
+   */
+  @Get('roles/:id/permissions')
+  async getRolePermissions(@Param('id') roleId: string) {
+    return this.authService.getRolePermissions(roleId);
+  }
+
+  /**
+   * Cập nhật danh sách quyền cho vai trò (Yêu cầu ADMIN)
+   */
+  @Put('roles/:id/permissions')
+  async updateRolePermissions(
+    @Param('id') roleId: string,
+    @Body('permissionIds') permissionIds: string[],
+  ) {
+    return this.authService.updateRolePermissions(roleId, permissionIds);
+  }
+
+  /**
+   * Quản lý người dùng: Lấy danh sách users
+   */
+  @Get('users')
+  async getUsers() {
+    return this.authService.getAllUsers();
+  }
+
+  /**
+   * Quản lý người dùng: Tạo tài khoản mới
+   */
+  @Post('users')
+  async createUser(@Body() body: any) {
+    return this.authService.createUser(body);
+  }
+
+  /**
+   * Quản lý người dùng: Khóa / Kích hoạt
+   */
+  @Patch('users/:id/toggle-status')
+  async toggleUserStatus(@Param('id') userId: string) {
+    return this.authService.toggleUserStatus(userId);
+  }
+
+  /**
+   * Đổi mật khẩu cá nhân
+   */
+  @Post('change-password')
+  async changePassword(
+    @CurrentUser() user: any,
+    @Body('oldPassword') oldPass: string,
+    @Body('newPassword') newPass: string,
+  ) {
+    if (!user?.id) throw new UnauthorizedException('Phiên đăng nhập không hợp lệ');
+    return this.authService.changePassword(user.id, oldPass, newPass);
+  }
 }
+
+

@@ -1,0 +1,328 @@
+.roles-permissions-page {
+  padding: 24px 32px;
+  background-color: var(--bg-primary, #f8fafc);
+  min-height: calc(100vh - 64px);
+  color: var(--text-primary, #1e293b);
+  font-family: inherit;
+}
+
+.rp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.rp-title-group h1 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 6px 0;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.rp-title-group p {
+  margin: 0;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.rp-save-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+  transition: all 0.2s ease;
+}
+
+.rp-save-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+  transform: translateY(-1px);
+}
+
+.rp-save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.rp-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* Sidebar Danh sách Roles */
+.rp-roles-sidebar {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.rp-sidebar-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  margin-bottom: 12px;
+  padding-left: 4px;
+}
+
+.rp-role-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-bottom: 6px;
+  border: 1px solid transparent;
+}
+
+.rp-role-item:hover {
+  background-color: #f1f5f9;
+}
+
+.rp-role-item.active {
+  background-color: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.rp-role-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rp-role-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.rp-role-item.active .rp-role-name {
+  color: #1d4ed8;
+}
+
+.rp-role-code {
+  font-size: 11px;
+  font-family: monospace;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.rp-role-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background-color: #e2e8f0;
+  color: #475569;
+}
+
+.rp-role-item.active .rp-role-badge {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+}
+
+/* Nội dung Ma trận quyền */
+.rp-matrix-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.rp-matrix-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rp-current-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rp-role-tag {
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #bfdbfe;
+}
+
+.rp-role-summary {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.rp-matrix-tools {
+  display: flex;
+  gap: 8px;
+}
+
+.rp-tool-btn {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.rp-tool-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* Groups and Permissions Table */
+.rp-groups-container {
+  padding: 12px 24px 24px;
+}
+
+.rp-resource-group {
+  margin-top: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.rp-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8fafc;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.rp-group-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.rp-group-icon {
+  color: #2563eb;
+}
+
+.rp-select-all-btn {
+  font-size: 12px;
+  color: #2563eb;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.rp-select-all-btn:hover {
+  text-decoration: underline;
+}
+
+.rp-permissions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  padding: 16px;
+  background: #ffffff;
+}
+
+.rp-perm-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.rp-perm-card:hover {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.rp-perm-card.checked {
+  background-color: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.rp-perm-checkbox {
+  margin-top: 3px;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #16a34a;
+}
+
+.rp-perm-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rp-perm-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.rp-perm-desc {
+  font-size: 11px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+/* Alert Notification */
+.rp-alert {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.rp-alert.success {
+  background-color: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.rp-alert.error {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}

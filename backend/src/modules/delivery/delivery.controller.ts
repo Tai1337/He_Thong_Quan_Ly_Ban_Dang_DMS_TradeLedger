@@ -102,6 +102,39 @@ export class DeliveryController {
     return this.deliveryService.getTripCargoManifest(id, distributorId);
   }
 
+  @Get(':id/map')
+  async getTripMapData(
+    @Param('id') id: string,
+    @Query('distributorId') distributorId: any = 1,
+  ) {
+    const manifest = await this.deliveryService.getTripCargoManifest(id, distributorId);
+    if (!manifest) return { stops: [], warehouseName: '' };
+
+    // Trả về dữ liệu gọn cho bản đồ
+    return {
+      tripCode: manifest.tripCode,
+      licensePlate: manifest.licensePlate,
+      driverName: manifest.driverName,
+      warehouseName: manifest.warehouseName,
+      warehouseCoords: manifest.warehouseCoords || null,
+      stops: manifest.retailerStops.map((stop: any) => ({
+        stopNumber: stop.stopNumber,
+        retailerName: stop.retailerName,
+        retailerCode: stop.retailerCode,
+        orderCode: stop.orderCode,
+        status: stop.status,
+        address: stop.address,
+        phone: stop.phone,
+        lat: stop.lat,
+        lng: stop.lng,
+        orderWeightKg: stop.orderWeightKg,
+        totalAmount: stop.totalAmount,
+        deliveryNotes: stop.deliveryNotes,
+      })),
+    };
+  }
+
+
   @Get(':id/return-summary')
   async getTripReturnSummary(
     @Param('id') id: string,
@@ -109,6 +142,7 @@ export class DeliveryController {
   ) {
     return this.deliveryService.getTripReturnSummary(id, distributorId);
   }
+
 
   @Post(':id/dispatch-orders')
   async dispatchOrdersToTrip(@Param('id') tripId: string, @Body() body: any) {

@@ -119,7 +119,7 @@ export class DeliveryTripRepository {
           select: { id: true, fullName: true, phone: true, username: true },
         },
         warehouse: {
-          select: { id: true, code: true, name: true },
+          select: { id: true, code: true, name: true, latitude: true, longitude: true },
         },
         supplier: {
           select: { id: true, code: true, name: true },
@@ -316,7 +316,7 @@ export const findDeliveryTripById = async (tripId: string | number | bigint, dis
         select: { id: true, fullName: true, phone: true, username: true },
       },
       warehouse: {
-        select: { id: true, code: true, name: true },
+        select: { id: true, code: true, name: true, latitude: true, longitude: true },
       },
       supplier: {
         select: { id: true, code: true, name: true },

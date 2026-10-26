@@ -39,7 +39,18 @@ export class AuthService {
           { email: trimmedIdentifier },
         ],
       },
-      include: { distributor: true, role: true },
+      include: {
+        distributor: true,
+        role: {
+          include: {
+            rolePermissions: {
+              include: {
+                permission: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!user) {
@@ -79,6 +90,11 @@ export class AuthService {
       data: { refreshTokenHash: hashedRefreshToken },
     });
 
+    const permissions =
+      user.role?.rolePermissions?.map(
+        (rp) => `${rp.permission.resource}:${rp.permission.action}`,
+      ) || [];
+
     const userToReturn = {
       id: user.id.toString(),
       username: user.username,
@@ -87,7 +103,9 @@ export class AuthService {
       email: user.email || user.username,
       status: user.status,
       roleId: user.roleId.toString(),
+      roleCode: user.role?.code,
       roleName: user.role?.name,
+      permissions,
       distributorId: user.distributorId?.toString() || null,
       distributor: user.distributor
         ? {
@@ -234,4 +252,244 @@ export class AuthService {
 
     return { accessToken, refreshToken };
   }
+
+  /**
+   * Lấy danh sách tất cả vai trò (Roles) trong hệ thống
+   */
+  async getAllRoles() {
+    const roles = await this.prisma.role.findMany({
+      include: {
+        _count: {
+          select: { users: true, rolePermissions: true },
+        },
+      },
+      orderBy: { id: 'asc' },
+    });
+
+    return roles.map((r) => ({
+      id: r.id.toString(),
+      code: r.code,
+      name: r.name,
+      userCount: r._count.users,
+      permissionCount: r._count.rolePermissions,
+    }));
+  }
+
+  /**
+   * Lấy toàn bộ danh mục Permission phân loại theo Resource
+   */
+  async getAllPermissions() {
+    const permissions = await this.prisma.permission.findMany({
+      orderBy: [{ resource: 'asc' }, { id: 'asc' }],
+    });
+
+    return permissions.map((p) => ({
+      id: p.id.toString(),
+      resource: p.resource,
+      action: p.action,
+      name: p.name,
+      description: p.description,
+    }));
+  }
+
+  /**
+   * Lấy danh sách ID quyền được cấp cho một Role cụ thể
+   */
+  async getRolePermissions(roleId: string) {
+    const role = await this.prisma.role.findUnique({
+      where: { id: BigInt(roleId) },
+      include: {
+        rolePermissions: {
+          include: {
+            permission: true,
+          },
+        },
+      },
+    });
+
+    if (!role) {
+      throw new UnauthorizedException('Không tìm thấy vai trò yêu cầu');
+    }
+
+    const permissionIds = role.rolePermissions.map((rp) =>
+      rp.permissionId.toString(),
+    );
+    const permissionKeys = role.rolePermissions.map(
+      (rp) => `${rp.permission.resource}:${rp.permission.action}`,
+    );
+
+    return {
+      roleId: role.id.toString(),
+      roleCode: role.code,
+      roleName: role.name,
+      permissionIds,
+      permissionKeys,
+    };
+  }
+
+  /**
+   * Cập nhật danh sách quyền cho một Role (Admin quản trị)
+   */
+  async updateRolePermissions(roleId: string, permissionIds: string[]) {
+    const parsedRoleId = BigInt(roleId);
+
+    const role = await this.prisma.role.findUnique({
+      where: { id: parsedRoleId },
+    });
+
+    if (!role) {
+      throw new UnauthorizedException('Không tìm thấy vai trò cần cập nhật');
+    }
+
+    // Xóa toàn bộ liên kết quyền cũ của Role
+    await this.prisma.rolePermission.deleteMany({
+      where: { roleId: parsedRoleId },
+    });
+
+    // Tạo các liên kết mới
+    if (permissionIds && permissionIds.length > 0) {
+      const dataToInsert = permissionIds.map((pId) => ({
+        roleId: parsedRoleId,
+        permissionId: BigInt(pId),
+      }));
+
+      await this.prisma.rolePermission.createMany({
+        data: dataToInsert,
+      });
+    }
+
+    return {
+      message: `Đã cập nhật thành công ${permissionIds?.length || 0} quyền cho vai trò ${role.name}`,
+    };
+  }
+
+  /**
+   * Lấy danh sách toàn bộ người dùng (Dành cho Admin)
+   */
+  async getAllUsers() {
+    const users = await this.prisma.user.findMany({
+      include: {
+        role: true,
+        distributor: true,
+      },
+      orderBy: { id: 'asc' },
+    });
+
+    return users.map((u) => ({
+      id: u.id.toString(),
+      username: u.username,
+      fullName: u.fullName,
+      email: u.email,
+      phone: u.phone,
+      status: u.status,
+      roleId: u.roleId.toString(),
+      roleCode: u.role?.code,
+      roleName: u.role?.name,
+      distributorName: u.distributor?.name || 'Hệ thống chung',
+      createdAt: u.createdAt,
+    }));
+  }
+
+  /**
+   * Tạo tài khoản người dùng mới (Dành cho Admin)
+   */
+  async createUser(dto: {
+    username: string;
+    fullName: string;
+    email?: string;
+    phone?: string;
+    password?: string;
+    roleId: string;
+    distributorId?: string;
+  }) {
+    const existing = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: dto.username },
+          ...(dto.email ? [{ email: dto.email }] : []),
+        ],
+      },
+    });
+
+    if (existing) {
+      throw new UnauthorizedException('Tên đăng nhập hoặc Email đã tồn tại');
+    }
+
+    const defaultPass = dto.password || '123456';
+    const passwordHash = await bcrypt.hash(defaultPass, this.saltRounds);
+
+    const user = await this.prisma.user.create({
+      data: {
+        username: dto.username,
+        fullName: dto.fullName,
+        email: dto.email || dto.username,
+        phone: dto.phone,
+        passwordHash,
+        roleId: BigInt(dto.roleId),
+        distributorId: dto.distributorId ? BigInt(dto.distributorId) : 1n,
+        status: true,
+      },
+      include: { role: true },
+    });
+
+    return {
+      id: user.id.toString(),
+      username: user.username,
+      fullName: user.fullName,
+      roleName: user.role?.name,
+      message: 'Tạo tài khoản thành công',
+    };
+  }
+
+  /**
+   * Khóa / Kích hoạt tài khoản
+   */
+  async toggleUserStatus(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: BigInt(userId) },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Không tìm thấy người dùng');
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: user.id },
+      data: { status: !user.status },
+    });
+
+    return {
+      id: updated.id.toString(),
+      status: updated.status,
+      message: `Đã ${updated.status ? 'kích hoạt' : 'khóa'} tài khoản thành công`,
+    };
+  }
+
+  /**
+   * Đổi mật khẩu cá nhân
+   */
+  async changePassword(userId: string, oldPass: string, newPass: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: BigInt(userId) },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Không tìm thấy tài khoản');
+    }
+
+    const isValid = await bcrypt.compare(oldPass, user.passwordHash);
+    if (!isValid) {
+      throw new UnauthorizedException('Mật khẩu hiện tại không chính xác');
+    }
+
+    const newHash = await bcrypt.hash(newPass, this.saltRounds);
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash: newHash },
+    });
+
+    return { message: 'Đổi mật khẩu thành công' };
+  }
 }
+
+

@@ -1,0 +1,416 @@
+/* ==============================
+   DeliveryMap Component Styles
+   ============================== */
+
+/* Fix icon Leaflet bị vỡ khi dùng với Vite/Webpack */
+.leaflet-default-icon-path {
+  display: none;
+}
+
+/* Container bản đồ */
+/* Container bản đồ */
+.delivery-map-wrapper {
+  position: relative;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  border: 1px solid #e2e8f0;
+  z-index: 1;
+  isolation: isolate;
+}
+
+.delivery-map-container {
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+}
+
+/* Đảm bảo toàn bộ các pane của Leaflet không tràn z-index đè lên thanh chức năng/sidebar (sidebar có z-index: 50) */
+.delivery-map-container .leaflet-pane,
+.mini-map-container .leaflet-pane {
+  z-index: 10 !important;
+}
+
+.delivery-map-container .leaflet-top,
+.delivery-map-container .leaflet-bottom,
+.mini-map-container .leaflet-top,
+.mini-map-container .leaflet-bottom {
+  z-index: 20 !important;
+}
+
+/* Leaflet popup tùy chỉnh */
+.leaflet-popup-content-wrapper {
+  border-radius: 10px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+  border: none !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  width: 240px !important;
+}
+
+.leaflet-popup-tip-container {
+  margin-top: -1px;
+}
+
+/* Popup nội dung */
+.map-popup {
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 13px;
+}
+
+.map-popup-header {
+  padding: 10px 14px 8px;
+  background: linear-gradient(135deg, #1e40af, #2563eb);
+  color: #fff;
+}
+
+.map-popup-header.status-delivered {
+  background: linear-gradient(135deg, #065f46, #059669);
+}
+
+.map-popup-header.status-failed {
+  background: linear-gradient(135deg, #991b1b, #dc2626);
+}
+
+.map-popup-header.status-shipping {
+  background: linear-gradient(135deg, #92400e, #d97706);
+}
+
+.map-popup-stop-number {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  text-align: center;
+  line-height: 22px;
+  font-weight: 700;
+  font-size: 12px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.map-popup-retailer-name {
+  font-weight: 700;
+  font-size: 14px;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.map-popup-order-code {
+  font-size: 11.5px;
+  opacity: 0.85;
+}
+
+.map-popup-body {
+  padding: 10px 14px 12px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.map-popup-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 12.5px;
+  color: #374151;
+}
+
+.map-popup-row svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #6b7280;
+}
+
+.map-popup-status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 11.5px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.map-popup-status-badge.delivered {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.map-popup-status-badge.failed {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.map-popup-status-badge.shipping {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.map-popup-status-badge.pending {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+/* Legend */
+.map-legend {
+  position: absolute;
+  bottom: 28px;
+  right: 10px;
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 10px;
+  padding: 10px 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  z-index: 999;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 140px;
+}
+
+.map-legend-title {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 11.5px;
+  margin-bottom: 3px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 4px;
+}
+
+.map-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #374151;
+}
+
+.map-legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 2px solid rgba(0,0,0,0.15);
+}
+
+.map-legend-dot.pending   { background: #2563eb; }
+.map-legend-dot.shipping  { background: #d97706; }
+.map-legend-dot.delivered { background: #16a34a; }
+.map-legend-dot.failed    { background: #dc2626; }
+.map-legend-dot.retailer  { background: #7c3aed; }
+
+/* Toolbar trên map */
+.map-toolbar {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999;
+  display: flex;
+  gap: 6px;
+  background: rgba(255,255,255,0.95);
+  padding: 6px 10px;
+  border-radius: 99px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+  backdrop-filter: blur(4px);
+}
+
+.map-toolbar-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.map-toolbar-btn:hover {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.map-toolbar-btn.active {
+  background: #2563eb;
+  color: #fff;
+}
+
+/* Thanh Widget thống kê tuyến đường thực tế (OSRM Routing) */
+.trip-route-stat-bar {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  right: 14px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 25;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.trip-route-stat-bar .stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.trip-route-stat-bar .stat-label {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.trip-route-stat-bar .stat-value {
+  color: #0f172a;
+  font-weight: 700;
+  font-size: 13.5px;
+}
+
+.btn-open-gmaps {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #2563eb;
+  color: #ffffff !important;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: all 0.15s;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.3);
+}
+
+.btn-open-gmaps:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+/* Mini-map (dùng trong SalesOrderDetail) */
+.mini-map-wrapper {
+  position: relative;
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+  z-index: 1;
+  isolation: isolate;
+}
+
+.mini-map-container {
+  width: 100%;
+  height: 220px;
+}
+
+.mini-map-footer {
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #475569;
+}
+
+.mini-map-footer a {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 11.5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mini-map-footer a:hover {
+  text-decoration: underline;
+}
+
+/* No coordinates placeholder */
+.map-no-coords {
+  width: 100%;
+  height: 220px;
+  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #94a3b8;
+  border-radius: 10px;
+  border: 2px dashed #cbd5e1;
+}
+
+.map-no-coords svg {
+  color: #cbd5e1;
+}
+
+.map-no-coords p {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.map-no-coords small {
+  font-size: 11.5px;
+  color: #b0bec5;
+}
+
+/* Loading overlay */
+.map-loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(2px);
+}
+
+.map-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: mapSpin 0.8s linear infinite;
+}
+
+@keyframes mapSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .delivery-map-container {
+    min-height: 300px;
+  }
+
+  .map-legend {
+    bottom: 20px;
+    right: 5px;
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+}

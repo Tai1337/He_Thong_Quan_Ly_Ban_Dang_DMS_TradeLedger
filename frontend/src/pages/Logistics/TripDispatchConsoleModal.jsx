@@ -18,7 +18,9 @@ import {
   Send,
   CheckCheck,
   Lock,
-  FileText
+  FileText,
+  Map,
+  List
 } from 'lucide-react';
 import { 
   getDeliveryTripDetail, 
@@ -26,8 +28,10 @@ import {
   dispatchOrdersToTrip, 
   removeOrderFromTrip, 
   updateDeliveryTripStatus, 
-  getTripCargoManifest 
+  getTripCargoManifest,
+  getTripMapData
 } from '../../services/api';
+import DeliveryMap from '../../components/Map/DeliveryMap';
 import ConfirmDeliveryModal from './ConfirmDeliveryModal';
 import TripClosingModal from './TripClosingModal';
 import './TripDispatchConsoleModal.css';
@@ -49,6 +53,11 @@ export default function TripDispatchConsoleModal({ tripId, isOpen, onClose, onRe
 
   // State mở modal bàn giao & đóng chuyến xe
   const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
+
+  // Map state
+  const [showMapView, setShowMapView] = useState(false);
+  const [mapData, setMapData] = useState(null);
+  const [mapLoading, setMapLoading] = useState(false);
 
   // Load data for the modal
   const loadTripData = useCallback(async () => {
@@ -502,12 +511,95 @@ export default function TripDispatchConsoleModal({ tripId, isOpen, onClose, onRe
             <div className="manifest-container">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                 <h3 style={{ margin: 0, fontSize: '15px' }}>Lộ Trình Các Điểm Giao Hàng</h3>
-                {trip?.status === 'SHIPPING' && (
-                  <span style={{ fontSize: '12.5px', color: '#2563eb', fontWeight: 600 }}>
-                    Tiến độ: {(trip?.orders || []).filter(o => o.status === 'DELIVERED' || o.status === 'DELIVERY_FAILED').length} / {(trip?.orders || []).length} điểm đã hoàn thành
-                  </span>
-                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  {trip?.status === 'SHIPPING' && (
+                    <span style={{ fontSize: '12.5px', color: '#2563eb', fontWeight: 600 }}>
+                      Tiến độ: {(trip?.orders || []).filter(o => o.status === 'DELIVERED' || o.status === 'DELIVERY_FAILED').length} / {(trip?.orders || []).length} điểm đã hoàn thành
+                    </span>
+                  )}
+                  {/* Toggle Map / List */}
+                  <div style={{ display: 'flex', border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden' }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowMapView(false)}
+                      style={{
+                        padding: '5px 12px',
+                        background: !showMapView ? '#2563eb' : '#fff',
+                        color: !showMapView ? '#fff' : '#374151',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        fontWeight: 600,
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      <List size={14} /> Danh sách
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setShowMapView(true);
+                        if (!mapData) {
+                          setMapLoading(true);
+                          try {
+                            const data = await getTripMapData(tripId, 1);
+                            setMapData(data);
+                          } catch (err) {
+                            // ignore
+                          } finally {
+                            setMapLoading(false);
+                          }
+                        }
+                      }}
+                      style={{
+                        padding: '5px 12px',
+                        background: showMapView ? '#2563eb' : '#fff',
+                        color: showMapView ? '#fff' : '#374151',
+                        border: 'none',
+                        borderLeft: '1px solid #e2e8f0',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        fontWeight: 600,
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      <Map size={14} /> Bản đồ
+                    </button>
+                  </div>
+                </div>
               </div>
+
+              {/* MAP VIEW */}
+              {showMapView && (
+                <div style={{ marginBottom: 16 }}>
+                  {mapLoading ? (
+                    <div style={{ textAlign: 'center', padding: '60px', color: '#94a3b8' }}>
+                      <div style={{ marginBottom: 8 }}>⏳ Đang tải bản đồ...</div>
+                    </div>
+                  ) : mapData && mapData.stops && mapData.stops.length > 0 ? (
+                    <DeliveryMap
+                      stops={mapData.stops}
+                      height="480px"
+                      showRoute={true}
+                      mode="trip"
+                      warehouseName={mapData.warehouseName}
+                      warehouseCoords={mapData.warehouseCoords}
+                    />
+                  ) : (
+                    <div style={{ textAlign: 'center', padding: '60px', color: '#94a3b8', background: '#f8fafc', borderRadius: 10, border: '1px dashed #e2e8f0' }}>
+                      <MapPin size={32} style={{ marginBottom: 8, color: '#cbd5e1' }} />
+                      <div>Các cửa hàng trong chuyến xe này chưa có tọa độ GPS.</div>
+                      <small style={{ fontSize: 12 }}>Cập nhật latitude/longitude trong hồ sơ đại lý để xem bản đồ.</small>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {!manifest?.retailerStops || manifest.retailerStops.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>
