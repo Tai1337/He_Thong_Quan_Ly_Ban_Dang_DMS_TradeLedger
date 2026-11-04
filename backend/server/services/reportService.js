@@ -318,3 +318,169 @@ export const exportReportToExcel = async ({ title, headers, data, fileName }) =>
 
   return await workbook.xlsx.writeBuffer();
 };
+
+export const getProfitLossStatement = async (distributorId, filters = {}) => {
+  const fiscalYear = Number(filters.fiscalYear) || 2026;
+  const startDate = new Date(fiscalYear, 0, 1);
+  const endDate = new Date(fiscalYear, 11, 31, 23, 59, 59, 999);
+
+  const salesOrders = await prisma.salesOrder.findMany({
+    where: {
+      distributorId: BigInt(distributorId),
+      createdAt: {
+        gte: startDate,
+        lte: endDate,
+      },
+      status: { notIn: ['CANCELLED'] },
+    },
+    include: {
+      items: {
+        include: {
+          product: true,
+        },
+      },
+      invoice: true,
+      retailer: true,
+    },
+  });
+
+  const monthlyData = {};
+  for (let m = 0; m < 12; m++) {
+    monthlyData[m] = { income: 0, expense: 0, netProfit: 0 };
+  }
+
+  let totalSalesRevenue = 0;
+  let totalDirectCost = 0;
+  let totalDiscounts = 0;
+  const channelBreakdown = {};
+
+  salesOrders.forEach((so) => {
+    const month = new Date(so.createdAt).getMonth();
+    let orderRevenue = 0;
+    let orderCost = 0;
+
+    if (so.invoice) {
+      orderRevenue = Number(so.invoice.totalAmount);
+      totalDiscounts += Number(so.invoice.invoiceDiscountAmount || 0);
+    } else {
+      so.items?.forEach((it) => {
+        orderRevenue += Number(it.quantity) * Number(it.unitPrice);
+      });
+    }
+
+    so.items?.forEach((it) => {
+      const costPerUnit = Number(it.product?.basePrice || Number(it.unitPrice) * 0.75);
+      orderCost += Number(it.quantity) * costPerUnit;
+    });
+
+    totalSalesRevenue += orderRevenue;
+    totalDirectCost += orderCost;
+
+    if (monthlyData[month]) {
+      monthlyData[month].income += orderRevenue;
+      monthlyData[month].expense += orderCost;
+      monthlyData[month].netProfit = monthlyData[month].income - monthlyData[month].expense;
+    }
+
+    const channel = so.retailer?.channel || 'Tiệm Tạp Hoá';
+    channelBreakdown[channel] = (channelBreakdown[channel] || 0) + orderRevenue;
+  });
+
+  const periodicity = filters.periodicity || 'Theo Quý';
+  let chartData = [];
+
+  if (periodicity === 'Theo Tháng') {
+    chartData = Object.keys(monthlyData).map((mStr) => {
+      const m = Number(mStr);
+      return {
+        period: `Tháng ${m + 1}`,
+        income: monthlyData[m].income,
+        expense: monthlyData[m].expense,
+        netProfit: monthlyData[m].netProfit,
+      };
+    });
+  } else {
+    const quarters = [
+      { label: `Quý 1 (${fiscalYear})`, months: [0, 1, 2] },
+      { label: `Quý 2 (${fiscalYear})`, months: [3, 4, 5] },
+      { label: `Quý 3 (${fiscalYear})`, months: [6, 7, 8] },
+      { label: `Quý 4 (${fiscalYear})`, months: [9, 10, 11] },
+    ];
+    chartData = quarters.map((q) => {
+      const qIncome = q.months.reduce((sum, m) => sum + monthlyData[m].income, 0);
+      const qExpense = q.months.reduce((sum, m) => sum + monthlyData[m].expense, 0);
+      return {
+        period: q.label,
+        income: qIncome,
+        expense: qExpense,
+        netProfit: qIncome - qExpense,
+      };
+    });
+  }
+
+  const netProfit = totalSalesRevenue - totalDirectCost;
+
+  return {
+    equation: {
+      totalIncome: totalSalesRevenue,
+      totalExpense: totalDirectCost,
+      netProfit: netProfit,
+      profitMargin: totalSalesRevenue > 0 ? (netProfit / totalSalesRevenue) * 100 : 0,
+    },
+    chartData,
+    channelBreakdown,
+    totalOrdersCount: salesOrders.length,
+    fiscalYear,
+  };
+};
+
+export const exportProfitLossExcel = async (distributorId, filters = {}) => {
+  const data = await getProfitLossStatement(distributorId, filters);
+
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'DMS TradeLedger';
+  workbook.created = new Date();
+
+  const sheet = workbook.addWorksheet('Báo Cáo Lãi Lỗ P&L', {
+    views: [{ showGridLines: true }],
+  });
+
+  sheet.mergeCells('A1:E1');
+  const titleCell = sheet.getCell('A1');
+  titleCell.value = `BÁO CÁO KẾT QUẢ KINH DOANH P&L - NĂM TÀI CHÍNH ${data.fiscalYear}`;
+  titleCell.font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+  titleCell.fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FF059669' },
+  };
+  titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+  sheet.getRow(1).height = 36;
+
+  sheet.addRow(['CHỈ TIÊU TÀI CHÍNH', 'GIÁ TRỊ (VNĐ)']);
+  sheet.getRow(2).font = { name: 'Arial', size: 10, bold: true };
+
+  sheet.addRow(['1. Tổng Doanh Thu (Total Income)', data.equation.totalIncome]);
+  sheet.addRow(['2. Tổng Giá Vốn & Chi Phí (Total Expense)', data.equation.totalExpense]);
+  sheet.addRow(['3. Lợi Nhuận Thuần (Net Profit)', data.equation.netProfit]);
+  sheet.addRow(['4. Tỷ Suất Lợi Nhuận (Profit Margin)', `${data.equation.profitMargin.toFixed(1)}%`]);
+
+  sheet.addRow([]);
+  sheet.addRow(['KỲ BÁO CÁO', 'DOANH THU (VNĐ)', 'GIÁ VỐN COGS (VNĐ)', 'LỢI NHUẬN THUẦN (VNĐ)']);
+  const headerRow = sheet.getRow(8);
+  headerRow.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+  headerRow.eachCell((cell) => {
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF065F46' } };
+    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+  });
+
+  data.chartData.forEach((item) => {
+    sheet.addRow([item.period, item.income, item.expense, item.netProfit]);
+  });
+
+  sheet.columns.forEach((col) => {
+    col.width = 25;
+  });
+
+  return await workbook.xlsx.writeBuffer();
+};

@@ -12,6 +12,7 @@ import purchaseOrderRoutes from './routes/purchaseOrderRoutes.js';
 import ppoRoutes from './routes/ppoRoutes.js';
 import purchaseReceivingRoutes from './routes/purchaseReceivingRoutes.js';
 import deliveryTripRoutes from './routes/deliveryTripRoutes.js';
+import invoiceRoutes from './routes/invoiceRoutes.js';
 import { setupShopRoutes } from './portal/shopRoutes.js';
 
 const app = express();

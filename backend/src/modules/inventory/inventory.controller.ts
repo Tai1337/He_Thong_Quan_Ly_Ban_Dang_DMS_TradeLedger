@@ -34,4 +34,27 @@ export class InventoryController {
     );
     res.send(buffer);
   }
+
+  @Get('transactions')
+  async getInventoryTransactions(@Query() query: any) {
+    const distributorId = query.distributorId || 1;
+    return this.inventoryService.getTransactionsService(distributorId, query);
+  }
+
+  @Get('transactions/export')
+  async exportInventoryTransactions(@Query() query: any, @Res() res: Response) {
+    const distributorId = query.distributorId || 1;
+    const buffer = await this.inventoryService.exportTransactionsExcelService(distributorId, query);
+
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+    const filename = `NhatKyGiaoDichKho_${dateStr}.xlsx`;
+
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.send(buffer);
+  }
 }

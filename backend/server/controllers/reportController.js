@@ -217,3 +217,28 @@ export const exportSalesOrdersExcel = async (req, res) => {
     res.status(500).json({ error: error.message || 'Lỗi xuất file Excel' });
   }
 };
+
+export const getProfitLoss = async (req, res) => {
+  try {
+    const distributorId = req.query.distributorId || 1;
+    const data = await reportService.getProfitLossStatement(distributorId, req.query);
+    res.status(200).json(data);
+  } catch (error) {
+    console.error('Error in getProfitLoss:', error);
+    res.status(500).json({ error: error.message || 'Lỗi tải báo cáo P&L' });
+  }
+};
+
+export const exportProfitLoss = async (req, res) => {
+  try {
+    const distributorId = req.query.distributorId || 1;
+    const buffer = await reportService.exportProfitLossExcel(distributorId, req.query);
+
+    res.setHeader('Content-Disposition', 'attachment; filename="Bao_Cao_KQKD_PnL.xlsx"');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(buffer);
+  } catch (error) {
+    console.error('Error in exportProfitLoss:', error);
+    res.status(500).json({ error: error.message || 'Lỗi xuất file Excel P&L' });
+  }
+};

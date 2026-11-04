@@ -1,29 +1,19 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  Sparkles, 
-  ShieldCheck, 
-  Truck, 
-  BadgePercent, 
   Search, 
   ShoppingCart, 
   ArrowRight, 
   Check, 
-  Heart, 
-  Filter,
   CheckCircle2,
-  Package,
   ChevronDown,
   Loader2,
-  Flame,
-  Zap,
   TrendingDown,
-  Layers
+  TrendingUp,
+  PackageCheck
 } from 'lucide-react';
 import { getShopProducts, getShopCategories } from '../../services/api';
 import ShopHeader from './components/ShopHeader';
 import HeroBannerSection from './components/HeroBannerSection';
-import QuickShortcutsBar from './components/QuickShortcutsBar';
-import FlashSaleSection from './components/FlashSaleSection';
 import CategoryGridSection from './components/CategoryGridSection';
 import ProductCard from './components/ProductCard';
 import ProductDetailModal from './components/ProductDetailModal';
@@ -72,7 +62,7 @@ export default function ShopHome() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [catalogTab, setCatalogTab] = useState('all'); // 'all' | 'best_seller' | 'price_asc' | 'in_stock'
+  const [catalogTab, setCatalogTab] = useState('all'); // 'all' | 'best_seller' | 'price_asc' | 'price_desc' | 'in_stock'
   const [showWishlistOnly, setShowWishlistOnly] = useState(false);
   const [loading, setLoading] = useState(true);
   const [toastMsg, setToastMsg] = useState('');
@@ -116,7 +106,7 @@ export default function ShopHome() {
       .catch(err => console.error('Lỗi tải danh mục:', err));
   }, []);
 
-  // Load initial products from API (Keyset pagination limit: 16)
+  // Load initial products from API
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
@@ -247,21 +237,6 @@ export default function ShopHome() {
     triggerToast(`Đặt đơn thành công! Mã đơn: ${order.orderCode}`);
   };
 
-  // Shortcut bar click handler
-  const handleSelectShortcut = (shortcutId) => {
-    if (shortcutId === 'flash_deal') {
-      const el = document.getElementById('flash-sale');
-      el?.scrollIntoView({ behavior: 'smooth' });
-    } else if (shortcutId === 'top_seller') {
-      setCatalogTab('best_seller');
-      const el = document.getElementById('main-catalog');
-      el?.scrollIntoView({ behavior: 'smooth' });
-    } else {
-      const el = document.getElementById('main-catalog');
-      el?.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
   // Filtered & Sorted products pipeline
   const displayedProducts = useMemo(() => {
     let list = [...products];
@@ -276,8 +251,9 @@ export default function ShopHome() {
       list = list.filter(p => p.inStock);
     } else if (catalogTab === 'price_asc') {
       list.sort((a, b) => a.activePrice - b.activePrice);
+    } else if (catalogTab === 'price_desc') {
+      list.sort((a, b) => b.activePrice - a.activePrice);
     } else if (catalogTab === 'best_seller') {
-      // Deterministic sort simulating best sellers
       list.sort((a, b) => Number(b.id) - Number(a.id));
     }
 
@@ -296,7 +272,7 @@ export default function ShopHome() {
         </div>
       )}
 
-      {/* 1. Header (Hasaki Green + Shopee Search Bar) */}
+      {/* 1. Header (Clean & Single-bar) */}
       <ShopHeader
         customer={customer}
         cartCount={totalCartCount}
@@ -313,39 +289,16 @@ export default function ShopHome() {
           setSelectedCategory(null);
         }}
         showWishlistOnly={showWishlistOnly}
-        onSelectCategory={(catId) => {
-          setSelectedCategory(catId);
-          setShowWishlistOnly(false);
-          const el = document.getElementById('main-catalog');
-          el?.scrollIntoView({ behavior: 'smooth' });
-        }}
       />
 
-      {/* 2. Hero Banner Slider & Promo Cards (Shopee Layout) */}
+      {/* 2. Compact Welcome Banner */}
       <HeroBannerSection
         onOpenAuth={() => setIsAuthOpen(true)}
         onOpenLookup={() => setIsLookupOpen(true)}
         customer={customer}
       />
 
-      {/* 3. Quick Circular Shortcuts (Shopee & Hasaki Style) */}
-      <QuickShortcutsBar
-        onSelectShortcut={handleSelectShortcut}
-        onOpenLookup={() => setIsLookupOpen(true)}
-        onOpenAuth={() => setIsAuthOpen(true)}
-      />
-
-      {/* 4. Flash Sale Section (Hasaki Style) */}
-      <div id="flash-sale">
-        <FlashSaleSection
-          products={products}
-          onAddToCart={handleAddToCart}
-          onOpenDetail={(p) => setSelectedProductForDetail(p)}
-          customer={customer}
-        />
-      </div>
-
-      {/* 5. 2-Row Category Grid (Shopee Categories Style) */}
+      {/* 3. Sleek Category Pills Bar */}
       <CategoryGridSection
         categories={categories}
         selectedCategory={selectedCategory}
@@ -355,27 +308,26 @@ export default function ShopHome() {
         }}
       />
 
-      {/* 6. Main Catalog Section (Shopee/Hasaki Recommended Grid) */}
+      {/* 4. Main Catalog Section */}
       <main className="shop-main-layout" id="main-catalog">
         <div className="shop-container">
           {/* Section Heading & Filter Tabs */}
           <div className="catalog-header-bar">
             <div className="catalog-title-group">
-              <div className="catalog-section-badge">
-                <Flame size={15} color="#ee4d2d" />
-                <span>GỢI Ý HÔM NAY CHO BẠN</span>
-              </div>
               <h2 className="catalog-title-main">
                 {showWishlistOnly
                   ? 'Sản Phẩm Trong Danh Sách Yêu Thích'
                   : selectedCategory
                     ? `Ngành hàng: ${categories.find(c => c.id === selectedCategory)?.name || ''}`
-                    : 'Tất Cả Sản Phẩm Phân Phối Trực Tiếp'}
+                    : 'Tất Cả Sản Phẩm Phân Phối'}
                 {debouncedSearch && ` — Tìm kiếm "${debouncedSearch}"`}
               </h2>
+              <span className="catalog-count-subtitle">
+                Hiển thị <strong>{displayedProducts.length}</strong> {totalCount ? `trong tổng số ${totalCount} sản phẩm` : 'sản phẩm'}
+              </span>
             </div>
 
-            {/* Shopee-style Filter Tabs */}
+            {/* Clean Filter Tabs */}
             <div className="catalog-tabs-track">
               <button
                 type="button"
@@ -390,8 +342,8 @@ export default function ShopHome() {
                 className={`catalog-tab-btn ${catalogTab === 'best_seller' && !showWishlistOnly ? 'active' : ''}`}
                 onClick={() => { setCatalogTab('best_seller'); setShowWishlistOnly(false); }}
               >
-                <Flame size={13} color="#ea580c" />
-                <span>Bán Chạy Nhất</span>
+                <PackageCheck size={14} />
+                <span>Bán Chạy</span>
               </button>
 
               <button
@@ -399,8 +351,17 @@ export default function ShopHome() {
                 className={`catalog-tab-btn ${catalogTab === 'price_asc' && !showWishlistOnly ? 'active' : ''}`}
                 onClick={() => { setCatalogTab('price_asc'); setShowWishlistOnly(false); }}
               >
-                <TrendingDown size={13} color="#059669" />
-                <span>Giá Sỉ Tốt Nhất</span>
+                <TrendingDown size={14} />
+                <span>Giá Tăng Dần</span>
+              </button>
+
+              <button
+                type="button"
+                className={`catalog-tab-btn ${catalogTab === 'price_desc' && !showWishlistOnly ? 'active' : ''}`}
+                onClick={() => { setCatalogTab('price_desc'); setShowWishlistOnly(false); }}
+              >
+                <TrendingUp size={14} />
+                <span>Giá Giảm Dần</span>
               </button>
 
               <button
@@ -408,7 +369,7 @@ export default function ShopHome() {
                 className={`catalog-tab-btn ${catalogTab === 'in_stock' && !showWishlistOnly ? 'active' : ''}`}
                 onClick={() => { setCatalogTab('in_stock'); setShowWishlistOnly(false); }}
               >
-                <Check size={13} color="#0284c7" />
+                <Check size={14} />
                 <span>Chỉ Hàng Sẵn Kho</span>
               </button>
             </div>
@@ -429,10 +390,10 @@ export default function ShopHome() {
           ) : displayedProducts.length === 0 ? (
             <div className="catalog-empty-state">
               <div className="empty-search-disc">
-                <Search size={36} color="#94a3b8" />
+                <Search size={32} color="#94a3b8" />
               </div>
               <h3>Không tìm thấy sản phẩm phù hợp</h3>
-              <p>Thử điều chỉnh lại từ khoá tìm kiếm hoặc đặt lại các bộ lọc bên trên.</p>
+              <p>Thử điều chỉnh lại từ khoá tìm kiếm hoặc chọn ngành hàng khác.</p>
               <button
                 type="button"
                 className="reset-filter-btn"
@@ -443,7 +404,7 @@ export default function ShopHome() {
                   setCatalogTab('all');
                 }}
               >
-                Đặt lại tất cả bộ lọc
+                Xem tất cả sản phẩm
               </button>
             </div>
           ) : (
@@ -462,24 +423,9 @@ export default function ShopHome() {
                 ))}
               </div>
 
-              {/* Keyset Pagination & Progress Section */}
+              {/* Load more button */}
               {!showWishlistOnly && (
                 <div className="catalog-pagination-section">
-                  <div className="pagination-progress-wrapper">
-                    <div className="pagination-progress-info">
-                      <span>Đang hiển thị <strong>{displayedProducts.length}</strong> / <strong>{totalCount}</strong> sản phẩm</span>
-                      <span className="pagination-percent-badge">
-                        {Math.min(100, Math.round((displayedProducts.length / (totalCount || 1)) * 100))}%
-                      </span>
-                    </div>
-                    <div className="pagination-progress-track">
-                      <div 
-                        className="pagination-progress-fill" 
-                        style={{ width: `${Math.min(100, Math.round((displayedProducts.length / (totalCount || 1)) * 100))}%` }}
-                      />
-                    </div>
-                  </div>
-
                   {hasMore ? (
                     <button
                       type="button"
@@ -489,20 +435,20 @@ export default function ShopHome() {
                     >
                       {loadingMore ? (
                         <>
-                          <Loader2 size={18} className="spin-icon" />
-                          <span>Đang tải thêm sản phẩm...</span>
+                          <Loader2 size={16} className="spin-icon" />
+                          <span>Đang tải thêm...</span>
                         </>
                       ) : (
                         <>
-                          <span>Tải thêm 16 sản phẩm tiếp theo</span>
-                          <ChevronDown size={18} />
+                          <span>Tải thêm sản phẩm</span>
+                          <ChevronDown size={16} />
                         </>
                       )}
                     </button>
                   ) : (
                     <div className="pagination-end-tag">
-                      <CheckCircle2 size={16} color="#059669" />
-                      <span>Bạn đã xem toàn bộ <strong>{totalCount}</strong> sản phẩm trong danh mục</span>
+                      <CheckCircle2 size={15} color="#059669" />
+                      <span>Đã hiển thị toàn bộ <strong>{totalCount}</strong> sản phẩm</span>
                     </div>
                   )}
                 </div>
@@ -512,10 +458,10 @@ export default function ShopHome() {
         </div>
       </main>
 
-      {/* 7. Comprehensive E-Commerce Footer */}
+      {/* 5. Clean B2B Footer */}
       <ShopFooter />
 
-      {/* Floating Cart Button for quick access on mobile */}
+      {/* Floating Cart Pill (for Mobile or Quick Action) */}
       {totalCartCount > 0 && (
         <button
           type="button"

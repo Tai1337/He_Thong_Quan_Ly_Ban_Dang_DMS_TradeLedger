@@ -33,5 +33,13 @@ export class ReportService {
       limit: 5000,
     });
   }
+
+  async getProfitLossStatement(distributorId: any, query: any) {
+    return this.reportDataService.getProfitLossStatement(distributorId, query);
+  }
+
+  async exportProfitLossExcel(distributorId: any, query: any) {
+    return this.reportDataService.exportProfitLossExcel(distributorId, query);
+  }
 }
 

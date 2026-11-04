@@ -187,4 +187,23 @@ export class ReportController {
 
     return res.status(200).json({ data });
   }
+
+  @Get('profit-and-loss')
+  async getProfitLoss(@Query() query: any) {
+    const distributorId = query.distributorId || 1;
+    return this.reportService.getProfitLossStatement(distributorId, query);
+  }
+
+  @Get('profit-and-loss/export')
+  async exportProfitLoss(@Query() query: any, @Res() res: Response) {
+    const distributorId = query.distributorId || 1;
+    const buffer = await this.reportService.exportProfitLossExcel(distributorId, query);
+
+    res.setHeader('Content-Disposition', 'attachment; filename="Bao_Cao_KQKD_PnL.xlsx"');
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    return res.send(buffer);
+  }
 }

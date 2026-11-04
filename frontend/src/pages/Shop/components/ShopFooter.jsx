@@ -6,141 +6,82 @@ import {
   MapPin, 
   ShieldCheck, 
   Truck, 
-  CreditCard, 
-  QrCode, 
-  ArrowUpRight 
+  CheckCircle2
 } from 'lucide-react';
 import './ShopFooter.css';
 
 export default function ShopFooter() {
   return (
     <footer className="shop-footer-wrapper">
-      {/* 4 Trust Highlights Strip */}
-      <div className="footer-highlights-strip">
-        <div className="shop-container highlights-grid">
-          <div className="highlight-cell">
-            <div className="highlight-icon">
-              <ShieldCheck size={26} color="#059669" />
+      {/* 3 Core B2B Commitments */}
+      <div className="footer-commitments-strip">
+        <div className="shop-container commitments-grid">
+          <div className="commitment-item">
+            <div className="commitment-icon">
+              <ShieldCheck size={22} color="#059669" />
             </div>
-            <div>
-              <strong>100% Hàng Chính Hãng</strong>
-              <small>Phân phối trực tiếp từ nhà máy</small>
-            </div>
-          </div>
-
-          <div className="highlight-cell">
-            <div className="highlight-icon">
-              <Truck size={26} color="#0284c7" />
-            </div>
-            <div>
-              <strong>Giao Xe Tải 24h</strong>
-              <small>Miễn phí theo tuyến bán hàng</small>
+            <div className="commitment-text">
+              <strong>100% Chính Hãng Từ Nhà Máy</strong>
+              <span>Date mới, đủ giấy tờ và hoá đơn GTGT</span>
             </div>
           </div>
 
-          <div className="highlight-cell">
-            <div className="highlight-icon">
-              <Package size={26} color="#ea580c" />
+          <div className="commitment-item">
+            <div className="commitment-icon">
+              <Truck size={22} color="#0284c7" />
             </div>
-            <div>
-              <strong>Date Mới & Đúng Lô</strong>
-              <small>Kiểm soát chặt chẽ trên DMS</small>
+            <div className="commitment-text">
+              <strong>Giao Xe Tải Trong 24h - 48h</strong>
+              <span>Đội ngũ xe tải điều phối theo tuyến bán hàng</span>
             </div>
           </div>
 
-          <div className="highlight-cell">
-            <div className="highlight-icon">
-              <PhoneCall size={26} color="#7c3aed" />
+          <div className="commitment-item">
+            <div className="commitment-icon">
+              <CheckCircle2 size={22} color="#7c3aed" />
             </div>
-            <div>
-              <strong>Hotline Tuyến 1900 6868</strong>
-              <small>Hỗ trợ đặt sỉ & công nợ 24/7</small>
+            <div className="commitment-text">
+              <strong>Đồng Bộ Kho DMS Tức Thì</strong>
+              <span>Đơn hàng mã tiền tố R- kết nối trực tiếp kho vận</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main 4-Column Footer */}
-      <div className="footer-main-content">
-        <div className="shop-container footer-columns-grid">
-          {/* Col 1 */}
-          <div className="footer-col">
-            <div className="footer-brand-title">
+      {/* Main Footer Information */}
+      <div className="footer-main-info">
+        <div className="shop-container footer-info-inner">
+          <div className="footer-brand-summary">
+            <div className="footer-logo">
               <Package size={22} color="#059669" />
-              <span>DMS TradeLedger</span>
+              <span className="logo-text">DMS TradeLedger</span>
             </div>
-            <p className="footer-desc">
-              Hệ thống Cổng Đặt Hàng & Quản Lý Phân Phối Hàng Tiêu Dùng Nhanh (FMCG) số 1 dành cho Nhà Phân Phối, Tiệm Tạp Hoá và Cửa Hàng Tiện Lợi.
+            <p className="footer-summary-desc">
+              Cổng Đặt Hàng Trực Tuyến & Quản Lý Phân Phối Hàng Tiêu Dùng Nhanh (FMCG) dành riêng cho Nhà Phân Phối, Tiệm Tạp Hoá và Chuỗi Bán Lẻ.
             </p>
-            <div className="footer-contact-row">
-              <MapPin size={15} color="#059669" />
+          </div>
+
+          <div className="footer-contact-details">
+            <div className="contact-line">
+              <MapPin size={16} color="#059669" />
               <span>Kho Tổng: KCN Tân Bình, P. Tây Thạnh, TP. Hồ Chí Minh</span>
             </div>
-            <div className="footer-contact-row">
-              <Mail size={15} color="#059669" />
-              <span>hotro@dmstradeledger.vn</span>
+            <div className="contact-line">
+              <PhoneCall size={16} color="#059669" />
+              <span>Hotline Đặt Hàng & Hỗ Trợ: <strong>1900 6868</strong> (08:00 - 18:00)</span>
             </div>
-          </div>
-
-          {/* Col 2 */}
-          <div className="footer-col">
-            <h4 className="footer-heading">CHĂM SÓC KHÁCH HÀNG</h4>
-            <ul className="footer-links-list">
-              <li><a href="#orders">Quy trình đặt đơn tiền tố R-</a></li>
-              <li><a href="#b2b">Chính sách chiết khấu sỉ 12%</a></li>
-              <li><a href="#delivery">Lịch trình tuyến xe tải DMS</a></li>
-              <li><a href="#exchange">Chính sách đổi trả hàng cận date</a></li>
-              <li><a href="#terms">Điều khoản hợp đồng đại lý</a></li>
-            </ul>
-          </div>
-
-          {/* Col 3 */}
-          <div className="footer-col">
-            <h4 className="footer-heading">PHƯƠNG THỨC THANH TOÁN</h4>
-            <div className="payment-badges-grid">
-              <div className="payment-badge">
-                <QrCode size={18} color="#2563eb" />
-                <span>VietQR Chuyển Khoản</span>
-              </div>
-              <div className="payment-badge">
-                <CreditCard size={18} color="#059669" />
-                <span>Tiền Mặt Khi Nhận Hàng (COD)</span>
-              </div>
-              <div className="payment-badge">
-                <ShieldCheck size={18} color="#d97706" />
-                <span>Công Nợ Đại Lý B2B (30 ngày)</span>
-              </div>
-            </div>
-
-            <h4 className="footer-heading" style={{ marginTop: '20px' }}>ĐỐI TÁC VẬN CHUYỂN</h4>
-            <div className="delivery-fleet-note">
-              <Truck size={18} color="#0284c7" />
-              <span>Đội xe tải phân phối chuyên trách DMS</span>
-            </div>
-          </div>
-
-          {/* Col 4 */}
-          <div className="footer-col">
-            <h4 className="footer-heading">DÀNH CHO QUẢN TRỊ VIÊN</h4>
-            <p className="footer-sub-text">
-              Truy cập phân hệ điều phối kho, giám sát đơn hàng và phân tuyến tài xế nội bộ:
-            </p>
-            <a href="/" className="footer-dms-admin-btn">
-              <span>Đăng Nhập DMS Quản Trị</span>
-              <ArrowUpRight size={16} />
-            </a>
-            <div className="trust-cert-seal">
-              <span>CHỨNG NHẬN ĐẠT CHUẨN PHÂN PHỐI QUỐC GIA FMCG</span>
+            <div className="contact-line">
+              <Mail size={16} color="#059669" />
+              <span>Email: <strong>hotro@dmstradeledger.vn</strong></span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Copyright Bar */}
-      <div className="footer-bottom-bar">
-        <div className="shop-container bottom-inner">
-          <span>© 2026 DMS TradeLedger. Bản quyền thuộc về Hệ Thống Quản Lý Bán Hàng & Phân Phối Nhà Phân Phối.</span>
-          <span>Cổng Đặt Hàng Trực Tuyến Đơn Hàng Điện Tử R-</span>
+      <div className="footer-copyright-bar">
+        <div className="shop-container copyright-inner">
+          <span>© 2026 DMS TradeLedger. All rights reserved. Hệ Thống Quản Lý Phân Phối Đa Điểm Bán.</span>
         </div>
       </div>
     </footer>

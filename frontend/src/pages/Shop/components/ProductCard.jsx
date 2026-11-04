@@ -6,8 +6,7 @@ import {
   Check, 
   Package, 
   Sparkles,
-  TrendingDown,
-  Star
+  Tag
 } from 'lucide-react';
 import './ProductCard.css';
 
@@ -15,7 +14,6 @@ export default function ProductCard({
   product, 
   customer, 
   onAddToCart, 
-  onOpenDetail,
   isWishlisted,
   onToggleWishlist
 }) {
@@ -26,38 +24,7 @@ export default function ProductCard({
 
   const isStore = customer?.accountType === 'STORE';
   const displayPrice = isStore ? product.wholesalePrice : product.basePrice;
-  const originalPrice = Math.round(displayPrice * 1.15);
   const activeImage = product.imageUrl || product.retailImageUrl;
-
-  // Deterministic sold count based on product.id for authentic FMCG e-commerce feel
-  const seed = Math.abs((Number(product.id) || 1) * 73);
-  const soldCount = 200 + (seed % 1400);
-
-  // Render SVG package visual badge
-  const renderProductGraphic = () => {
-    const hues = [
-      { bg: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)', label: 'BEVERAGE' },
-      { bg: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', label: 'FOOD' },
-      { bg: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', label: 'GROCERY' },
-      { bg: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)', label: 'PREMIUM' }
-    ];
-    const theme = hues[seed % hues.length];
-
-    return (
-      <div className="product-graphic-canvas">
-        <div className="graphic-pkg-box" style={{ background: theme.bg }}>
-          <div className="graphic-pkg-top-tape"></div>
-          <div className="graphic-pkg-center">
-            <Package size={34} color="#ffffff" strokeWidth={1.8} />
-            <span className="graphic-pkg-unit">{product.unit || 'THÙNG'}</span>
-          </div>
-          <div className="graphic-pkg-barcode">
-            <span></span><span></span><span></span><span></span><span></span>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   const handleAdd = (e) => {
     e.stopPropagation();
@@ -67,6 +34,17 @@ export default function ProductCard({
       setIsAdding(false);
       setQty(1);
     }, 400);
+  };
+
+  const renderProductGraphic = () => {
+    return (
+      <div className="product-graphic-canvas">
+        <div className="graphic-pkg-box">
+          <Package size={32} color="#059669" strokeWidth={1.8} />
+          <span className="graphic-pkg-unit">{product.unit || 'THÙNG'}</span>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -91,7 +69,7 @@ export default function ProductCard({
           renderProductGraphic()
         )}
 
-        {/* Top Badges (Shopee Style Discount Tag) */}
+        {/* Top Badges */}
         <div className="media-top-tags">
           {product.inStock ? (
             <span className="stock-tag in-stock">
@@ -104,21 +82,17 @@ export default function ProductCard({
           )}
 
           {product.isSample ? (
-            <span style={{ background: '#7c3aed', color: '#ffffff', padding: '3px 7px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-              <Sparkles size={10} /> [S] Hàng Dùng Thử
+            <span className="sample-badge">
+              <Sparkles size={11} /> Hàng Dùng Thử
             </span>
           ) : isStore ? (
             <span className="b2b-badge">
-              <Sparkles size={11} /> Sỉ -12%
+              <Tag size={11} /> Giá Sỉ B2B
             </span>
-          ) : (
-            <span className="shopee-discount-badge">
-              -15%
-            </span>
-          )}
+          ) : null}
         </div>
 
-        {/* Wishlist Heart Button */}
+        {/* Wishlist Action */}
         <button
           type="button"
           className={`card-wishlist-action ${isWishlisted ? 'favorited' : ''}`}
@@ -141,12 +115,6 @@ export default function ProductCard({
           <span className="sku-chip">{product.sku}</span>
         </div>
 
-        {product.groupStdSku && (
-          <div className="meta-group-row">
-            <span className="group-chip">{product.groupStdSku}</span>
-          </div>
-        )}
-
         {/* Title */}
         <h3 
           className="product-main-title" 
@@ -158,9 +126,8 @@ export default function ProductCard({
 
         {/* Packaging Specs */}
         <div className="packaging-spec-row">
-          <span className="spec-pill">
-            Quy cách: <strong>{product.unit || 'THÙNG'}</strong>
-          </span>
+          <span className="spec-label">Quy cách:</span>
+          <strong className="spec-value">{product.unit || 'THÙNG'}</strong>
           {product.conversionRate > 1 && (
             <span className="conversion-text">
               ({product.conversionRate} {product.retailUnit || 'lẻ'})
@@ -168,22 +135,7 @@ export default function ProductCard({
           )}
         </div>
 
-        {/* Hasaki / Shopee Rating & Sold Count */}
-        <div className="product-rating-sold-row">
-          <div className="star-rating-cluster">
-            <Star size={11} fill="#f59e0b" color="#f59e0b" />
-            <Star size={11} fill="#f59e0b" color="#f59e0b" />
-            <Star size={11} fill="#f59e0b" color="#f59e0b" />
-            <Star size={11} fill="#f59e0b" color="#f59e0b" />
-            <Star size={11} fill="#f59e0b" color="#f59e0b" />
-            <span className="rating-score">5.0</span>
-          </div>
-          <span className="sold-count-text">
-            Đã bán {soldCount} {product.unit || 'thùng'}
-          </span>
-        </div>
-
-        {/* Pricing Block (Shopee Orange/Red) */}
+        {/* Pricing Block */}
         <div className="card-pricing-block">
           <div className="active-price-display">
             <span className="price-val">
@@ -191,17 +143,11 @@ export default function ProductCard({
             </span>
             <span className="per-unit-label">/{product.unit || 'thùng'}</span>
           </div>
-
-          <div className="strike-price-display">
-            <span className="strike-price-text">
-              {originalPrice.toLocaleString('vi-VN')} đ
-            </span>
-            {isStore && (
-              <span className="saving-badge">
-                <TrendingDown size={11} /> Tiết kiệm 12%
-              </span>
-            )}
-          </div>
+          {isStore && (
+            <div className="b2b-saving-tag">
+              Áp dụng chiết khấu đại lý
+            </div>
+          )}
         </div>
 
         {/* Action Controls */}
@@ -236,12 +182,11 @@ export default function ProductCard({
           {isStore && product.isSample ? (
             <button
               type="button"
-              className="btn-add-to-cart"
-              style={{ background: '#f1f5f9', color: '#64748b', borderColor: '#cbd5e1', cursor: 'not-allowed', width: '100%' }}
+              className="btn-add-to-cart sample-disabled"
               disabled
-              title="Sản phẩm đang trong giai đoạn thử nghiệm thị trường, chưa mở bán sỉ số lượng lớn."
+              title="Sản phẩm thử nghiệm thị trường"
             >
-              <span>Đang thử nghiệm (Chưa bán sỉ)</span>
+              <span>Thử nghiệm</span>
             </button>
           ) : (
             <button

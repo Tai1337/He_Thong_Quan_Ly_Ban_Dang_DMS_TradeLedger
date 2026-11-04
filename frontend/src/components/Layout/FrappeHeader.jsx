@@ -103,6 +103,7 @@ const FrappeHeader = ({ user, onLogout }) => {
   const quickLinks = [
     { label: 'Danh sách Đơn bán hàng (SO)', sub: 'Bán hàng • Đơn chốt giao', path: '/sales/sales-orders', type: 'Phân hệ' },
     { label: 'Đơn đặt hàng mua (PO)', sub: 'Mua hàng • Đặt hàng NCC', path: '/purchase/purchase-orders', type: 'Phân hệ' },
+    { label: 'Nhật ký giao dịch kho', sub: 'Kho bãi • Sổ giao dịch xuất nhập', path: '/inventory/transactions', type: 'Kho' },
     { label: 'Kiểm kê kho hàng', sub: 'Kho bãi • Đếm tồn thực tế', path: '/inventory/counts', type: 'Kho' },
     { label: 'Quản lý sản phẩm & SKU', sub: 'Danh mục • Giá bán lẻ/thùng', path: '/catalog/products', type: 'Sản phẩm' },
     { label: 'RPT083 - Báo cáo tồn kho NPP', sub: 'Tồn kho • Hạn dùng FEFO', path: '/inventory/rpt083', type: 'Báo cáo' },
@@ -160,6 +161,7 @@ const FrappeHeader = ({ user, onLogout }) => {
     if (path.startsWith('/sales/sales-orders')) return [{ label: 'DMS-NPP TradeLedger', path: '/' }, { label: 'Bán hàng', path: '/sales/sales-orders' }, { label: 'Đơn bán hàng (SO)', path: '/sales/sales-orders' }];
     if (path.startsWith('/purchase/receiving')) return [{ label: 'DMS-NPP TradeLedger', path: '/' }, { label: 'Mua hàng', path: '/purchase/purchase-orders' }, { label: 'Nhập kho mua hàng', path: '/purchase/receiving' }];
     if (path.startsWith('/purchase/purchase-orders')) return [{ label: 'DMS-NPP TradeLedger', path: '/' }, { label: 'Mua hàng', path: '/purchase/purchase-orders' }, { label: 'Đơn mua hàng (PO)', path: '/purchase/purchase-orders' }];
+    if (path.startsWith('/inventory/transactions')) return [{ label: 'DMS-NPP TradeLedger', path: '/' }, { label: 'Kho bãi', path: '/inventory/transactions' }, { label: 'Nhật ký giao dịch kho', path: '/inventory/transactions' }];
     if (path.startsWith('/inventory/counts')) return [{ label: 'DMS-NPP TradeLedger', path: '/' }, { label: 'Kho bãi', path: '/inventory/counts' }, { label: 'Kiểm kê kho', path: '/inventory/counts' }];
     if (path.startsWith('/catalog/products')) return [{ label: 'DMS-NPP TradeLedger', path: '/' }, { label: 'Danh mục', path: '/catalog/products' }, { label: 'Sản phẩm & SKU', path: '/catalog/products' }];
     if (path.startsWith('/reports/profit-and-loss')) return [{ label: 'DMS-NPP TradeLedger', path: '/' }, { label: 'Tài chính', path: '/reports/profit-and-loss' }, { label: 'Báo cáo Lãi Lỗ (P&L)', path: '/reports/profit-and-loss' }];

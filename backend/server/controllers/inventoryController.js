@@ -1,4 +1,9 @@
-import { getInventoryRpt083Service, getInventoryRpt083ExportService } from '../services/inventoryService.js';
+import { 
+  getInventoryRpt083Service, 
+  getInventoryRpt083ExportService,
+  getTransactionsService,
+  exportTransactionsExcelService
+} from '../services/inventoryService.js';
 import { generateExcelBuffer } from '../utils/excelGenerator.js';
 import { rpt083Config } from '../config/reports/rpt083.config.js';
 
@@ -34,6 +39,35 @@ export const getInventoryRpt083Export = async (req, res) => {
     res.send(buffer);
   } catch (error) {
     console.error('Error exporting inventory rpt083:', error);
+    res.status(500).json({ error: error.message || 'Lỗi server khi xuất file' });
+  }
+};
+
+export const getInventoryTransactions = async (req, res) => {
+  try {
+    const distributorId = req.query.distributorId || 1;
+    const result = await getTransactionsService(distributorId, req.query);
+    res.json(result);
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách giao dịch kho:', error);
+    res.status(500).json({ error: error.message || 'Lỗi server' });
+  }
+};
+
+export const exportInventoryTransactions = async (req, res) => {
+  try {
+    const distributorId = req.query.distributorId || 1;
+    const buffer = await exportTransactionsExcelService(distributorId, req.query);
+
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+    const filename = `NhatKyGiaoDichKho_${dateStr}.xlsx`;
+
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(buffer);
+  } catch (error) {
+    console.error('Error exporting inventory transactions:', error);
     res.status(500).json({ error: error.message || 'Lỗi server khi xuất file' });
   }
 };

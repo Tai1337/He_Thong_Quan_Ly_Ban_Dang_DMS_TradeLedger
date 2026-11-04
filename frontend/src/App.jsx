@@ -7,6 +7,7 @@ import RPT057 from './pages/Reports/RPT057/RPT057';
 import RPT083 from './pages/Inventory/RPT083/RPT083';
 import InventoryCountList from './pages/Inventory/InventoryCount/InventoryCountList';
 import InventoryCountDetail from './pages/Inventory/InventoryCount/InventoryCountDetail';
+import InventoryTransactions from './pages/Inventory/InventoryTransactions/InventoryTransactions';
 import SalesOrderList from './pages/Sales/SalesOrderList/SalesOrderList';
 import SalesOrderDetail from './pages/Sales/SalesOrderList/SalesOrderDetail';
 import PurchaseOrderList from './pages/Purchase/PurchaseOrderList/PurchaseOrderList';
@@ -201,6 +202,18 @@ function App() {
             user ? (
               <Layout user={user} onLogout={handleLogout}>
                 <RPT083 user={user} />
+              </Layout>
+            ) : (
+              <Navigate to="/login" />
+            )
+          } 
+        />
+        <Route 
+          path="/inventory/transactions" 
+          element={
+            user ? (
+              <Layout user={user} onLogout={handleLogout}>
+                <InventoryTransactions />
               </Layout>
             ) : (
               <Navigate to="/login" />

@@ -404,6 +404,35 @@ export const getInventoryRpt083 = async (filters) => {
   return data;
 };
 
+// --- SỔ NHẬT KÝ GIAO DỊCH KHO (INVENTORY TRANSACTIONS) ---
+
+export const getInventoryTransactions = async (filters = {}) => {
+  const cleanFilters = {};
+  Object.keys(filters).forEach(k => {
+    if (filters[k] !== undefined && filters[k] !== null && filters[k] !== '') {
+      cleanFilters[k] = filters[k];
+    }
+  });
+  const queryParams = new URLSearchParams(cleanFilters).toString();
+  const response = await fetch(`${API_URL}/inventory/transactions?${queryParams}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi tải nhật ký giao dịch kho');
+  }
+  return data;
+};
+
+export const exportInventoryTransactions = (filters = {}) => {
+  const cleanFilters = {};
+  Object.keys(filters).forEach(k => {
+    if (filters[k] !== undefined && filters[k] !== null && filters[k] !== '') {
+      cleanFilters[k] = filters[k];
+    }
+  });
+  const queryParams = new URLSearchParams(cleanFilters).toString();
+  window.open(`${API_URL}/inventory/transactions/export?${queryParams}`, '_blank');
+};
+
 // --- NHẬP KHO ĐẶT HÀNG THEO CHUYẾN XE (INBOUND GOODS RECEIVING) ---
 
 export const getInboundDeliveryTrips = async (filters = {}) => {
