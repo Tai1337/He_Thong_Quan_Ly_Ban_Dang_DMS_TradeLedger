@@ -55,8 +55,15 @@ async function main() {
         distributorId: distributor.id,
         code: 'KHO-TEST',
         name: 'Kho NPP Test',
-        type: 'SALES'
+        type: 'SALES',
+        latitude: 10.8027100,
+        longitude: 106.6645200
       }
+    });
+  } else if (warehouse.latitude == null) {
+    warehouse = await prisma.warehouse.update({
+      where: { id: warehouse.id },
+      data: { latitude: 10.8027100, longitude: 106.6645200 }
     });
   }
 
@@ -129,11 +136,11 @@ async function main() {
 
   // 7. Retailers (Đại lý / Cửa hàng)
   const retailersList = [
-    { code: 'DL-001', name: 'Tạp Hóa Minh Phát', address: '124 Hai Bà Trưng, Phường Đa Kao, Quận 1, TP.HCM', phone: '0901234567' },
-    { code: 'DL-002', name: 'Cửa Hàng Bách Hóa Cô Ba', address: '45 Lê Văn Sỹ, Phường 13, Quận 3, TP.HCM', phone: '0912345678' },
-    { code: 'DL-003', name: 'Siêu Thị Mini Tiện Lợi', address: '789 Nguyễn Thị Thập, Phường Tân Phong, Quận 7, TP.HCM', phone: '0923456789' },
-    { code: 'DL-004', name: 'Đại Lý Nước Giải Khát Hòa Bình', address: '22 Bạch Đằng, Phường 24, Quận Bình Thạnh, TP.HCM', phone: '0934567890' },
-    { code: 'DL-005', name: 'Cửa Hàng Tiện Ích 24/7 An Lộc', address: '56 Trường Chinh, Phường 15, Quận Tân Bình, TP.HCM', phone: '0945678901' }
+    { code: 'DL-001', name: 'Tạp Hóa Minh Phát', address: '124 Hai Bà Trưng, Phường Đa Kao, Quận 1, TP.HCM', phone: '0901234567', latitude: 10.7875300, longitude: 106.6952100 },
+    { code: 'DL-002', name: 'Cửa Hàng Bách Hóa Cô Ba', address: '45 Lê Văn Sỹ, Phường 13, Quận 3, TP.HCM', phone: '0912345678', latitude: 10.7834500, longitude: 106.6781200 },
+    { code: 'DL-003', name: 'Siêu Thị Mini Tiện Lợi', address: '789 Nguyễn Thị Thập, Phường Tân Phong, Quận 7, TP.HCM', phone: '0923456789', latitude: 10.7430100, longitude: 106.7167500 },
+    { code: 'DL-004', name: 'Đại Lý Nước Giải Khát Hòa Bình', address: '22 Bạch Đằng, Phường 24, Quận Bình Thạnh, TP.HCM', phone: '0934567890', latitude: 10.8018700, longitude: 106.7213400 },
+    { code: 'DL-005', name: 'Cửa Hàng Tiện Ích 24/7 An Lộc', address: '56 Trường Chinh, Phường 15, Quận Tân Bình, TP.HCM', phone: '0945678901', latitude: 10.8045600, longitude: 106.6548300 }
   ];
 
   const retailerMap = {};
@@ -153,8 +160,15 @@ async function main() {
           code: ret.code,
           name: ret.name,
           address: ret.address,
-          phone: ret.phone
+          phone: ret.phone,
+          latitude: ret.latitude,
+          longitude: ret.longitude
         }
+      });
+    } else if (r.latitude == null) {
+      r = await prisma.retailer.update({
+        where: { id: r.id },
+        data: { latitude: ret.latitude, longitude: ret.longitude }
       });
     }
     retailerMap[ret.code] = r;
