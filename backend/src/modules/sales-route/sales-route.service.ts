@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 
-const ROUTE_INCLUDE = {
+const ROUTE_INCLUDE: Prisma.SalesRouteInclude = {
   salesRep: { select: { id: true, username: true, fullName: true, phone: true } },
   stops: {
     include: {
@@ -9,7 +10,7 @@ const ROUTE_INCLUDE = {
     },
     orderBy: [{ weekday: 'asc' }, { visitOrder: 'asc' }],
   },
-} as const;
+};
 
 @Injectable()
 export class SalesRouteService {
