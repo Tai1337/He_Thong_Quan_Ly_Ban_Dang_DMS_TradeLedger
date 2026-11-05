@@ -78,14 +78,14 @@
   flex-wrap: wrap;
 }
 
-.filter-group {
+.filters-card .filter-group {
   display: flex;
   flex-direction: column;
   gap: 6px;
   min-width: 200px;
 }
 
-.filter-group label {
+.filters-card .filter-group label {
   font-size: 12px;
   font-weight: 600;
   color: #475569;

@@ -200,8 +200,8 @@ const InventoryCountList = () => {
 
       {/* Filter Toolbar */}
       <div className="count-filter-toolbar">
-        <form onSubmit={handleSearchSubmit} className="search-form">
-          <div className="search-input-wrapper">
+        <form onSubmit={handleSearchSubmit} className="count-search-form">
+          <div className="count-search-input-wrapper">
             <Search size={18} className="search-icon" />
             <input
               type="text"
@@ -210,12 +210,12 @@ const InventoryCountList = () => {
               onChange={(e) => setFilters({ ...filters, search: e.target.value })}
             />
           </div>
-          <button type="submit" className="btn-search">Tìm</button>
+          <button type="submit" className="count-btn-search">Tìm</button>
         </form>
 
-        <div className="filter-group">
+        <div className="count-filter-group">
           {/* Lọc theo kho */}
-          <div className="filter-select-wrapper">
+          <div className="count-filter-select-wrapper">
             <WarehouseIcon size={16} className="select-icon" />
             <select
               value={filters.warehouseId}
@@ -229,7 +229,7 @@ const InventoryCountList = () => {
           </div>
 
           {/* Lọc theo trạng thái */}
-          <div className="filter-select-wrapper">
+          <div className="count-filter-select-wrapper">
             <Filter size={16} className="select-icon" />
             <select
               value={filters.status}
@@ -245,7 +245,7 @@ const InventoryCountList = () => {
           </div>
 
           {/* Lọc theo hình thức */}
-          <div className="filter-select-wrapper">
+          <div className="count-filter-select-wrapper">
             <Layers size={16} className="select-icon" />
             <select
               value={filters.countType}
@@ -259,7 +259,7 @@ const InventoryCountList = () => {
 
           <button
             type="button"
-            className="btn-refresh"
+            className="count-btn-refresh"
             onClick={fetchCounts}
             title="Tải lại danh sách"
           >
