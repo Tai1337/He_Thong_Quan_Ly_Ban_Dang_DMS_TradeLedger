@@ -161,6 +161,60 @@ async function main() {
   }
   console.log("✓ Đã khởi tạo Retailers");
 
+  // 7b. Tuyến bán hàng mẫu (sale ghé cửa hàng theo thứ trong tuần)
+  const routesList = [
+    {
+      code: 'RT-001', name: 'Tuyến Quận 1 - 3', salesUsername: 'NVBH001',
+      stops: [
+        { retailer: 'DL-001', weekday: 1, visitOrder: 1 },
+        { retailer: 'DL-002', weekday: 1, visitOrder: 2 },
+        { retailer: 'DL-001', weekday: 4, visitOrder: 1 },
+        { retailer: 'DL-002', weekday: 4, visitOrder: 2 },
+      ]
+    },
+    {
+      code: 'RT-002', name: 'Tuyến Quận 7 - Bình Thạnh', salesUsername: 'NVBH002',
+      stops: [
+        { retailer: 'DL-003', weekday: 2, visitOrder: 1 },
+        { retailer: 'DL-004', weekday: 2, visitOrder: 2 },
+        { retailer: 'DL-003', weekday: 5, visitOrder: 1 },
+        { retailer: 'DL-004', weekday: 5, visitOrder: 2 },
+      ]
+    },
+    {
+      code: 'RT-003', name: 'Tuyến Tân Bình', salesUsername: 'NVBH003',
+      stops: [
+        { retailer: 'DL-005', weekday: 3, visitOrder: 1 },
+        { retailer: 'DL-005', weekday: 6, visitOrder: 1 },
+        { retailer: 'DL-001', weekday: 6, visitOrder: 2 },
+      ]
+    },
+  ];
+
+  await prisma.salesRouteStop.deleteMany({ where: { route: { code: { in: routesList.map((r) => r.code) } } } });
+  for (const rt of routesList) {
+    const rep = salesMap[rt.salesUsername];
+    const route = await prisma.salesRoute.upsert({
+      where: { code: rt.code },
+      update: { name: rt.name, salesRepId: rep.id },
+      create: {
+        code: rt.code,
+        name: rt.name,
+        distributorId: distributor.id,
+        salesRepId: rep.id,
+      },
+    });
+    await prisma.salesRouteStop.createMany({
+      data: rt.stops.map((s) => ({
+        routeId: route.id,
+        retailerId: retailerMap[s.retailer].id,
+        weekday: s.weekday,
+        visitOrder: s.visitOrder,
+      })),
+    });
+  }
+  console.log("✓ Đã khởi tạo Tuyến bán hàng");
+
   // 8. Delivery Trips (Chuyến xe giao hàng)
   const tripsList = [
     { tripCode: 'TRIP-20260909-001', driverId: driverMap['NVGH001']?.id, status: 'WAITING_SHIP' },

@@ -238,3 +238,31 @@
   padding: 12px 16px;
   border-top: 1px solid #e5e7eb;
 }
+
+.pnl-spin {
+  animation: pnl-spin 0.8s linear infinite;
+}
+
+@keyframes pnl-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.pnl-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.pnl-filter-meta {
+  align-self: center;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.pnl-kpi-val.danger {
+  color: #dc2626;
+}

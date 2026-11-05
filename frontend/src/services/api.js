@@ -394,6 +394,78 @@ export const exportReportExcel = (reportType, filters = {}) => {
   window.open(endpoint, '_blank');
 };
 
+export const getProfitLossStatement = async (filters = {}, signal) => {
+  const queryParams = new URLSearchParams(filters).toString();
+  const response = await fetch(`${API_URL}/reports/profit-and-loss?${queryParams}`, { signal });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || 'Lỗi khi tải báo cáo lãi lỗ');
+  }
+  return data;
+};
+
+export const exportProfitLossExcel = (filters = {}) => {
+  const queryParams = new URLSearchParams(filters).toString();
+  window.open(`${API_URL}/reports/profit-and-loss/export?${queryParams}`, '_blank');
+};
+
+// --- PHÂN LUỒNG BÁN HÀNG (SALES ROUTES) ---
+
+export const getSalesRoutes = async (filters = {}) => {
+  const query = new URLSearchParams(filters).toString();
+  const response = await fetch(`${API_URL}/sales-routes?${query}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || 'Lỗi khi tải tuyến bán hàng');
+  }
+  return data;
+};
+
+export const getSalesRoutesWeekly = async (filters = {}) => {
+  const query = new URLSearchParams(filters).toString();
+  const response = await fetch(`${API_URL}/sales-routes/weekly?${query}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || 'Lỗi khi tải lịch phân luồng tuần');
+  }
+  return data;
+};
+
+export const createSalesRoute = async (payload) => {
+  const response = await fetch(`${API_URL}/sales-routes`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || 'Lỗi khi tạo tuyến bán hàng');
+  }
+  return data;
+};
+
+export const updateSalesRoute = async (id, payload) => {
+  const response = await fetch(`${API_URL}/sales-routes/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || 'Lỗi khi cập nhật tuyến bán hàng');
+  }
+  return data;
+};
+
+export const deleteSalesRoute = async (id) => {
+  const response = await fetch(`${API_URL}/sales-routes/${id}`, { method: 'DELETE' });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || 'Lỗi khi xóa tuyến bán hàng');
+  }
+  return data;
+};
+
 export const getInventoryRpt083 = async (filters) => {
   const queryParams = new URLSearchParams(filters).toString();
   const response = await fetch(`${API_URL}/inventory/rpt083?${queryParams}`);

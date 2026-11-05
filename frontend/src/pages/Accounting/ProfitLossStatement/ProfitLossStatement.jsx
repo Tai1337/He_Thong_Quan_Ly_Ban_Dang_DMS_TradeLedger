@@ -1,12 +1,9 @@
-import { useState } from 'react';
-import { 
-  RotateCw, 
-  MoreHorizontal, 
-  ChevronDown, 
+import { useEffect, useState } from 'react';
+import {
+  RotateCw,
+  MoreHorizontal,
+  ChevronDown,
   ChevronRight,
-  Download,
-  Printer,
-  FileSpreadsheet
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -16,212 +13,132 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend
+  Legend,
 } from 'recharts';
+import { getProfitLossStatement, exportProfitLossExcel } from '../../../services/api';
 import './ProfitLossStatement.css';
 
-// Dữ liệu biểu đồ mẫu theo đúng ảnh Image 1
-const chartData = [
-  { period: 'Apr 24-Jun 24', income: 0, expense: 0, netProfit: 0 },
-  { period: 'Jul 24-Sep 24', income: 0, expense: 0, netProfit: 0 },
-  { period: 'Oct 24-Dec 24', income: 1000000, expense: 620000, netProfit: 380000 },
-  { period: 'Jan 25-Mar 25', income: 1000000, expense: 620000, netProfit: 380000 },
-];
+const formatMoney = (amount) =>
+  new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(Number(amount) || 0) + ' đ';
+
+const formatCompact = (amount) => {
+  const v = Number(amount) || 0;
+  const abs = Math.abs(v);
+  if (abs >= 1_000_000_000) return `${(v / 1_000_000_000).toFixed(1)} T`;
+  if (abs >= 1_000_000) return `${(v / 1_000_000).toFixed(1)} Tr`;
+  if (abs >= 1_000) return `${(v / 1_000).toFixed(0)} K`;
+  return String(v);
+};
 
 const ProfitLossStatement = () => {
-  // Bộ lọc theo phân hệ DMS-NPP
   const [filters, setFilters] = useState({
-    company: 'Công ty TNHH Phân Phối DMS TradeLedger',
-    financeBook: 'Sổ cái Bán hàng & Kho vận',
-    fiscalYear: '2026',
-    fromYear: '2026',
-    toYear: '2026',
+    fiscalYear: String(new Date().getFullYear()),
     periodicity: 'Theo Quý',
-    currency: 'VNĐ',
-    costCenter: 'Trung tâm Phân phối Miền Nam',
-    branch: 'Chi nhánh Tổng Kho Bình Dương',
-    project: 'Kênh GT - Tạp hóa truyền thống',
-    reportView: 'Tổng hợp',
-    accumulatedValues: true,
-    includeDefaultFB: true
   });
-
-  // State đóng mở cây tài khoản
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [expandedNodes, setExpandedNodes] = useState({
     income: true,
-    directIncome: true,
     expense: true,
   });
 
-  const toggleNode = (node) => {
-    setExpandedNodes(prev => ({ ...prev, [node]: !prev[node] }));
+  const fetchData = async (signal) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await getProfitLossStatement(filters, signal);
+      setData(result);
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        setError(err.message || 'Không thể tải dữ liệu báo cáo');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const formatMoney = (amount) => {
-    return new Intl.NumberFormat('vi-VN').format(amount) + ' đ';
-  };
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchData(controller.signal);
+    return () => controller.abort();
+  }, [filters.fiscalYear, filters.periodicity]);
+
+  const chartData = data?.chartData ?? [];
+  const equation = data?.equation ?? { totalIncome: 0, totalExpense: 0, netProfit: 0, profitMargin: 0 };
+
+  const toggleNode = (node) =>
+    setExpandedNodes((prev) => ({ ...prev, [node]: !prev[node] }));
 
   return (
     <div className="pnl-statement-page">
       {/* 1. Header Toolbar */}
       <div className="pnl-page-header">
-        <h1 className="pnl-page-title">Profit and Loss Statement</h1>
+        <h1 className="pnl-page-title">Báo cáo Lãi Lỗ (P&L)</h1>
 
         <div className="pnl-header-actions">
-          <select className="pnl-select-btn">
-            <option>Financial Statements</option>
-            <option>Balance Sheet</option>
-            <option>Cash Flow</option>
+          <select
+            className="pnl-select-btn"
+            value={filters.periodicity}
+            onChange={(e) => setFilters((f) => ({ ...f, periodicity: e.target.value }))}
+          >
+            <option value="Theo Tháng">Theo Tháng</option>
+            <option value="Theo Quý">Theo Quý</option>
           </select>
 
-          <select className="pnl-select-btn">
-            <option>Actions</option>
-            <option>Export to Excel</option>
-            <option>Export to PDF</option>
-          </select>
-
-          <button type="button" className="pnl-icon-btn" title="Refresh">
-            <RotateCw size={15} />
+          <button type="button" className="pnl-select-btn" onClick={() => exportProfitLossExcel(filters)}>
+            Xuất Excel
           </button>
 
-          <button type="button" className="pnl-icon-btn" title="More Options">
+          <button
+            type="button"
+            className="pnl-icon-btn"
+            title="Làm mới"
+            onClick={() => fetchData()}
+            disabled={loading}
+          >
+            <RotateCw size={15} className={loading ? 'pnl-spin' : ''} />
+          </button>
+
+          <button type="button" className="pnl-icon-btn" title="Tùy chọn khác">
             <MoreHorizontal size={15} />
           </button>
         </div>
       </div>
 
-      {/* 2. Filter Rows (2 Hàng ô lọc bo tròn góc chuẩn ERPNext) */}
+      {/* 2. Filter Rows */}
       <div className="pnl-filters-card">
-        {/* Row 1 */}
         <div className="pnl-filter-row">
-          <input 
-            type="text" 
-            className="pnl-filter-input" 
-            value={filters.company} 
-            placeholder="Company"
-            onChange={(e) => setFilters({ ...filters, company: e.target.value })}
-          />
-
-          <input 
-            type="text" 
-            className="pnl-filter-input" 
-            placeholder="Finance Book"
-            value={filters.financeBook}
-            onChange={(e) => setFilters({ ...filters, financeBook: e.target.value })}
-          />
-
-          <select 
+          <select
             className="pnl-filter-input select"
             value={filters.fiscalYear}
-            onChange={(e) => setFilters({ ...filters, fiscalYear: e.target.value })}
+            onChange={(e) => setFilters((f) => ({ ...f, fiscalYear: e.target.value }))}
           >
-            <option>Năm tài chính (2026)</option>
-            <option>2026</option>
-            <option>2025</option>
+            <option value="2026">Năm tài chính 2026</option>
+            <option value="2025">Năm tài chính 2025</option>
+            <option value="2024">Năm tài chính 2024</option>
           </select>
 
-          <input 
-            type="text" 
-            className="pnl-filter-input" 
-            value={filters.fromYear} 
-            placeholder="Từ năm"
-            onChange={(e) => setFilters({ ...filters, fromYear: e.target.value })}
-          />
-
-          <input 
-            type="text" 
-            className="pnl-filter-input" 
-            value={filters.toYear} 
-            placeholder="Đến năm"
-            onChange={(e) => setFilters({ ...filters, toYear: e.target.value })}
-          />
-
-          <select 
+          <select
             className="pnl-filter-input select"
             value={filters.periodicity}
-            onChange={(e) => setFilters({ ...filters, periodicity: e.target.value })}
+            onChange={(e) => setFilters((f) => ({ ...f, periodicity: e.target.value }))}
           >
-            <option>Kỳ báo cáo (Theo Quý)</option>
-            <option>Theo Tháng</option>
-            <option>Theo Quý</option>
-            <option>Theo Năm</option>
-          </select>
-        </div>
-
-        {/* Row 2 */}
-        <div className="pnl-filter-row">
-          <select 
-            className="pnl-filter-input select"
-            value={filters.currency}
-            onChange={(e) => setFilters({ ...filters, currency: e.target.value })}
-          >
-            <option>Currency</option>
-            <option>USD</option>
-            <option>VND</option>
+            <option value="Theo Tháng">Kỳ báo cáo: Theo Tháng</option>
+            <option value="Theo Quý">Kỳ báo cáo: Theo Quý</option>
           </select>
 
-          <input 
-            type="text" 
-            className="pnl-filter-input" 
-            placeholder="Cost Center"
-            value={filters.costCenter}
-            onChange={(e) => setFilters({ ...filters, costCenter: e.target.value })}
-          />
-
-          <input 
-            type="text" 
-            className="pnl-filter-input" 
-            placeholder="Branch"
-            value={filters.branch}
-            onChange={(e) => setFilters({ ...filters, branch: e.target.value })}
-          />
-
-          <input 
-            type="text" 
-            className="pnl-filter-input" 
-            placeholder="Project"
-            value={filters.project}
-            onChange={(e) => setFilters({ ...filters, project: e.target.value })}
-          />
-
-          <select 
-            className="pnl-filter-input select"
-            value={filters.reportView}
-            onChange={(e) => setFilters({ ...filters, reportView: e.target.value })}
-          >
-            <option>Report View</option>
-            <option>Summary</option>
-            <option>Detailed</option>
-          </select>
-
-          <label className="pnl-checkbox-label">
-            <input 
-              type="checkbox" 
-              checked={filters.accumulatedValues}
-              onChange={(e) => setFilters({ ...filters, accumulatedValues: e.target.checked })}
-            />
-            <span>Accumulated Values</span>
-          </label>
-        </div>
-
-        {/* Checkbox row */}
-        <div className="pnl-checkbox-row">
-          <label className="pnl-checkbox-label">
-            <input 
-              type="checkbox" 
-              checked={filters.includeDefaultFB}
-              onChange={(e) => setFilters({ ...filters, includeDefaultFB: e.target.checked })}
-            />
-            <span>Include Default FB Entries</span>
-          </label>
+          <span className="pnl-filter-meta">
+            {data ? `${data.totalOrdersCount} đơn hàng · Năm ${data.fiscalYear}` : ''}
+          </span>
         </div>
       </div>
 
-      {/* 3. KPI Equation Cards (Total Income - Total Expense = Net Profit) */}
+      {/* 3. KPI Equation Cards */}
       <div className="pnl-kpi-equation-card">
         <div className="pnl-kpi-col">
-          <span className="pnl-kpi-label">Total Income</span>
-          <span className="pnl-kpi-val">$ 10,00,000.00</span>
+          <span className="pnl-kpi-label">Tổng Doanh Thu</span>
+          <span className="pnl-kpi-val">{formatMoney(equation.totalIncome)}</span>
         </div>
 
         <div className="pnl-operator-box">
@@ -229,8 +146,8 @@ const ProfitLossStatement = () => {
         </div>
 
         <div className="pnl-kpi-col">
-          <span className="pnl-kpi-label">Total Expense</span>
-          <span className="pnl-kpi-val">$ 6,20,000.00</span>
+          <span className="pnl-kpi-label">Tổng Giá Vốn</span>
+          <span className="pnl-kpi-val">{formatMoney(equation.totalExpense)}</span>
         </div>
 
         <div className="pnl-operator-box">
@@ -238,57 +155,53 @@ const ProfitLossStatement = () => {
         </div>
 
         <div className="pnl-kpi-col">
-          <span className="pnl-kpi-label">Net Profit</span>
-          <span className="pnl-kpi-val success">$ 3,80,000.00</span>
+          <span className="pnl-kpi-label">Lợi Nhuận Thuần</span>
+          <span className={`pnl-kpi-val ${equation.netProfit >= 0 ? 'success' : 'danger'}`}>
+            {formatMoney(equation.netProfit)}
+          </span>
+        </div>
+
+        <div className="pnl-operator-box">
+          <span>·</span>
+        </div>
+
+        <div className="pnl-kpi-col">
+          <span className="pnl-kpi-label">Tỷ Suất Lợi Nhuận</span>
+          <span className="pnl-kpi-val">{Number(equation.profitMargin || 0).toFixed(1)}%</span>
         </div>
       </div>
 
-      {/* 4. Interactive Trend Chart */}
+      {/* 4. Trend Chart */}
       <div className="pnl-chart-card">
-        <ResponsiveContainer width="100%" height={260}>
-          <LineChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f3f5" />
-            <XAxis dataKey="period" stroke="#9ca3af" fontSize={12} tickLine={false} />
-            <YAxis 
-              stroke="#9ca3af" 
-              fontSize={11} 
-              tickLine={false}
-              tickFormatter={(v) => v === 0 ? '0' : `${v / 1000} K`}
-            />
-            <Tooltip 
-              formatter={(value) => formatMoney(value)}
-              contentStyle={{ borderRadius: 6, border: '1px solid #e5e7eb' }}
-            />
-            <Legend verticalAlign="bottom" height={36} iconType="rect" />
-            <Line 
-              type="linear" 
-              dataKey="income" 
-              name="Income" 
-              stroke="#ec4899" 
-              strokeWidth={2} 
-              dot={false}
-              activeDot={{ r: 5 }} 
-            />
-            <Line 
-              type="linear" 
-              dataKey="expense" 
-              name="Expense" 
-              stroke="#2563eb" 
-              strokeWidth={2} 
-              dot={false}
-              activeDot={{ r: 5 }} 
-            />
-            <Line 
-              type="linear" 
-              dataKey="netProfit" 
-              name="Net Profit/Loss" 
-              stroke="#10b981" 
-              strokeWidth={2} 
-              dot={false}
-              activeDot={{ r: 5 }} 
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        {chartData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={260}>
+            <LineChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f3f5" />
+              <XAxis
+                dataKey="period"
+                stroke="#9ca3af"
+                fontSize={12}
+                tickLine={false}
+              />
+              <YAxis
+                stroke="#9ca3af"
+                fontSize={11}
+                tickLine={false}
+                tickFormatter={formatCompact}
+              />
+              <Tooltip
+                formatter={(value) => formatMoney(value)}
+                contentStyle={{ borderRadius: 6, border: '1px solid #e5e7eb' }}
+              />
+              <Legend verticalAlign="bottom" height={36} iconType="rect" />
+              <Line type="linear" dataKey="income" name="Doanh thu" stroke="#ec4899" strokeWidth={2} dot={false} activeDot={{ r: 5 }} />
+              <Line type="linear" dataKey="expense" name="Giá vốn" stroke="#2563eb" strokeWidth={2} dot={false} activeDot={{ r: 5 }} />
+              <Line type="linear" dataKey="netProfit" name="Lợi nhuận" stroke="#10b981" strokeWidth={2} dot={false} activeDot={{ r: 5 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        ) : (
+          !loading && <div className="pnl-empty">Không có dữ liệu trong kỳ báo cáo</div>
+        )}
       </div>
 
       {/* 5. Hierarchical Tree Table */}
@@ -296,102 +209,92 @@ const ProfitLossStatement = () => {
         <table className="pnl-data-table">
           <thead>
             <tr>
-              <th style={{ width: '40%' }}>Account</th>
-              <th style={{ textAlign: 'right' }}>Apr 24-Jun 24</th>
-              <th style={{ textAlign: 'right' }}>Jul 24-Sep 24</th>
-              <th style={{ textAlign: 'right' }}>Oct 24-Dec 24</th>
-              <th style={{ textAlign: 'right' }}>Jan 25-Mar 25</th>
+              <th style={{ width: '40%' }}>Tài khoản</th>
+              {chartData.map((d) => (
+                <th key={d.period} style={{ textAlign: 'right' }}>{d.period}</th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            {/* Level 1: Income */}
-            <tr className="tree-row parent-row" onClick={() => toggleNode('income')}>
-              <td>
-                <div className="tree-cell">
-                  <span className="row-num">1</span>
-                  {expandedNodes.income ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                  <strong>Income</strong>
-                </div>
-              </td>
-              <td style={{ textAlign: 'right' }}>$ 0.00</td>
-              <td style={{ textAlign: 'right' }}>$ 0.00</td>
-              <td style={{ textAlign: 'right', fontWeight: 600 }}>$ 10,00,000.00</td>
-              <td style={{ textAlign: 'right', fontWeight: 600 }}>$ 10,00,000.00</td>
-            </tr>
-
-            {/* Level 2: Direct Income */}
-            {expandedNodes.income && (
+            {loading ? (
+              <tr>
+                <td colSpan={chartData.length + 1} style={{ textAlign: 'center', padding: 32 }}>
+                  Đang tải dữ liệu...
+                </td>
+              </tr>
+            ) : error ? (
+              <tr>
+                <td colSpan={chartData.length + 1} style={{ textAlign: 'center', padding: 32, color: '#dc2626' }}>
+                  {error}
+                </td>
+              </tr>
+            ) : (
               <>
-                <tr className="tree-row child-level-1" onClick={() => toggleNode('directIncome')}>
+                {/* Income */}
+                <tr className="tree-row parent-row" onClick={() => toggleNode('income')}>
                   <td>
-                    <div className="tree-cell indent-1">
-                      <span className="row-num">2</span>
-                      {expandedNodes.directIncome ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                      <span>Direct Income</span>
+                    <div className="tree-cell">
+                      <span className="row-num">1</span>
+                      {expandedNodes.income ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                      <strong>Doanh Thu</strong>
                     </div>
                   </td>
-                  <td style={{ textAlign: 'right' }}>$ 0.00</td>
-                  <td style={{ textAlign: 'right' }}>$ 0.00</td>
-                  <td style={{ textAlign: 'right' }}>$ 10,00,000.00</td>
-                  <td style={{ textAlign: 'right' }}>$ 10,00,000.00</td>
+                  {chartData.map((d) => (
+                    <td key={d.period} style={{ textAlign: 'right', fontWeight: 600 }}>
+                      {formatMoney(d.income)}
+                    </td>
+                  ))}
                 </tr>
 
-                {/* Level 3: Sales */}
-                {expandedNodes.directIncome && (
-                  <tr className="tree-row child-level-2">
+                {/* Expense */}
+                <tr className="tree-row parent-row" onClick={() => toggleNode('expense')}>
+                  <td>
+                    <div className="tree-cell">
+                      <span className="row-num">2</span>
+                      {expandedNodes.expense ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                      <strong>Giá Vốn (COGS)</strong>
+                    </div>
+                  </td>
+                  {chartData.map((d) => (
+                    <td key={d.period} style={{ textAlign: 'right', fontWeight: 600 }}>
+                      {formatMoney(d.expense)}
+                    </td>
+                  ))}
+                </tr>
+
+                {expandedNodes.expense && (
+                  <tr className="tree-row child-level-1">
                     <td>
-                      <div className="tree-cell indent-2">
+                      <div className="tree-cell indent-1">
                         <span className="row-num">3</span>
-                        <span>Sales</span>
+                        <span>Giá vốn hàng bán</span>
                       </div>
                     </td>
-                    <td style={{ textAlign: 'right' }}>$ 0.00</td>
-                    <td style={{ textAlign: 'right' }}>$ 0.00</td>
-                    <td style={{ textAlign: 'right' }}>$ 10,00,000.00</td>
-                    <td style={{ textAlign: 'right' }}>$ 10,00,000.00</td>
+                    {chartData.map((d) => (
+                      <td key={d.period} style={{ textAlign: 'right' }}>
+                        {formatMoney(d.expense)}
+                      </td>
+                    ))}
                   </tr>
                 )}
               </>
             )}
-
-            {/* Level 1: Expense */}
-            <tr className="tree-row parent-row" onClick={() => toggleNode('expense')}>
-              <td>
-                <div className="tree-cell">
-                  <span className="row-num">4</span>
-                  {expandedNodes.expense ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                  <strong>Expense</strong>
-                </div>
-              </td>
-              <td style={{ textAlign: 'right' }}>$ 0.00</td>
-              <td style={{ textAlign: 'right' }}>$ 0.00</td>
-              <td style={{ textAlign: 'right', fontWeight: 600 }}>$ 6,20,000.00</td>
-              <td style={{ textAlign: 'right', fontWeight: 600 }}>$ 6,20,000.00</td>
-            </tr>
-
-            {/* Level 2: Cost of Goods Sold */}
-            {expandedNodes.expense && (
-              <tr className="tree-row child-level-1">
-                <td>
-                  <div className="tree-cell indent-1">
-                    <span className="row-num">5</span>
-                    <span>Cost of Goods Sold (COGS)</span>
-                  </div>
-                </td>
-                <td style={{ textAlign: 'right' }}>$ 0.00</td>
-                <td style={{ textAlign: 'right' }}>$ 0.00</td>
-                <td style={{ textAlign: 'right' }}>$ 6,20,000.00</td>
-                <td style={{ textAlign: 'right' }}>$ 6,20,000.00</td>
-              </tr>
-            )}
           </tbody>
           <tfoot>
             <tr className="tree-total-row">
-              <td style={{ fontWeight: 700 }}>Total Net Profit</td>
-              <td style={{ textAlign: 'right', fontWeight: 700 }}>$ 0.00</td>
-              <td style={{ textAlign: 'right', fontWeight: 700 }}>$ 0.00</td>
-              <td style={{ textAlign: 'right', fontWeight: 700, color: '#10b981' }}>$ 3,80,000.00</td>
-              <td style={{ textAlign: 'right', fontWeight: 700, color: '#10b981' }}>$ 3,80,000.00</td>
+              <td style={{ fontWeight: 700 }}>Tổng Lợi Nhuận</td>
+              {chartData.map((d) => (
+                <td
+                  key={d.period}
+                  style={{
+                    textAlign: 'right',
+                    fontWeight: 700,
+                    color: d.netProfit >= 0 ? '#10b981' : '#dc2626',
+                  }}
+                >
+                  {formatMoney(d.netProfit)}
+                </td>
+              ))}
             </tr>
           </tfoot>
         </table>

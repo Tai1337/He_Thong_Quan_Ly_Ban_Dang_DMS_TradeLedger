@@ -199,6 +199,8 @@ model Distributor {
   inventoryCounts         InventoryCount[]
   invoices                Invoice[]
   promotions              Promotion[]
+  expenses                Expense[]
+  salesRoutes             SalesRoute[]
 
   @@map("distributors")
 }
@@ -228,6 +230,8 @@ model User {
   statusHistories         OrderStatusHistory[]
   purchaseOrdersCreated   PurchaseOrder[]
   poStatusHistories       PurchaseOrderStatusHistory[]
+  expensesCreated         Expense[]              @relation("ExpensesCreated")
+  salesRoutes             SalesRoute[]
 
   @@map("users")
 }
@@ -309,11 +313,15 @@ model Retailer {
   // [Cải tiến #6] Toạ độ địa lý để tối ưu tuyến giao hàng
   latitude      Decimal? @db.Decimal(10, 7)
   longitude     Decimal? @db.Decimal(10, 7)
+  // [Finance] Hạn mức tín dụng & điều khoản thanh toán (ngày)
+  creditLimit      Decimal? @db.Decimal(14, 2) @map("credit_limit")
+  paymentTermDays  Int?     @map("payment_term_days")
 
   distributor      Distributor       @relation(fields: [distributorId], references: [id])
   salesOrders      SalesOrder[]
   customerAccounts CustomerAccount[]
   sampleAllocations ProductSampleAllocation[]
+  routeStops        SalesRouteStop[]
 
   @@unique([distributorId, code])
   @@map("retailers")
@@ -798,6 +806,29 @@ model Payment {
 }
 
 // ============================================================
+// [Finance] MODULE CHI PHÍ (Expense) - phục vụ P&L thực data
+// ============================================================
+
+model Expense {
+  id            BigInt   @id @default(autoincrement())
+  distributorId BigInt   @map("distributor_id")
+  expenseCode   String   @unique @db.VarChar(30) @map("expense_code")
+  category      String   @db.VarChar(50)  // RENT, SALARY, MARKETING, LOGISTICS, UTILITY, OTHER
+  amount        Decimal  @db.Decimal(14, 2)
+  expenseDate   DateTime @db.Date @map("expense_date")
+  description   String?  @db.VarChar(255)
+  createdById   BigInt?  @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  distributor Distributor @relation(fields: [distributorId], references: [id])
+  createdBy   User?       @relation("ExpensesCreated", fields: [createdById], references: [id])
+
+  @@index([distributorId, expenseDate])
+  @@map("expenses")
+}
+
+// ============================================================
 // [Cải tiến #7] MODULE KHUYẾN MÃI / CHIẾT KHẤU
 // ============================================================
 
@@ -943,6 +974,41 @@ model ProductSampleAllocation {
 
   @@unique([productId, retailerId])
   @@map("product_sample_allocations")
+}
+
+/// Tuyến bán hàng: một NVBH phụ trách, ghé các cửa hàng theo lịch tuần
+model SalesRoute {
+  id            BigInt   @id @default(autoincrement())
+  distributorId BigInt   @map("distributor_id")
+  code          String   @unique @db.VarChar(30)
+  name          String   @db.VarChar(150)
+  salesRepId    BigInt   @map("sales_rep_id")
+  notes         String?  @db.Text
+  status        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  distributor Distributor      @relation(fields: [distributorId], references: [id])
+  salesRep    User             @relation(fields: [salesRepId], references: [id])
+  stops       SalesRouteStop[]
+
+  @@index([distributorId, salesRepId])
+  @@map("sales_routes")
+}
+
+/// Điểm ghé: tuyến nào ghé cửa hàng nào, thứ mấy, thứ tự ghé
+model SalesRouteStop {
+  id          BigInt @id @default(autoincrement())
+  routeId     BigInt @map("route_id")
+  retailerId  BigInt @map("retailer_id")
+  weekday     Int    // 1 = Thứ 2 ... 7 = Chủ nhật
+  visitOrder  Int    @default(1) @map("visit_order")
+
+  route    SalesRoute @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  retailer Retailer   @relation(fields: [retailerId], references: [id], onDelete: Cascade)
+
+  @@index([routeId, weekday, visitOrder])
+  @@map("sales_route_stops")
 }
 
 
