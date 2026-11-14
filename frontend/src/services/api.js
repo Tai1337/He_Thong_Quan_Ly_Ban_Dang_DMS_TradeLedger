@@ -1143,6 +1143,107 @@ export const changePassword = async (oldPassword, newPassword) => {
   return data;
 };
 
+// --- PROMOTIONS ---
+
+export const getPromotions = async (filters = {}) => {
+  const cleanFilters = {};
+  Object.keys(filters).forEach((k) => {
+    if (filters[k] !== undefined && filters[k] !== null && filters[k] !== '') {
+      cleanFilters[k] = filters[k];
+    }
+  });
+
+  const queryParams = new URLSearchParams(cleanFilters).toString();
+  const response = await fetch(`${API_URL}/promotions?${queryParams}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || data.message || 'Lỗi khi tải danh sách khuyến mãi');
+  }
+  return data;
+};
+
+export const getPromotionById = async (id) => {
+  const response = await fetch(`${API_URL}/promotions/${id}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || data.message || 'Lỗi khi tải chi tiết khuyến mãi');
+  }
+  return data;
+};
+
+export const createPromotion = async (promotionData) => {
+  const response = await fetch(`${API_URL}/promotions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(promotionData),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || data.message || 'Lỗi khi tạo khuyến mãi');
+  }
+  return data;
+};
+
+export const autoGeneratePromotion = async (generateData) => {
+  const response = await fetch(`${API_URL}/promotions/auto-generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(generateData),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || data.message || 'Lỗi khi tự động sinh khuyến mãi');
+  }
+  return data;
+};
+
+export const getClearanceCandidates = async () => {
+  const response = await fetch(`${API_URL}/promotions/clearance-candidates`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || data.message || 'Lỗi khi tải danh sách hàng tồn kho');
+  }
+  return data;
+};
+
+export const evaluateCartPromotions = async (cartData) => {
+  const response = await fetch(`${API_URL}/promotions/evaluate-cart`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(cartData),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || data.message || 'Lỗi khi tính toán khuyến mãi giỏ hàng');
+  }
+  return data;
+};
+
+export const updatePromotion = async (id, updateData) => {
+  const response = await fetch(`${API_URL}/promotions/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updateData),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || data.message || 'Lỗi khi cập nhật khuyến mãi');
+  }
+  return data;
+};
+
+export const deletePromotion = async (id) => {
+  const response = await fetch(`${API_URL}/promotions/${id}`, {
+    method: 'DELETE',
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || data.message || 'Lỗi khi xóa khuyến mãi');
+  }
+  return data;
+};
+
+
 
 
 

@@ -872,6 +872,7 @@ model Promotion {
 model PromotionPercentageDiscount {
   promotionId         BigInt   @id @map("promotion_id")
   discountPercent     Decimal  @map("discount_percent") @db.Decimal(5, 2)
+  minQuantity         Decimal? @default(1) @map("min_quantity") @db.Decimal(14, 2)
   maxQuantityPerOrder Decimal? @map("max_quantity_per_order") @db.Decimal(14, 2)
 
   promotion Promotion                    @relation(fields: [promotionId], references: [id], onDelete: Cascade)

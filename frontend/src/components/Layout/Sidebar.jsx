@@ -47,6 +47,7 @@ const inventorySubMenu = [
 
 const catalogSubMenu = [
   { id: 'cat-products', label: 'Quản lý sản phẩm & Mẫu thử [S]', path: '/catalog/products' },
+  { id: 'cat-promotions', label: 'Chương trình khuyến mãi', path: '/catalog/promotions' },
 ];
 
 const menuItems = [

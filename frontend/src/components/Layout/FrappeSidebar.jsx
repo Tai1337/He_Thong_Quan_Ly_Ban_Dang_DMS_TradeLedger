@@ -24,7 +24,8 @@ import {
   PinOff,
   Search,
   Palette,
-  ClipboardCheck
+  ClipboardCheck,
+  Tag
 } from 'lucide-react';
 import './Layout.css';
 import { hasPermission } from '../../utils/authPermission';
@@ -70,6 +71,7 @@ const modulesData = {
     requiredPermission: 'sales_orders:view',
     subItems: [
       { label: 'Danh sách đơn bán (SO)', path: '/sales/sales-orders', icon: FileText, requiredPermission: 'sales_orders:view' },
+      { label: 'Chương trình khuyến mãi', path: '/catalog/promotions', icon: Tag, requiredPermission: 'sales_orders:view' },
       { label: 'Chuyến xe & Điều phối giao', path: '/logistics/delivery-trips', icon: Truck, requiredPermission: 'delivery_trips:view' },
       { label: 'Lập đơn bán hàng mới', path: '/sales/sales-orders?create=true', icon: PlusCircle, requiredPermission: 'sales_orders:create' },
       { label: 'Kiểm tra thiếu tồn (RPT005)', path: '/sales/sales-orders?rpt005=true', icon: CheckSquare, requiredPermission: 'inventory:view' },
@@ -85,6 +87,7 @@ const modulesData = {
     requiredPermission: ['inventory:view', 'master_data:view', 'inventory_counts:view'],
     subItems: [
       { label: 'Quản lý sản phẩm & SKU', path: '/catalog/products', icon: Box, requiredPermission: 'master_data:view' },
+      { label: 'Chương trình khuyến mãi', path: '/catalog/promotions', icon: Tag, requiredPermission: 'master_data:view' },
       { label: 'Nhật ký giao dịch kho', path: '/inventory/transactions', icon: FileText, requiredPermission: 'inventory:view' },
       { label: 'Kiểm kê kho hàng', path: '/inventory/counts', icon: ClipboardCheck, requiredPermission: 'inventory_counts:view' },
       { label: 'RPT083 - Báo cáo tồn kho NPP', path: '/inventory/rpt083', icon: BarChart3, requiredPermission: 'inventory:view' },

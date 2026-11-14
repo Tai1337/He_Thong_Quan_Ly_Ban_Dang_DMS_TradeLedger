@@ -367,3 +367,188 @@
   transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(5, 150, 105, 0.38);
 }
+
+/* SMART UPSELL PROMOTION STYLES */
+.cart-upsell-container {
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border: 1px solid #fed7aa;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.upsell-section-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #c2410c;
+  margin-bottom: 8px;
+}
+
+.sparkle-hint-icon {
+  color: #ea580c;
+}
+
+.upsell-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.upsell-item-card {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 10px 12px;
+  border: 1px solid #fed7aa;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.upsell-item-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.upsell-type-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background: #fff7ed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.upsell-item-content {
+  flex: 1;
+}
+
+.upsell-msg-text {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.35;
+}
+
+.upsell-progress-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 5px;
+}
+
+.upsell-progress-track {
+  flex: 1;
+  height: 6px;
+  background: #f1f5f9;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.upsell-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ea580c 0%, #f97316 100%);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.upsell-progress-count {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #c2410c;
+}
+
+.btn-quick-add-upsell {
+  padding: 6px 12px;
+  background: #ea580c;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.btn-quick-add-upsell:hover {
+  background: #c2410c;
+}
+
+/* APPLIED PROMOTIONS STYLES */
+.cart-applied-promos-container {
+  margin-bottom: 16px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.applied-promos-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #15803d;
+  margin-bottom: 8px;
+}
+
+.applied-promos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.applied-promo-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #166534;
+}
+
+.applied-promo-text {
+  flex: 1;
+}
+
+/* FOOTER PROMO DISCOUNTS */
+.promo-discount-row {
+  color: #15803d;
+}
+
+.promo-discount-val {
+  color: #15803d;
+  font-size: 14px;
+}
+
+.promo-gift-row {
+  color: #7e22ce;
+}
+
+.promo-gift-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #f3e8ff;
+  color: #7e22ce;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
