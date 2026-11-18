@@ -26,7 +26,8 @@ import {
   Palette,
   ClipboardCheck,
   Gift,
-  Tag
+  Tag,
+  FileSpreadsheet
 } from 'lucide-react';
 import './Layout.css';
 import { hasPermission } from '../../utils/authPermission';
@@ -96,12 +97,14 @@ const modulesData = {
   pnl: {
     id: 'pnl',
     icon: PieChart,
-    label: 'Tài chính & Kế toán',
-    desc: 'Accounting & Profit and Loss',
+    label: 'Tài chính & Doanh thu',
+    desc: 'Finance, P&L & Revenue Reports',
     path: '/reports/profit-and-loss',
     requiredPermission: 'reports_finance:view',
     subItems: [
       { label: 'Báo cáo KQKD (Profit & Loss)', path: '/reports/profit-and-loss', icon: PieChart, requiredPermission: 'reports_finance:view' },
+      { label: 'RPT057 - Doanh số & Sản lượng', path: '/reports/rpt057', icon: BarChart3, requiredPermission: 'reports_finance:view' },
+      { label: 'RPT061 - Chi tiết dòng hàng bán', path: '/reports/rpt061', icon: FileSpreadsheet, requiredPermission: 'reports_finance:view' },
     ]
   },
   calendar: {
@@ -123,6 +126,7 @@ const modulesData = {
     requiredPermission: 'reports_finance:view',
     subItems: [
       { label: 'RPT057 - Doanh số & Sản lượng', path: '/reports/rpt057', icon: BarChart3, requiredPermission: 'reports_finance:view' },
+      { label: 'RPT061 - Chi tiết dòng hàng bán', path: '/reports/rpt061', icon: FileSpreadsheet, requiredPermission: 'reports_finance:view' },
       { label: 'RPT083 - Báo cáo tồn kho NPP', path: '/inventory/rpt083', icon: BarChart3, requiredPermission: 'inventory:view' },
       { label: 'Báo cáo KQKD (Profit & Loss)', path: '/reports/profit-and-loss', icon: PieChart, requiredPermission: 'reports_finance:view' },
     ]

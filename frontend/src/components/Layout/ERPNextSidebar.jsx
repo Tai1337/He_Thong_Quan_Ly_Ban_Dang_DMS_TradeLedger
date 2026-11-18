@@ -18,7 +18,8 @@ import {
   CheckSquare, 
   LogOut,
   SlidersHorizontal,
-  ChevronDown
+  ChevronDown,
+  FileSpreadsheet
 } from 'lucide-react';
 import './Layout.css';
 
@@ -68,6 +69,7 @@ const moduleSubmenus = {
     description: 'Analytics & Reporting',
     items: [
       { id: 'rpt-057', label: 'RPT057 - Doanh số & Sản lượng', icon: BarChart3, path: '/reports/rpt057' },
+      { id: 'rpt-061', label: 'RPT061 - Chi tiết dòng hàng bán', icon: FileSpreadsheet, path: '/reports/rpt061' },
       { id: 'rpt-083', label: 'RPT083 - Báo cáo tồn kho', icon: BarChart3, path: '/inventory/rpt083' },
       { id: 'rpt-005', label: 'RPT005 - Kiểm tra thiếu tồn kho', icon: CheckSquare, path: '/sales/sales-orders?rpt005=true' },
     ]

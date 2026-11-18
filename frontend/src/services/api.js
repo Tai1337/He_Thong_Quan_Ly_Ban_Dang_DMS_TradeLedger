@@ -381,6 +381,50 @@ export const getReportRpt005 = async (filters = {}) => {
   return data;
 };
 
+export const getReportRpt057 = async (filters = {}) => {
+  const cleanFilters = {};
+  Object.keys(filters).forEach((k) => {
+    if (filters[k] !== undefined && filters[k] !== null && filters[k] !== '') {
+      cleanFilters[k] = filters[k];
+    }
+  });
+  const query = new URLSearchParams(cleanFilters).toString();
+  const response = await fetch(`${API_URL}/reports/rpt057?${query}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || data.message || 'Lỗi tải dữ liệu RPT057');
+  }
+  return data;
+};
+
+export const exportReportRpt057 = (filters = {}) => {
+  const cleanFilters = { ...filters, export: 'excel' };
+  const query = new URLSearchParams(cleanFilters).toString();
+  window.open(`${API_URL}/reports/rpt057?${query}`, '_blank');
+};
+
+export const getReportRpt061 = async (filters = {}) => {
+  const cleanFilters = {};
+  Object.keys(filters).forEach((k) => {
+    if (filters[k] !== undefined && filters[k] !== null && filters[k] !== '') {
+      cleanFilters[k] = filters[k];
+    }
+  });
+  const query = new URLSearchParams(cleanFilters).toString();
+  const response = await fetch(`${API_URL}/reports/rpt061?${query}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || data.message || 'Lỗi tải dữ liệu RPT061');
+  }
+  return data;
+};
+
+export const exportReportRpt061 = (filters = {}) => {
+  const cleanFilters = { ...filters, export: 'excel' };
+  const query = new URLSearchParams(cleanFilters).toString();
+  window.open(`${API_URL}/reports/rpt061?${query}`, '_blank');
+};
+
 export const exportReportExcel = (reportType, filters = {}) => {
   const cleanFilters = { ...filters, export: 'excel' };
   const query = new URLSearchParams(cleanFilters).toString();

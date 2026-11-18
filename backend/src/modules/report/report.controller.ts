@@ -54,37 +54,71 @@ export class ReportController {
   async getRpt057(@Query() query: any, @Res() res: Response) {
     const distributorId = query.distributorId || 1;
     const isExport = query.export === 'excel';
-    const data = await this.reportService.getRpt057Data(distributorId, query);
+    const result: any = await this.reportService.getRpt057Data(distributorId, query);
 
     if (isExport) {
-      const headers = [
-        { label: 'STT', key: '__stt', width: 6, align: 'center' },
-        { label: 'Mã VNBH', key: 'vnbhCode', width: 16 },
-        { label: 'Họ tên VNBH', key: 'vnbhName', width: 26 },
-        { label: 'Tổng số đơn', key: 'totalOrders', width: 14, format: 'number' },
-        {
-          label: 'Tổng sản lượng (Thùng)',
-          key: 'totalQuantity',
-          width: 22,
-          format: 'number',
-        },
-        {
-          label: 'Tổng doanh số (VNĐ)',
-          key: 'totalAmount',
-          width: 22,
-          format: 'currency',
-        },
-      ];
+      const dimension = query.dimension || 'product';
+      let title = 'RPT057 - BÁO CÁO DOANH SỐ VÀ SẢN LƯỢNG';
+      let headers: any[] = [];
+
+      if (dimension === 'retailer') {
+        title = 'RPT057 - BÁO CÁO DOANH SỐ THEO ĐẠI LÝ / ĐIỂM BÁN';
+        headers = [
+          { label: 'STT', key: '__stt', width: 6, align: 'center' },
+          { label: 'Mã Đại lý', key: 'retailerCode', width: 16 },
+          { label: 'Tên Đại lý', key: 'retailerName', width: 28 },
+          { label: 'Địa chỉ', key: 'address', width: 32 },
+          { label: 'Số điện thoại', key: 'phone', width: 16 },
+          { label: 'Số đơn hàng', key: 'orderCount', width: 14, format: 'number' },
+          { label: 'Tổng sản lượng (Thùng)', key: 'totalQuantity', width: 22, format: 'number' },
+          { label: 'Tổng doanh số (VNĐ)', key: 'totalAmount', width: 22, format: 'currency' },
+          { label: 'Tỷ trọng (%)', key: 'revenueShare', width: 14, format: 'number' },
+        ];
+      } else if (dimension === 'vnbh') {
+        title = 'RPT057 - BÁO CÁO DOANH SỐ THEO NHÂN VIÊN BÁN HÀNG';
+        headers = [
+          { label: 'STT', key: '__stt', width: 6, align: 'center' },
+          { label: 'Mã VNBH', key: 'vnbhCode', width: 16 },
+          { label: 'Họ tên VNBH', key: 'vnbhName', width: 26 },
+          { label: 'Tổng số đơn', key: 'totalOrders', width: 14, format: 'number' },
+          {
+            label: 'Tổng sản lượng (Thùng)',
+            key: 'totalQuantity',
+            width: 22,
+            format: 'number',
+          },
+          {
+            label: 'Tổng doanh số (VNĐ)',
+            key: 'totalAmount',
+            width: 22,
+            format: 'currency',
+          },
+          { label: 'Tỷ trọng (%)', key: 'revenueShare', width: 14, format: 'number' },
+        ];
+      } else {
+        title = 'RPT057 - BÁO CÁO DOANH SỐ THEO MẶT HÀNG (SKU)';
+        headers = [
+          { label: 'STT', key: '__stt', width: 6, align: 'center' },
+          { label: 'Mã SKU', key: 'sku', width: 16 },
+          { label: 'Tên sản phẩm', key: 'productName', width: 32 },
+          { label: 'ĐVT', key: 'unit', width: 10, align: 'center' },
+          { label: 'Số đơn đặt', key: 'orderCount', width: 14, format: 'number' },
+          { label: 'Sản lượng bán', key: 'totalQuantity', width: 18, format: 'number' },
+          { label: 'Đơn giá BQ (VNĐ)', key: 'avgPrice', width: 18, format: 'currency' },
+          { label: 'Tổng doanh số (VNĐ)', key: 'totalAmount', width: 22, format: 'currency' },
+          { label: 'Tỷ trọng (%)', key: 'revenueShare', width: 14, format: 'number' },
+        ];
+      }
 
       const buffer = await this.reportService.exportReportToExcel({
-        title: 'RPT057 - BÁO CÁO DOANH SỐ VÀ SẢN LƯỢNG THEO VNBH',
+        title,
         headers,
-        data,
+        data: result.data || [],
       });
 
       res.setHeader(
         'Content-Disposition',
-        'attachment; filename="RPT057_Doanh_So_San_Luong.xlsx"',
+        `attachment; filename="RPT057_Doanh_So_${dimension}.xlsx"`,
       );
       res.setHeader(
         'Content-Type',
@@ -93,7 +127,7 @@ export class ReportController {
       return res.send(buffer);
     }
 
-    return res.status(200).json({ data });
+    return res.status(200).json(result);
   }
 
   @Get('rpt006')

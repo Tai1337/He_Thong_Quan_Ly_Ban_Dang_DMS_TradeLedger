@@ -43,6 +43,8 @@ const routesSubMenu = [
 
 const pnlSubMenu = [
   { id: 'pnl-statement', label: 'Báo cáo KQKD (Profit & Loss)', path: '/reports/profit-and-loss' },
+  { id: 'sales-rpt057', label: 'RPT057 - Doanh số & Sản lượng', path: '/reports/rpt057' },
+  { id: 'sales-rpt061', label: 'RPT061 - Chi tiết dòng hàng bán', path: '/reports/rpt061' },
 ];
 
 const adminSubMenu = [

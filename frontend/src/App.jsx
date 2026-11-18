@@ -4,6 +4,7 @@ import { io } from 'socket.io-client';
 import Login from './pages/Login/Login';
 import Home from './pages/Home/Home';
 import RPT057 from './pages/Reports/RPT057/RPT057';
+import RPT061 from './pages/Reports/RPT061/RPT061';
 import RPT083 from './pages/Inventory/RPT083/RPT083';
 import InventoryCountList from './pages/Inventory/InventoryCount/InventoryCountList';
 import InventoryCountDetail from './pages/Inventory/InventoryCount/InventoryCountDetail';
@@ -216,6 +217,18 @@ function App() {
             user ? (
               <Layout user={user} onLogout={handleLogout}>
                 <RPT057 />
+              </Layout>
+            ) : (
+              <Navigate to="/login" />
+            )
+          } 
+        />
+        <Route 
+          path="/reports/rpt061" 
+          element={
+            user ? (
+              <Layout user={user} onLogout={handleLogout}>
+                <RPT061 />
               </Layout>
             ) : (
               <Navigate to="/login" />

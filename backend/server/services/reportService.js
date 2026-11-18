@@ -68,43 +68,142 @@ export const getRpt005Data = async (distributorId, filters = {}) => {
 };
 
 /**
- * Lấy dữ liệu cho RPT057: Báo cáo doanh số và sản lượng
+ * Lấy dữ liệu cho RPT057: Báo cáo doanh số và sản lượng đa chiều
+ * Hỗ trợ dimension: 'product' | 'retailer' | 'vnbh'
  */
 export const getRpt057Data = async (distributorId, filters = {}) => {
-  const { orders } = await findSalesOrdersByDistributor(distributorId, {
+  const dimension = filters.dimension || 'product';
+
+  const filterParams = {
     ...filters,
     page: 1,
-    limit: 2000
-  });
+    limit: 5000,
+  };
 
-  // Gom nhóm theo VNBH
-  const vnbhMap = {};
+  if (!filterParams.status) {
+    filterParams.status = ['CONFIRMED', 'ALLOCATED', 'PICKING', 'DELIVERING', 'DELIVERED', 'INVOICED', 'COMPLETED'];
+  }
+
+  const { orders } = await findSalesOrdersByDistributor(distributorId, filterParams);
+
+  let totalRevenue = 0;
+  let totalVolume = 0;
+  const uniqueRetailerSet = new Set();
+  const uniqueProductSet = new Set();
+  const groupMap = {};
 
   for (const order of orders) {
+    const retailerId = order.retailer?.id?.toString() || 'unknown';
+    const retailerCode = order.retailer?.code || 'N/A';
+    const retailerName = order.retailer?.name || 'Khách vãng lai';
+    const address = order.retailer?.address || '';
+    const phone = order.retailer?.phone || '';
+    uniqueRetailerSet.add(retailerId);
+
     const vnbhKey = order.createdBy?.username || 'Chưa gán';
     const vnbhName = order.createdBy?.fullName || 'Chưa gán';
 
-    if (!vnbhMap[vnbhKey]) {
-      vnbhMap[vnbhKey] = {
-        vnbhCode: vnbhKey,
-        vnbhName,
-        totalOrders: 0,
-        totalQuantity: 0,
-        totalAmount: 0
-      };
-    }
-
-    vnbhMap[vnbhKey].totalOrders += 1;
-
     for (const item of (order.items || [])) {
-      const qty = Number(item.quantity);
-      const price = Number(item.unitPrice);
-      vnbhMap[vnbhKey].totalQuantity += qty;
-      vnbhMap[vnbhKey].totalAmount += qty * price;
+      const pId = item.productId?.toString() || 'unknown';
+      const sku = item.product?.sku || 'N/A';
+      const productName = item.product?.name || 'Sản phẩm khác';
+      const unit = item.product?.unit || 'Thùng';
+      const retailUnit = item.product?.retailUnit || '';
+
+      const qty = Number(item.quantity) || 0;
+      const price = Number(item.unitPrice) || 0;
+      const discount = Number(item.discountAmount) || 0;
+      const lineTotal = Math.max(0, qty * price - discount);
+
+      totalRevenue += lineTotal;
+      totalVolume += qty;
+      uniqueProductSet.add(pId);
+
+      let key = '';
+      if (dimension === 'product') {
+        key = pId;
+        if (!groupMap[key]) {
+          groupMap[key] = {
+            productId: pId,
+            sku,
+            productName,
+            unit,
+            retailUnit,
+            orderCount: 0,
+            orderIds: new Set(),
+            totalQuantity: 0,
+            totalAmount: 0,
+          };
+        }
+        groupMap[key].orderIds.add(order.id.toString());
+        groupMap[key].totalQuantity += qty;
+        groupMap[key].totalAmount += lineTotal;
+      } else if (dimension === 'retailer') {
+        key = retailerId;
+        if (!groupMap[key]) {
+          groupMap[key] = {
+            retailerId,
+            retailerCode,
+            retailerName,
+            address,
+            phone,
+            orderCount: 0,
+            orderIds: new Set(),
+            totalQuantity: 0,
+            totalAmount: 0,
+          };
+        }
+        groupMap[key].orderIds.add(order.id.toString());
+        groupMap[key].totalQuantity += qty;
+        groupMap[key].totalAmount += lineTotal;
+      } else {
+        key = vnbhKey;
+        if (!groupMap[key]) {
+          groupMap[key] = {
+            vnbhCode: vnbhKey,
+            vnbhName,
+            orderCount: 0,
+            orderIds: new Set(),
+            totalQuantity: 0,
+            totalAmount: 0,
+          };
+        }
+        groupMap[key].orderIds.add(order.id.toString());
+        groupMap[key].totalQuantity += qty;
+        groupMap[key].totalAmount += lineTotal;
+      }
     }
   }
 
-  return Object.values(vnbhMap);
+  const data = Object.values(groupMap).map((row) => {
+    const orderCount = row.orderIds ? row.orderIds.size : row.orderCount;
+    delete row.orderIds;
+    const avgPrice = row.totalQuantity > 0 ? Math.round(row.totalAmount / row.totalQuantity) : 0;
+    const revenueShare = totalRevenue > 0 ? Number(((row.totalAmount / totalRevenue) * 100).toFixed(2)) : 0;
+    return {
+      ...row,
+      orderCount,
+      totalOrders: orderCount,
+      avgPrice,
+      revenueShare,
+    };
+  }).sort((a, b) => b.totalAmount - a.totalAmount);
+
+  const totalOrders = orders.length;
+  const averageOrderValue = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
+
+  return {
+    summary: {
+      totalRevenue: Math.round(totalRevenue),
+      totalVolume,
+      totalOrders,
+      averageOrderValue,
+      uniqueProducts: uniqueProductSet.size,
+      uniqueRetailers: uniqueRetailerSet.size,
+    },
+    data,
+    dimension,
+  };
 };
 
 /**
@@ -181,14 +280,17 @@ export const getRpt061Data = async (distributorId, filters = {}) => {
   const { orders } = await findSalesOrdersByDistributor(distributorId, {
     ...filters,
     page: 1,
-    limit: 2000
+    limit: 3000
   });
 
   const rows = [];
   for (const order of orders) {
     for (const item of (order.items || [])) {
-      const qty = Number(item.quantity);
-      const price = Number(item.unitPrice);
+      const qty = Number(item.quantity) || 0;
+      const price = Number(item.unitPrice) || 0;
+      const discount = Number(item.discountAmount) || 0;
+      const isPromo = Boolean(item.isPromotion);
+      const lineTotal = isPromo ? 0 : Math.max(0, qty * price - discount);
 
       const lotsStr = (item.allocations || [])
         .map(a => `${a.stockLot?.lotNumber || 'N/A'} (${a.quantity})`)
@@ -206,7 +308,9 @@ export const getRpt061Data = async (distributorId, filters = {}) => {
         unit: item.product?.unit || 'THÙNG',
         quantity: qty,
         unitPrice: price,
-        totalAmount: qty * price,
+        discountAmount: discount,
+        totalAmount: lineTotal,
+        isPromotion: isPromo,
         allocatedLots: lotsStr
       });
     }
