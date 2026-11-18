@@ -154,14 +154,13 @@ export default function RPT002PrintView({ trips = [], currentUserName = 'Thủ k
         <table className="rpt-table">
           <thead>
             <tr>
-              <th style={{ width: '35px' }}>STT</th>
-              <th style={{ width: '95px' }}>Mã SKU</th>
-              <th>Tên Sản Phẩm & Quy Cách</th>
-              <th style={{ width: '65px' }}>ĐVT</th>
-              <th style={{ width: '220px' }}>Số Lô / Hạn Dùng / Vị Trí Kho</th>
-              <th style={{ width: '75px' }}>SL Bốc</th>
-              <th style={{ width: '85px' }}>Thực Xuất</th>
-              <th style={{ width: '85px' }}>Ghi Chú</th>
+              <th style={{ width: '5%' }}>STT</th>
+              <th style={{ width: '13%' }}>Mã SKU</th>
+              <th style={{ width: '31%' }}>Tên Sản Phẩm & Quy Cách</th>
+              <th style={{ width: '7%' }}>ĐVT</th>
+              <th style={{ width: '22%' }}>Số Lô / Hạn Dùng / Vị Trí Kho</th>
+              <th style={{ width: '10%' }}>SL Bốc</th>
+              <th style={{ width: '12%' }}>Thực Xuất</th>
             </tr>
           </thead>
           <tbody>
@@ -172,6 +171,11 @@ export default function RPT002PrintView({ trips = [], currentUserName = 'Thủ k
                 <td>
                   <div className="font-bold">{item.name}</div>
                   {item.isPromo && <span className="badge-foc">🎁 Hàng tặng khuyến mãi 0đ</span>}
+                  {isMultiple && item.tripCodes.size > 0 && (
+                    <div style={{ fontSize: '10.5px', color: '#475569', marginTop: '2px' }}>
+                      Xe: {Array.from(item.tripCodes).join(', ')}
+                    </div>
+                  )}
                 </td>
                 <td className="text-center font-semibold">{item.unit}</td>
                 <td style={{ fontSize: '11px', color: '#334155' }}>
@@ -186,20 +190,23 @@ export default function RPT002PrintView({ trips = [], currentUserName = 'Thủ k
                 <td className="text-right font-bold text-blue-900" style={{ fontSize: '13px' }}>
                   {formatNumber(item.totalQuantity)}
                 </td>
-                <td className="text-center" style={{ color: '#cbd5e1' }}>[ &nbsp;&nbsp;&nbsp;&nbsp; ]</td>
-                <td style={{ fontSize: '11px' }}>
-                  {isMultiple && <span>Xe: {Array.from(item.tripCodes).join(', ')}</span>}
+                <td className="text-center" style={{ color: '#94a3b8', fontSize: '11px' }}>
+                  [ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ]
                 </td>
               </tr>
             ))}
           </tbody>
           <tfoot>
             <tr className="rpt-table-total-row">
-              <td colSpan={5} className="text-right font-bold">TỔNG CỘNG SỐ LƯỢNG HÀNG XUẤT BỐC LÊN XE:</td>
-              <td className="text-right font-bold text-blue-900" style={{ fontSize: '14px' }}>
+              <td colSpan={5} className="text-right font-bold">
+                TỔNG CỘNG SỐ LƯỢNG HÀNG XUẤT BỐC LÊN XE:
+              </td>
+              <td className="text-right font-bold text-blue-900" style={{ fontSize: '13.5px' }}>
                 {formatNumber(totalPackages)}
               </td>
-              <td colSpan={2} className="text-center font-bold">Thùng/Kiện</td>
+              <td className="text-center font-bold" style={{ fontSize: '11px' }}>
+                Thùng/Kiện
+              </td>
             </tr>
           </tfoot>
         </table>
@@ -231,3 +238,4 @@ export default function RPT002PrintView({ trips = [], currentUserName = 'Thủ k
     </div>
   );
 }
+

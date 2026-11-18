@@ -1,20 +1,29 @@
 /* src/pages/Logistics/Reports/ReportsPrint.css */
 
-/* Khung hiển thị chứng từ xem trước và in */
+/* Box sizing cho toàn bộ tài liệu in */
+.rpt-print-document,
+.rpt-print-document * {
+  box-sizing: border-box;
+}
+
+/* Khung hiển thị chứng từ xem trước trên màn hình */
 .rpt-print-document {
-  background: white;
+  background: #ffffff;
   color: #0f172a;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   line-height: 1.4;
-  padding: 24px;
-  max-width: 900px;
+  padding: 32px 36px;
+  max-width: 880px;
+  width: 100%;
   margin: 0 auto;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
 }
 
 .rpt-print-page {
   page-break-after: always;
+  break-after: page;
   margin-bottom: 30px;
   padding-bottom: 24px;
   border-bottom: 1px dashed #cbd5e1;
@@ -22,6 +31,7 @@
 
 .rpt-print-page:last-child {
   page-break-after: avoid;
+  break-after: avoid;
   margin-bottom: 0;
   padding-bottom: 0;
   border-bottom: none;
@@ -35,30 +45,33 @@
   border-bottom: 2px solid #0f172a;
   padding-bottom: 12px;
   margin-bottom: 16px;
+  gap: 16px;
 }
 
 .rpt-company-info h3 {
-  font-size: 15px;
+  font-size: 14.5px;
   font-weight: 800;
   margin: 0 0 4px 0;
   color: #0f172a;
   text-transform: uppercase;
+  letter-spacing: -0.01em;
 }
 
 .rpt-company-info p {
-  font-size: 12px;
+  font-size: 11.5px;
   color: #475569;
   margin: 2px 0;
 }
 
 .rpt-doc-code-badge {
   text-align: right;
-  font-size: 12px;
+  font-size: 11.5px;
   color: #64748b;
+  flex-shrink: 0;
 }
 
 .rpt-doc-code-badge strong {
-  font-size: 14px;
+  font-size: 13.5px;
   color: #1e293b;
   display: block;
   font-family: monospace;
@@ -71,16 +84,16 @@
 }
 
 .rpt-doc-title {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 800;
   color: #0f172a;
-  margin: 0 0 6px 0;
+  margin: 0 0 4px 0;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 }
 
 .rpt-doc-subtitle {
-  font-size: 12px;
+  font-size: 11.5px;
   color: #475569;
   font-style: italic;
   margin: 0;
@@ -94,8 +107,8 @@
   background-color: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
-  padding: 12px 16px;
-  font-size: 12.5px;
+  padding: 10px 14px;
+  font-size: 12px;
   margin-bottom: 16px;
 }
 
@@ -107,27 +120,33 @@
 .rpt-meta-label {
   color: #64748b;
   font-weight: 600;
-  min-width: 110px;
+  min-width: 115px;
+  flex-shrink: 0;
 }
 
 .rpt-meta-value {
   color: #0f172a;
   font-weight: 500;
+  word-break: break-word;
 }
 
-/* Bảng dữ liệu in ấn */
+/* Bảng dữ liệu in ấn chuẩn fixed table */
 .rpt-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: 11.5px;
   margin-bottom: 16px;
+  background-color: #ffffff;
 }
 
 .rpt-table th,
 .rpt-table td {
   border: 1px solid #cbd5e1;
-  padding: 7px 8px;
+  padding: 6px 7px;
   vertical-align: middle;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .rpt-table th {
@@ -136,11 +155,12 @@
   font-weight: 700;
   text-align: center;
   text-transform: uppercase;
-  font-size: 11px;
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
 }
 
 .rpt-table tbody tr:nth-child(even) {
-  background-color: #fafafa;
+  background-color: #fafbfc;
 }
 
 .rpt-table-total-row {
@@ -149,7 +169,7 @@
 }
 
 .rpt-table-total-row td {
-  padding: 9px 8px;
+  padding: 8px 7px;
 }
 
 /* Khối thanh toán cho RPT004 */
@@ -160,12 +180,12 @@
 }
 
 .rpt-payment-summary-box {
-  width: 340px;
+  width: 330px;
   background-color: #f8fafc;
   border: 1px solid #cbd5e1;
   border-radius: 6px;
   padding: 10px 14px;
-  font-size: 12px;
+  font-size: 11.5px;
 }
 
 .rpt-payment-line {
@@ -175,7 +195,7 @@
 }
 
 .rpt-payment-line.highlight {
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 800;
   color: #1e3a8a;
   border-top: 1.5px solid #cbd5e1;
@@ -184,7 +204,7 @@
 }
 
 .rpt-words-block {
-  font-size: 11.5px;
+  font-size: 11px;
   font-style: italic;
   color: #475569;
   margin-top: 4px;
@@ -197,7 +217,9 @@
   gap: 16px;
   text-align: center;
   margin-top: 24px;
-  font-size: 12px;
+  font-size: 11.5px;
+  page-break-inside: avoid;
+  break-inside: avoid;
 }
 
 .rpt-signatures-grid.two-cols {
@@ -209,29 +231,34 @@
   text-transform: uppercase;
   color: #0f172a;
   margin-bottom: 4px;
+  font-size: 11.5px;
 }
 
 .rpt-sign-hint {
-  font-size: 11px;
+  font-size: 10.5px;
   color: #64748b;
   font-style: italic;
 }
 
 .rpt-sign-space {
-  height: 60px;
+  height: 55px;
 }
 
 .rpt-sign-name {
   font-weight: 600;
   color: #0f172a;
+  font-size: 12px;
 }
 
-/* Utilities in ấn */
+/* Utilities */
 .text-center { text-align: center; }
 .text-right { text-align: right; }
 .text-left { text-align: left; }
 .font-bold { font-weight: 700; }
+.font-semibold { font-weight: 600; }
+.font-medium { font-weight: 500; }
 .font-mono { font-family: monospace; }
+
 .badge-foc {
   display: inline-block;
   background-color: #dcfce7;
@@ -243,49 +270,73 @@
   margin-top: 2px;
 }
 
-/* Định dạng in @media print */
+/* ========================================================
+   PRINT ENGINE: @media print (CHẮC CHẮN IN ĐƯỢC 100%)
+   ======================================================== */
 @media print {
   @page {
     size: A4 portrait;
-    margin: 10mm;
+    margin: 8mm 10mm;
   }
 
+  /* Reset toàn bộ thanh cuộn và layout container của App */
+  html,
   body {
-    background: white !important;
-    color: black !important;
-  }
-
-  /* Ẩn toàn bộ giao diện app khi in */
-  .frappe-sidebar,
-  .erpnext-sidebar,
-  .frappe-header,
-  .erpnext-topbar,
-  .rpt-no-print,
-  .report-header,
-  .detail-action-bar,
-  .trip-detail-nav-tabs,
-  button {
-    display: none !important;
-  }
-
-  .rpt-print-document {
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    padding: 0 !important;
-    max-width: 100% !important;
+    height: auto !important;
+    min-height: 100% !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    color: #000000 !important;
     margin: 0 !important;
+    padding: 0 !important;
   }
 
+  /* Ẩn tất cả mọi thứ trên body theo cơ chế visibility */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Chỉ cho phép vùng chứng từ hiển thị */
+  .rpt-print-document,
+  .rpt-print-document * {
+    visibility: visible;
+  }
+
+  /* Định vị vùng chứng từ lên trên cùng góc (0, 0) của trang giấy in */
+  .rpt-print-document {
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  /* Phân trang A4 chuẩn */
   .rpt-print-page {
     page-break-after: always !important;
+    break-after: page !important;
     margin-bottom: 0 !important;
     padding-bottom: 0 !important;
     border-bottom: none !important;
   }
 
+  .rpt-print-page:last-child {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
   .rpt-table th,
   .rpt-table td {
-    border-color: #000 !important;
+    border-color: #000000 !important;
   }
 
   .rpt-meta-grid,
@@ -295,5 +346,10 @@
     background-color: #f1f5f9 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+
+  .rpt-signatures-grid {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 }

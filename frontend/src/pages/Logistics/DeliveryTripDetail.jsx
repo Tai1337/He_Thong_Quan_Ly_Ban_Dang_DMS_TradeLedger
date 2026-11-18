@@ -67,7 +67,9 @@ export default function DeliveryTripDetail() {
   }, [id]);
 
   const handlePrint = () => {
-    window.print();
+    setTimeout(() => {
+      window.print();
+    }, 100);
   };
 
   const handlePrintSingleOrder = (order) => {
@@ -777,3 +779,4 @@ export default function DeliveryTripDetail() {
     </div>
   );
 }
+

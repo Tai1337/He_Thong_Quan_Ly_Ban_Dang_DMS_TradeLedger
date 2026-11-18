@@ -79,16 +79,16 @@ export default function RPT006PrintView({ trip = {}, accountantName = 'Kế toá
         <table className="rpt-table">
           <thead>
             <tr>
-              <th style={{ width: '35px' }}>STT</th>
-              <th style={{ width: '100px' }}>Mã Đơn SO</th>
-              <th>Tên Cửa Hàng / Khách Hàng</th>
-              <th style={{ width: '170px' }}>Địa Chỉ Giao Hàng</th>
-              <th style={{ width: '85px' }}>Điện Thoại</th>
-              <th style={{ width: '60px' }}>Số Thùng</th>
-              <th style={{ width: '105px' }} className="text-right">Tiền Phải Thu</th>
-              <th style={{ width: '95px' }} className="text-right">Thực Thu</th>
-              <th style={{ width: '75px' }} className="text-center">Hình Thức</th>
-              <th style={{ width: '85px' }} className="text-center">Ký Nhận</th>
+              <th style={{ width: '4%' }}>STT</th>
+              <th style={{ width: '11%' }}>Mã Đơn SO</th>
+              <th style={{ width: '20%' }}>Tên Cửa Hàng / Khách Hàng</th>
+              <th style={{ width: '19%' }}>Địa Chỉ Giao Hàng</th>
+              <th style={{ width: '10%' }}>Điện Thoại</th>
+              <th style={{ width: '6%' }}>Số Thùng</th>
+              <th style={{ width: '11%' }} className="text-right">Tiền Phải Thu</th>
+              <th style={{ width: '9%' }} className="text-right">Thực Thu</th>
+              <th style={{ width: '5%' }} className="text-center">Hình Thức</th>
+              <th style={{ width: '5%' }} className="text-center">Ký Nhận</th>
             </tr>
           </thead>
           <tbody>
@@ -161,3 +161,4 @@ export default function RPT006PrintView({ trip = {}, accountantName = 'Kế toá
     </div>
   );
 }
+

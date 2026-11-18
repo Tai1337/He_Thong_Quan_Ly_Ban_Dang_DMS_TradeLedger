@@ -85,15 +85,15 @@ export default function RPT004PrintView({ trip = {}, orders = [] }) {
             <table className="rpt-table">
               <thead>
                 <tr>
-                  <th style={{ width: '35px' }}>STT</th>
-                  <th style={{ width: '90px' }}>Mã SKU</th>
-                  <th>Tên Sản Phẩm & Quy Cách</th>
-                  <th style={{ width: '60px' }}>ĐVT</th>
-                  <th style={{ width: '65px' }}>SL Đặt</th>
-                  <th style={{ width: '65px' }}>SL Giao</th>
-                  <th style={{ width: '95px' }} className="text-right">Đơn Giá</th>
-                  <th style={{ width: '85px' }} className="text-right">Chiết Khấu</th>
-                  <th style={{ width: '110px' }} className="text-right">Thành Tiền</th>
+                  <th style={{ width: '4%' }}>STT</th>
+                  <th style={{ width: '11%' }}>Mã SKU</th>
+                  <th style={{ width: '29%' }}>Tên Sản Phẩm & Quy Cách</th>
+                  <th style={{ width: '6%' }}>ĐVT</th>
+                  <th style={{ width: '7%' }}>SL Đặt</th>
+                  <th style={{ width: '7%' }}>SL Giao</th>
+                  <th style={{ width: '11%' }} className="text-right">Đơn Giá</th>
+                  <th style={{ width: '11%' }} className="text-right">Chiết Khấu</th>
+                  <th style={{ width: '14%' }} className="text-right">Thành Tiền</th>
                 </tr>
               </thead>
               <tbody>
@@ -177,3 +177,4 @@ export default function RPT004PrintView({ trip = {}, orders = [] }) {
     </div>
   );
 }
+

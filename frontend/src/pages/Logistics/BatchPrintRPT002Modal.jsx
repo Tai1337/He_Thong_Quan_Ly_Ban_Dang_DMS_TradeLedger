@@ -43,7 +43,9 @@ export default function BatchPrintRPT002Modal({ isOpen, onClose, tripIds = [] })
   if (!isOpen) return null;
 
   const handlePrint = () => {
-    window.print();
+    setTimeout(() => {
+      window.print();
+    }, 100);
   };
 
   return (
@@ -105,3 +107,4 @@ export default function BatchPrintRPT002Modal({ isOpen, onClose, tripIds = [] })
     </div>
   );
 }
+

@@ -123,10 +123,10 @@
 }
 
 .batch-print-content {
-  background: #ffffff;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  background: transparent;
+  padding: 0;
+  display: flex;
+  justify-content: center;
 }
 
 .batch-loading-state,
@@ -186,3 +186,4 @@
     display: none !important;
   }
 }
+
