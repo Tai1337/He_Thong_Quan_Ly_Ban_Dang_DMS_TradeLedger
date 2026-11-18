@@ -260,7 +260,11 @@
 
 .table-responsive {
   width: 100%;
+  max-height: calc(100vh - 320px);
+  min-height: 280px;
+  overflow-y: auto;
   overflow-x: auto;
+  position: relative;
 }
 
 .data-table {
@@ -270,6 +274,9 @@
 }
 
 .data-table th {
+  position: sticky;
+  top: 0;
+  z-index: 8;
   background-color: #f8fafc;
   color: #475569;
   font-weight: 700;
@@ -279,6 +286,7 @@
   padding: 12px 14px;
   border-bottom: 2px solid #e2e8f0;
   white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .data-table td {
@@ -292,14 +300,25 @@
   background-color: #f8fafc;
 }
 
+.data-table tfoot {
+  position: sticky;
+  bottom: 0;
+  z-index: 9;
+}
+
 .table-total-row {
   background-color: #f1f5f9;
-  border-top: 2px solid #cbd5e1;
   font-size: 13px;
 }
 
-.table-total-row td {
+.data-table tfoot tr.table-total-row td {
+  position: sticky;
+  bottom: 0;
+  z-index: 9;
+  background-color: #f1f5f9;
+  border-top: 2px solid #cbd5e1;
   padding: 14px;
+  box-shadow: 0 -3px 8px rgba(0, 0, 0, 0.08);
 }
 
 /* Badges & Tags */

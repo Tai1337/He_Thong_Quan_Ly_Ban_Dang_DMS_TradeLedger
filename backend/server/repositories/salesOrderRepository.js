@@ -40,6 +40,8 @@ export const findSalesOrdersByDistributor = async (distributorId, filters = {}) 
     } else if (typeof status === 'string') {
       statusList = status.split(',').map(s => s.trim()).filter(Boolean);
     }
+    const validStatuses = ['PENDING', 'SUBMITTED', 'ALLOCATED', 'SHIPPED', 'DELIVERED', 'DELIVERY_FAILED', 'INVOICED', 'PAID', 'CANCELLED'];
+    statusList = statusList.filter(s => validStatuses.includes(s));
     if (statusList.length === 1) {
       where.status = statusList[0];
     } else if (statusList.length > 1) {

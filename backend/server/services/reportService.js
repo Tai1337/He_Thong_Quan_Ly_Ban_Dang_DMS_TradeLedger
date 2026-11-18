@@ -81,7 +81,7 @@ export const getRpt057Data = async (distributorId, filters = {}) => {
   };
 
   if (!filterParams.status) {
-    filterParams.status = ['CONFIRMED', 'ALLOCATED', 'PICKING', 'DELIVERING', 'DELIVERED', 'INVOICED', 'COMPLETED'];
+    filterParams.status = ['PENDING', 'SUBMITTED', 'ALLOCATED', 'SHIPPED', 'DELIVERED', 'INVOICED', 'PAID'];
   }
 
   const { orders } = await findSalesOrdersByDistributor(distributorId, filterParams);

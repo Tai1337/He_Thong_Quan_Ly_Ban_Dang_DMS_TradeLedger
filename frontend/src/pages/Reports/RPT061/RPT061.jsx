@@ -251,12 +251,14 @@ export default function RPT061() {
               onChange={(e) => setStatusFilter(e.target.value)}
             >
               <option value="">Tất cả trạng thái</option>
-              <option value="CONFIRMED">Đã duyệt (CONFIRMED)</option>
+              <option value="PENDING">Chờ xử lý (PENDING)</option>
+              <option value="SUBMITTED">Đã gửi (SUBMITTED)</option>
               <option value="ALLOCATED">Đã phân bổ kho (ALLOCATED)</option>
-              <option value="DELIVERING">Đang giao hàng (DELIVERING)</option>
+              <option value="SHIPPED">Đang giao hàng (SHIPPED)</option>
               <option value="DELIVERED">Đã giao hàng (DELIVERED)</option>
               <option value="INVOICED">Đã xuất hóa đơn (INVOICED)</option>
-              <option value="COMPLETED">Hoàn tất (COMPLETED)</option>
+              <option value="PAID">Đã thanh toán (PAID)</option>
+              <option value="CANCELLED">Đã hủy (CANCELLED)</option>
             </select>
           </div>
         </div>
@@ -407,3 +409,4 @@ export default function RPT061() {
     </div>
   );
 }
+
