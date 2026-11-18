@@ -19,6 +19,7 @@ import JobCardCalendar from './pages/Operations/JobCardCalendar/JobCardCalendar'
 import TaskGantt from './pages/Operations/TaskGantt/TaskGantt';
 import ThemeReview from './pages/ThemeReview/ThemeReview';
 import DeliveryTripList from './pages/Logistics/DeliveryTripList';
+import DeliveryTripDetail from './pages/Logistics/DeliveryTripDetail';
 import ShopHome from './pages/Shop/ShopHome';
 import ShopProductDetail from './pages/Shop/ShopProductDetail';
 import ProductManagement from './pages/Catalog/ProductManagement/ProductManagement';
@@ -153,6 +154,18 @@ function App() {
             user ? (
               <Layout user={user} onLogout={handleLogout}>
                 <DeliveryTripList />
+              </Layout>
+            ) : (
+              <Navigate to="/login" />
+            )
+          } 
+        />
+        <Route 
+          path="/logistics/delivery-trips/:id" 
+          element={
+            user ? (
+              <Layout user={user} onLogout={handleLogout}>
+                <DeliveryTripDetail />
               </Layout>
             ) : (
               <Navigate to="/login" />

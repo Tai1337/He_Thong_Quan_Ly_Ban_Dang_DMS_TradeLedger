@@ -128,6 +128,7 @@ export class DeliveryTripRepository {
           include: {
             retailer: true,
             warehouse: true,
+            invoice: true,
             items: {
               include: {
                 product: true,

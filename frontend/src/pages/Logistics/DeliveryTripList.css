@@ -432,6 +432,79 @@
   color: #ffffff;
 }
 
+/* Trip Code Link */
+.trip-code-link {
+  font-size: 14px;
+  font-weight: 700;
+  color: #2563eb;
+  text-decoration: none;
+  font-family: monospace;
+  transition: color 0.15s;
+}
+
+.trip-code-link:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+/* Row selection */
+.trips-table tr.row-selected td {
+  background-color: #eff6ff;
+}
+
+/* Batch Print Button */
+.btn-batch-print-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-batch-print-action:hover {
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+  box-shadow: 0 4px 6px rgba(37, 99, 235, 0.25);
+}
+
+/* Row Actions */
+.trip-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-table-action-detail {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #1e293b;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.btn-table-action-detail:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #2563eb;
+}
+
 /* Pagination */
 .trips-pagination-bar {
   display: flex;

@@ -86,6 +86,24 @@ export class DeliveryController {
     return { data: drivers };
   }
 
+  @Get('batch')
+  async getBatchDeliveryTrips(
+    @Query('ids') idsStr: string,
+    @Query('distributorId') qDistId?: any,
+  ) {
+    const distributorId = qDistId || 1;
+    const ids = idsStr
+      ? idsStr
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : [];
+    const trips = await Promise.all(
+      ids.map((id) => this.deliveryService.getDeliveryTripDetail(id, distributorId)),
+    );
+    return { data: trips.filter(Boolean) };
+  }
+
   @Get(':id')
   async getDeliveryTripDetail(
     @Param('id') id: string,

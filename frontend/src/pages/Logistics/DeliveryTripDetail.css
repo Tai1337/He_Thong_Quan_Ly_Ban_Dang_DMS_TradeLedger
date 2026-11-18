@@ -1,0 +1,763 @@
+/* ========================================================
+   DELIVERY TRIP DETAIL PAGE STYLING (DMS-NPP LOGISTICS)
+   ======================================================== */
+
+.trip-detail-page {
+  padding: 24px;
+  max-width: 1440px;
+  margin: 0 auto;
+  min-height: calc(100vh - 80px);
+  background-color: #f8fafc;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: #1e293b;
+}
+
+/* 1. Breadcrumb & Top Bar */
+.trip-detail-top-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.trip-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.breadcrumb-link {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+
+.breadcrumb-link:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.breadcrumb-sep {
+  color: #94a3b8;
+}
+
+.breadcrumb-current {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.trip-header-action-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-outline-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #334155;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-outline-back:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.btn-outline-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-outline-refresh:hover {
+  background: #f1f5f9;
+  color: #2563eb;
+  border-color: #2563eb;
+}
+
+.btn-primary-dispatch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+  transition: all 0.2s;
+}
+
+.btn-primary-dispatch:hover {
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+}
+
+/* 2. Hero Header Card */
+.trip-hero-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.trip-hero-title-row {
+  margin-bottom: 16px;
+}
+
+.trip-code-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.truck-icon {
+  color: #2563eb;
+}
+
+.trip-code-box h1 {
+  font-size: 24px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.trip-hero-notes {
+  margin: 8px 0 0 0;
+  font-size: 13.5px;
+  color: #64748b;
+  background: #f8fafc;
+  border-left: 3px solid #3b82f6;
+  padding: 6px 12px;
+  border-radius: 0 6px 6px 0;
+}
+
+.trip-quick-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  padding: 16px 0;
+  border-top: 1px dashed #e2e8f0;
+  border-bottom: 1px dashed #e2e8f0;
+}
+
+.meta-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.meta-label {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.meta-val {
+  font-size: 14.5px;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+/* In ấn nhanh */
+.trip-print-quick-actions {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.print-actions-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.print-buttons-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-report-quick {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #1e293b;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-report-quick:hover {
+  background: #e2e8f0;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.btn-report-quick.active {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+
+/* 3. Summary Metrics Strip */
+.trip-summary-metrics-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.metric-pill {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.metric-pill.highlight {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.metric-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.metric-icon.blue {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.metric-icon.amber {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.metric-icon.purple {
+  background: #f3e8ff;
+  color: #7e22ce;
+}
+
+.metric-icon.green {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.metric-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.metric-label {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.metric-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* 4. Tab Navigation Bar */
+.trip-detail-tabs-bar {
+  display: flex;
+  gap: 8px;
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.tab-item-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -6px;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  border-radius: 6px 6px 0 0;
+}
+
+.tab-item-btn:hover {
+  color: #1e293b;
+  background: #f1f5f9;
+}
+
+.tab-item-btn.active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+  background: #ffffff;
+}
+
+/* 5. Tab Content Views */
+.tab-pane-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.tab-pane-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.tab-pane-header h3 {
+  margin: 0 0 4px 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.tab-pane-header p {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.btn-preview-print {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-preview-print:hover {
+  background: #dbeafe;
+}
+
+/* Tables */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.trip-orders-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.trip-orders-table th {
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 2px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.trip-orders-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+  vertical-align: middle;
+}
+
+.trip-orders-table tr:hover td {
+  background: #f8fafc;
+}
+
+.order-code-link {
+  font-weight: 700;
+  color: #2563eb;
+  text-decoration: none;
+  font-family: monospace;
+}
+
+.order-code-link:hover {
+  text-decoration: underline;
+}
+
+.order-sub-weight {
+  font-size: 11.5px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.retailer-name-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.retailer-phone {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  color: #64748b;
+}
+
+.retailer-address-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: #475569;
+  max-width: 260px;
+}
+
+.pin-icon {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.badge-item-count {
+  background: #f1f5f9;
+  color: #334155;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cod-highlight-tag {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.cod-highlight-tag.has-cod {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.cod-highlight-tag.no-cod {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.badge-order-status {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge-order-status.allocated {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.badge-order-status.shipped {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.badge-order-status.delivered {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.badge-order-status.pending {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.btn-print-single-rpt {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-print-single-rpt:hover {
+  background: #eff6ff;
+  border-color: #2563eb;
+}
+
+.table-total-row td {
+  background: #f8fafc;
+  border-top: 2px solid #cbd5e1;
+  font-size: 13.5px;
+}
+
+/* Badge SKUs */
+.badge-unit {
+  background: #f1f5f9;
+  color: #475569;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.badge-promo-tag {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.badge-commercial-tag {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.lot-badges-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.lot-chip {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 11.5px;
+  color: #334155;
+  font-family: monospace;
+}
+
+.text-muted-gray {
+  color: #94a3b8;
+  font-style: italic;
+  font-size: 12px;
+}
+
+/* 6. Printable Report Previews */
+.tab-pane-report-preview {
+  background: transparent;
+}
+
+.report-action-toolbar {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.toolbar-info h4 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.toolbar-info p {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.toolbar-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.order-filter-dropdown {
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 13px;
+  background: #ffffff;
+  color: #1e293b;
+  outline: none;
+}
+
+.order-filter-dropdown:focus {
+  border-color: #2563eb;
+}
+
+.btn-print-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+  transition: all 0.2s;
+}
+
+.btn-print-main:hover {
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+}
+
+.printable-report-wrapper {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  padding: 24px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+/* Empty States */
+.empty-tab-state {
+  text-align: center;
+  padding: 48px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: #64748b;
+}
+
+/* Loading & Error States */
+.trip-detail-container.loading-state,
+.trip-detail-container.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: 40px;
+  text-align: center;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e2e8f0;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spinner 0.8s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* PRINT MEDIA QUERIES */
+@media print {
+  body {
+    background: #ffffff !important;
+  }
+
+  .trip-detail-page {
+    padding: 0 !important;
+    max-width: none !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+  }
+
+  .trip-detail-top-nav,
+  .trip-hero-card,
+  .trip-summary-metrics-strip,
+  .trip-detail-tabs-bar,
+  .report-action-toolbar,
+  .no-print {
+    display: none !important;
+  }
+
+  .printable-report-wrapper {
+    border: none !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+}

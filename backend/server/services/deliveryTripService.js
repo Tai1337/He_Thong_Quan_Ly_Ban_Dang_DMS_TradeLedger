@@ -150,11 +150,19 @@ export const getDeliveryTripDetailService = async (tripId, distributorId = 1) =>
         deliveredQuantity: it.deliveredQuantity !== null ? formatNumber(it.deliveredQuantity) : null,
         failedQuantity: it.failedQuantity !== null ? formatNumber(it.failedQuantity) : 0,
         unitPrice: formatNumber(it.unitPrice),
+        discountAmount: formatNumber(it.discountAmount) || 0,
+        isPromotion: Boolean(it.isPromotion),
+        totalAmount: it.isPromotion ? 0 : Math.max(0, itemQty * formatNumber(it.unitPrice) - (formatNumber(it.discountAmount) || 0)),
         unitWeightKg: unitWeight,
         totalWeightKg: Math.round(itemQty * unitWeight * 10) / 10,
         allocations: lotAllocations
       };
     });
+
+    const orderRawTotal = items.reduce((s, it) => s + (it.isPromotion ? 0 : it.totalAmount), 0);
+    const invoiceTotal = order.invoice ? formatNumber(order.invoice.totalAmount) : orderRawTotal;
+    const invoicePaid = order.invoice ? formatNumber(order.invoice.paidAmount) : 0;
+    const codAmount = Math.max(0, invoiceTotal - invoicePaid);
 
     return {
       id: order.id.toString(),
@@ -162,6 +170,12 @@ export const getDeliveryTripDetailService = async (tripId, distributorId = 1) =>
       status: order.status,
       deliveryNotes: order.deliveryNotes || '',
       orderWeightKg: Math.round(orderWeight * 10) / 10,
+      totalAmount: invoiceTotal,
+      paidAmount: invoicePaid,
+      remainingAmount: codAmount,
+      codAmount,
+      invoiceStatus: order.invoice?.status || (codAmount === 0 ? 'PAID' : 'UNPAID'),
+      invoiceCode: order.invoice?.invoiceCode || '',
       retailer: order.retailer ? {
         id: order.retailer.id.toString(),
         name: order.retailer.name,
@@ -215,6 +229,17 @@ export const getDeliveryTripDetailService = async (tripId, distributorId = 1) =>
       remainingCapacityKg: Math.max(0, Math.round((maxWeight - currentWeight) * 10) / 10)
     }
   };
+};
+
+/**
+ * 2b. Lấy chi tiết nhiều chuyến xe cùng lúc (phục vụ in gộp RPT002)
+ */
+export const getBatchDeliveryTripsService = async (tripIds = [], distributorId = 1) => {
+  const ids = Array.isArray(tripIds)
+    ? tripIds
+    : String(tripIds).split(',').map(s => s.trim()).filter(Boolean);
+  const results = await Promise.all(ids.map(id => getDeliveryTripDetailService(id, distributorId)));
+  return results.filter(Boolean);
 };
 
 /**

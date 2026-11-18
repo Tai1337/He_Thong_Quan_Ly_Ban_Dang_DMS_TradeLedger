@@ -712,6 +712,16 @@ export const getDeliveryTripDetail = async (id, distributorId = 1) => {
   return data;
 };
 
+export const getBatchDeliveryTrips = async (tripIds = [], distributorId = 1) => {
+  const idsStr = Array.isArray(tripIds) ? tripIds.join(',') : tripIds;
+  const response = await fetch(`${API_URL}/delivery-trips/batch?ids=${idsStr}&distributorId=${distributorId}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi tải thông tin nhiều chuyến xe');
+  }
+  return data.data || [];
+};
+
 export const getDispatchableOrders = async (warehouseId = '', distributorId = 1) => {
   const params = new URLSearchParams({ distributorId });
   if (warehouseId) params.append('warehouseId', warehouseId);

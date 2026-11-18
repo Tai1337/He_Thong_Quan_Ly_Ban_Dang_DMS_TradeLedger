@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import { 
   Truck, 
   Plus, 
@@ -18,12 +18,15 @@ import {
   Send,
   Lock,
   User,
-  Users
+  Users,
+  Printer,
+  FileText
 } from 'lucide-react';
 import { useDeliveryTrips } from '../../hooks/useDeliveryTrips';
 import { getDriverAvailability } from '../../services/api';
 import CreateTripModal from './CreateTripModal';
 import TripDispatchConsoleModal from './TripDispatchConsoleModal';
+import BatchPrintRPT002Modal from './BatchPrintRPT002Modal';
 import './DeliveryTripList.css';
 
 export default function DeliveryTripList() {
@@ -44,9 +47,29 @@ export default function DeliveryTripList() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(() => autoCreate && incomingOrderIds.length > 0);
   const [selectedTripId, setSelectedTripId] = useState(null);
 
+  // Multi-select for Batch Print RPT002
+  const [selectedTripIds, setSelectedTripIds] = useState([]);
+  const [isBatchPrintOpen, setIsBatchPrintOpen] = useState(false);
+
   // Trạng thái đội ngũ tài xế
   const [driverFleet, setDriverFleet] = useState([]);
   const [loadingFleet, setLoadingFleet] = useState(false);
+
+  const isAllSelected = trips.length > 0 && trips.every(t => selectedTripIds.includes(t.id));
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedTripIds(prev => prev.filter(id => !trips.some(t => t.id === id)));
+    } else {
+      const newIds = trips.map(t => t.id);
+      setSelectedTripIds(prev => Array.from(new Set([...prev, ...newIds])));
+    }
+  };
+
+  const toggleSelectTrip = (tripId) => {
+    setSelectedTripIds(prev =>
+      prev.includes(tripId) ? prev.filter(id => id !== tripId) : [...prev, tripId]
+    );
+  };
 
   useEffect(() => {
     setLoadingFleet(true);
@@ -273,16 +296,30 @@ export default function DeliveryTripList() {
           </select>
         </div>
 
-        <button 
-          type="button" 
-          className="btn-toolbar-refresh"
-          onClick={refetch}
-          disabled={loading}
-          title="Làm mới danh sách"
-        >
-          <RotateCcw size={14} />
-          <span>Làm mới</span>
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {selectedTripIds.length > 0 && (
+            <button
+              type="button"
+              className="btn-batch-print-action"
+              onClick={() => setIsBatchPrintOpen(true)}
+              title="In tổng hợp phiếu xuất kho gom hàng cho các chuyến xe đã chọn"
+            >
+              <Printer size={15} />
+              <span>In Tổng Hợp RPT002 ({selectedTripIds.length} chuyến)</span>
+            </button>
+          )}
+
+          <button 
+            type="button" 
+            className="btn-toolbar-refresh"
+            onClick={refetch}
+            disabled={loading}
+            title="Làm mới danh sách"
+          >
+            <RotateCcw size={14} />
+            <span>Làm mới</span>
+          </button>
+        </div>
       </div>
 
       {/* 4. Table Card */}
@@ -303,6 +340,14 @@ export default function DeliveryTripList() {
           <table className="trips-table">
             <thead>
               <tr>
+                <th style={{ width: 36, textAlign: 'center' }}>
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    onChange={toggleSelectAll}
+                    title="Chọn tất cả trên trang"
+                  />
+                </th>
                 <th>Mã Chuyến Xe</th>
                 <th>Biển Số Xe & Tuyến</th>
                 <th>Tài Xế Phụ Trách</th>
@@ -310,14 +355,28 @@ export default function DeliveryTripList() {
                 <th>Tải Trọng & Đầy Tải (%)</th>
                 <th>Đơn / Kiện</th>
                 <th>Trạng Thái</th>
-                <th style={{ textAlign: 'center' }}>Thao Tác</th>
+                <th style={{ textAlign: 'center', width: 210 }}>Thao Tác</th>
               </tr>
             </thead>
             <tbody>
               {trips.map(trip => (
-                <tr key={trip.id}>
+                <tr key={trip.id} className={selectedTripIds.includes(trip.id) ? 'row-selected' : ''}>
+                  <td style={{ textAlign: 'center' }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedTripIds.includes(trip.id)}
+                      onChange={() => toggleSelectTrip(trip.id)}
+                    />
+                  </td>
+
                   <td>
-                    <strong>{trip.tripCode}</strong>
+                    <Link
+                      to={`/logistics/delivery-trips/${trip.id}`}
+                      className="trip-code-link"
+                      title="Xem chi tiết chuyến xe và in các biểu mẫu RPT"
+                    >
+                      {trip.tripCode}
+                    </Link>
                     <div>
                       <span className={`trip-type-tag ${trip.tripType.toLowerCase()}`}>
                         {trip.tripType === 'OUTBOUND' ? 'Xuất Giao Đại Lý' : 'Nhập Hàng NCC'}
@@ -372,14 +431,26 @@ export default function DeliveryTripList() {
                   </td>
 
                   <td style={{ textAlign: 'center' }}>
-                    <button 
-                      type="button" 
-                      className="btn-table-action-dispatch"
-                      onClick={() => setSelectedTripId(trip.id)}
-                    >
-                      <SlidersHorizontal size={13} />
-                      <span>Bàn Điều Phối & Lô</span>
-                    </button>
+                    <div className="trip-row-actions">
+                      <Link
+                        to={`/logistics/delivery-trips/${trip.id}`}
+                        className="btn-table-action-detail"
+                        title="Xem chi tiết & in chứng từ RPT002, RPT004, RPT006"
+                      >
+                        <FileText size={13} />
+                        <span>Xem & In</span>
+                      </Link>
+
+                      <button 
+                        type="button" 
+                        className="btn-table-action-dispatch"
+                        onClick={() => setSelectedTripId(trip.id)}
+                        title="Mở bàn điều phối bốc xếp và gán lô hàng"
+                      >
+                        <SlidersHorizontal size={13} />
+                        <span>Điều Phối</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -428,6 +499,13 @@ export default function DeliveryTripList() {
           onRefreshList={refetch}
         />
       )}
+
+      {/* Modal In Tổng Hợp Phiếu Xuất Kho (RPT002) */}
+      <BatchPrintRPT002Modal
+        isOpen={isBatchPrintOpen}
+        onClose={() => setIsBatchPrintOpen(false)}
+        tripIds={selectedTripIds}
+      />
     </div>
   );
 }

@@ -113,6 +113,7 @@ export const findDeliveryTripById = async (tripId, distributorId) => {
         include: {
           retailer: true,
           warehouse: true,
+          invoice: true,
           items: {
             include: {
               product: true,

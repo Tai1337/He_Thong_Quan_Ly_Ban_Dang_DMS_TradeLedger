@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   getDeliveryTrips,
+  getBatchDeliveryTrips,
   getDeliveryTripDetail,
   getDispatchableOrders,
   createDeliveryTrip,
@@ -16,6 +17,7 @@ import {
 const router = express.Router();
 
 router.get('/', getDeliveryTrips);
+router.get('/batch', getBatchDeliveryTrips);
 router.post('/', createDeliveryTrip);
 router.get('/dispatchable-orders', getDispatchableOrders);
 router.get('/:id', getDeliveryTripDetail);

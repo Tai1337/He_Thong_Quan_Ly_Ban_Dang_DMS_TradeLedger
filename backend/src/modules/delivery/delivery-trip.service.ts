@@ -225,11 +225,19 @@ export class DeliveryTripService {
           deliveredQuantity: it.deliveredQuantity !== null ? formatNumber(it.deliveredQuantity) : null,
           failedQuantity: it.failedQuantity !== null ? formatNumber(it.failedQuantity) : 0,
           unitPrice: formatNumber(it.unitPrice),
+          discountAmount: formatNumber(it.discountAmount) || 0,
+          isPromotion: Boolean(it.isPromotion),
+          totalAmount: it.isPromotion ? 0 : Math.max(0, itemQty * formatNumber(it.unitPrice) - (formatNumber(it.discountAmount) || 0)),
           unitWeightKg: unitWeight,
           totalWeightKg: Math.round(itemQty * unitWeight * 10) / 10,
           allocations: lotAllocations,
         };
       });
+
+      const orderRawTotal = items.reduce((s: number, it: any) => s + (it.isPromotion ? 0 : it.totalAmount), 0);
+      const invoiceTotal = order.invoice ? formatNumber(order.invoice.totalAmount) : orderRawTotal;
+      const invoicePaid = order.invoice ? formatNumber(order.invoice.paidAmount) : 0;
+      const codAmount = Math.max(0, invoiceTotal - invoicePaid);
 
       return {
         id: order.id.toString(),
@@ -237,6 +245,12 @@ export class DeliveryTripService {
         status: order.status,
         deliveryNotes: order.deliveryNotes || '',
         orderWeightKg: Math.round(orderWeight * 10) / 10,
+        totalAmount: invoiceTotal,
+        paidAmount: invoicePaid,
+        remainingAmount: codAmount,
+        codAmount,
+        invoiceStatus: order.invoice?.status || (codAmount === 0 ? 'PAID' : 'UNPAID'),
+        invoiceCode: order.invoice?.invoiceCode || '',
         retailer: order.retailer
           ? {
               id: order.retailer.id.toString(),

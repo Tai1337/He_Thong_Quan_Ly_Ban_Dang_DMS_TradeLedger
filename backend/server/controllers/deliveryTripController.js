@@ -50,6 +50,18 @@ export const getDeliveryTripDetail = async (req, res) => {
   }
 };
 
+export const getBatchDeliveryTrips = async (req, res) => {
+  try {
+    const distributorId = req.query.distributorId || req.user?.distributorId || 1;
+    const ids = req.query.ids ? req.query.ids.split(',') : [];
+    const trips = await deliveryTripService.getBatchDeliveryTripsService(ids, distributorId);
+    res.json({ data: trips });
+  } catch (error) {
+    console.error('getBatchDeliveryTrips error:', error);
+    res.status(500).json({ error: error.message || 'Lỗi khi tải danh sách chuyến xe' });
+  }
+};
+
 export const getDispatchableOrders = async (req, res) => {
   try {
     const { distributorId = 1, warehouseId } = req.query;
