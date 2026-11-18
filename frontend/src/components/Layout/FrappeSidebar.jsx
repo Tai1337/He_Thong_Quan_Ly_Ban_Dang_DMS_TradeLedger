@@ -24,7 +24,8 @@ import {
   PinOff,
   Search,
   Palette,
-  ClipboardCheck
+  ClipboardCheck,
+  Gift
 } from 'lucide-react';
 import './Layout.css';
 import { hasPermission } from '../../utils/authPermission';
@@ -40,11 +41,10 @@ const modulesData = {
     subItems: [
       { label: 'Bàn làm việc (Dashboard)', path: '/', icon: Home },
       { label: 'Quản lý sản phẩm & SKU', path: '/catalog/products', icon: Box, requiredPermission: 'master_data:view' },
+      { label: 'Đơn hàng cần xử lý (SO)', path: '/sales/sales-orders', icon: FileText, requiredPermission: 'sales_orders:view' },
+      { label: 'Đơn đặt hàng mua (PO)', path: '/purchase/purchase-orders', icon: ShoppingCart, requiredPermission: 'purchase_orders:view' },
       { label: 'Kiểm kê kho hàng', path: '/inventory/counts', icon: ClipboardCheck, requiredPermission: 'inventory_counts:view' },
-      { label: 'Đơn hàng cần xử lý', path: '/sales/sales-orders', icon: FileText, requiredPermission: 'sales_orders:view' },
-      { label: 'Chuyến xe nhập kho đến hạn', path: '/purchase/receiving', icon: Truck, requiredPermission: 'purchase_orders:view' },
       { label: 'Báo cáo tài chính nhanh', path: '/reports/profit-and-loss', icon: PieChart, requiredPermission: 'reports_finance:view' },
-      { label: 'Review Khung Màu (4 Theme)', path: '/theme-review', icon: Palette },
     ]
   },
   buying: {
@@ -56,8 +56,8 @@ const modulesData = {
     requiredPermission: 'purchase_orders:view',
     subItems: [
       { label: 'Đơn đặt hàng mua (PO)', path: '/purchase/purchase-orders', icon: FileText, requiredPermission: 'purchase_orders:view' },
-      { label: 'Nhập kho mua hàng', path: '/purchase/receiving', icon: Truck, requiredPermission: 'purchase_orders:receive' },
       { label: 'Lập đơn đặt mua mới', path: '/purchase/purchase-orders?create=true', icon: PlusCircle, requiredPermission: 'purchase_orders:create' },
+      { label: 'Nhập kho mua hàng', path: '/purchase/receiving', icon: Truck, requiredPermission: 'purchase_orders:receive' },
       { label: 'Báo cáo tồn kho đặt hàng', path: '/inventory/rpt083', icon: BarChart3, requiredPermission: 'inventory:view' },
     ]
   },
@@ -70,8 +70,9 @@ const modulesData = {
     requiredPermission: 'sales_orders:view',
     subItems: [
       { label: 'Danh sách đơn bán (SO)', path: '/sales/sales-orders', icon: FileText, requiredPermission: 'sales_orders:view' },
-      { label: 'Chuyến xe & Điều phối giao', path: '/logistics/delivery-trips', icon: Truck, requiredPermission: 'delivery_trips:view' },
       { label: 'Lập đơn bán hàng mới', path: '/sales/sales-orders?create=true', icon: PlusCircle, requiredPermission: 'sales_orders:create' },
+      { label: 'Chương trình khuyến mãi', path: '/promotions', icon: Gift, requiredPermission: 'sales_orders:view' },
+      { label: 'Chuyến xe & Điều phối giao', path: '/logistics/delivery-trips', icon: Truck, requiredPermission: 'delivery_trips:view' },
       { label: 'Kiểm tra thiếu tồn (RPT005)', path: '/sales/sales-orders?rpt005=true', icon: CheckSquare, requiredPermission: 'inventory:view' },
       { label: 'Doanh số & Sản lượng (RPT057)', path: '/reports/rpt057', icon: BarChart3, requiredPermission: 'reports_finance:view' },
     ]
@@ -88,8 +89,6 @@ const modulesData = {
       { label: 'Nhật ký giao dịch kho', path: '/inventory/transactions', icon: FileText, requiredPermission: 'inventory:view' },
       { label: 'Kiểm kê kho hàng', path: '/inventory/counts', icon: ClipboardCheck, requiredPermission: 'inventory_counts:view' },
       { label: 'RPT083 - Báo cáo tồn kho NPP', path: '/inventory/rpt083', icon: BarChart3, requiredPermission: 'inventory:view' },
-      { label: 'Kiểm soát phân bổ FEFO', path: '/sales/sales-orders?rpt005=true', icon: SlidersHorizontal, requiredPermission: 'inventory:view' },
-      { label: 'Lịch nhập xuất kho', path: '/operations/calendar', icon: CalendarIcon },
     ]
   },
   pnl: {
@@ -101,30 +100,16 @@ const modulesData = {
     requiredPermission: 'reports_finance:view',
     subItems: [
       { label: 'Báo cáo KQKD (Profit & Loss)', path: '/reports/profit-and-loss', icon: PieChart, requiredPermission: 'reports_finance:view' },
-      { label: 'Theo dõi Thu - Chi', path: '/reports/profit-and-loss', icon: FileText, requiredPermission: 'reports_finance:view' },
-      { label: 'Công nợ & Doanh thu NPP', path: '/reports/rpt057', icon: BarChart3, requiredPermission: 'reports_finance:view' },
     ]
   },
   calendar: {
     id: 'calendar',
     icon: CalendarIcon,
-    label: 'Lịch hoạt động',
-    desc: 'Job Card & Calendar Trips',
+    label: 'Tuyến bán hàng (MCP)',
+    desc: 'Sales Routes & Tuyến bán hàng',
     path: '/operations/calendar',
     subItems: [
-      { label: 'Lịch vận hành công việc', path: '/operations/calendar', icon: CalendarIcon },
-      { label: 'Lịch chuyến xe giao hàng D+3', path: '/purchase/receiving', icon: Truck, requiredPermission: 'delivery_trips:view' },
-    ]
-  },
-  gantt: {
-    id: 'gantt',
-    icon: GitPullRequest,
-    label: 'Tiến độ Kế hoạch',
-    desc: 'Task Gantt & Dự án cung ứng',
-    path: '/operations/gantt',
-    subItems: [
-      { label: 'Biểu đồ tiến độ (Gantt)', path: '/operations/gantt', icon: GitPullRequest },
-      { label: 'Kế hoạch cung ứng Q1/2026', path: '/operations/gantt', icon: FileText },
+      { label: 'Lập tuyến bán hàng theo tuần', path: '/operations/calendar', icon: CalendarIcon },
     ]
   },
   reports: {
@@ -138,17 +123,6 @@ const modulesData = {
       { label: 'RPT057 - Doanh số & Sản lượng', path: '/reports/rpt057', icon: BarChart3, requiredPermission: 'reports_finance:view' },
       { label: 'RPT083 - Báo cáo tồn kho NPP', path: '/inventory/rpt083', icon: BarChart3, requiredPermission: 'inventory:view' },
       { label: 'Báo cáo KQKD (Profit & Loss)', path: '/reports/profit-and-loss', icon: PieChart, requiredPermission: 'reports_finance:view' },
-    ]
-  },
-  company: {
-    id: 'company',
-    icon: Building2,
-    label: 'Tổ chức & Chi nhánh',
-    desc: 'Công ty & Kho bãi',
-    path: '#',
-    subItems: [
-      { label: 'Hồ sơ Nhà phân phối', path: '#', icon: Building2 },
-      { label: 'Danh sách Kho hàng', path: '#', icon: Box, requiredPermission: 'master_data:view' },
     ]
   },
   security: {
@@ -165,7 +139,23 @@ const modulesData = {
   }
 };
 
-const navItemKeys = ['home', 'buying', 'selling', 'stock', 'pnl', 'calendar', 'gantt', 'reports', 'security'];
+const navItemKeys = ['home', 'buying', 'selling', 'stock', 'pnl', 'calendar', 'reports', 'security'];
+
+// Helper kiểm tra subItem có đang active dựa trên pathname và query params
+const checkIsSubActive = (subPath, currentPathname, currentSearch) => {
+  const [subBasePath, subQuery] = subPath.split('?');
+  if (currentPathname !== subBasePath) return false;
+
+  const currentParams = new URLSearchParams(currentSearch);
+
+  if (subQuery) {
+    const subParams = new URLSearchParams(subQuery);
+    return Array.from(subParams.entries()).every(([k, v]) => currentParams.get(k) === v);
+  }
+
+  // Đường dẫn gốc (không có query parameter): Chỉ active khi URL không chứa các trigger query modal như ?create=true hoặc ?rpt005=true
+  return currentParams.get('create') !== 'true' && currentParams.get('rpt005') !== 'true';
+};
 
 const FrappeSidebar = ({ user }) => {
   const navigate = useNavigate();
@@ -330,7 +320,7 @@ const FrappeSidebar = ({ user }) => {
             <div className="frappe-flyout-section-title">Chức năng & Chứng từ</div>
             {filteredSubItems.map((sub, idx) => {
               const SubIcon = sub.icon;
-              const isSubActive = location.pathname === sub.path.split('?')[0];
+              const isSubActive = checkIsSubActive(sub.path, location.pathname, location.search);
 
               return (
                 <button

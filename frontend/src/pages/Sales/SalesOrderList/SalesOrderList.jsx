@@ -724,6 +724,34 @@ const SalesOrderList = () => {
                             Web Retailer
                           </span>
                         )}
+                        {row.hasPromotion && (
+                          <span style={{
+                            background: '#dcfce7',
+                            color: '#15803d',
+                            border: '1px solid #bbf7d0',
+                            fontSize: '10px',
+                            fontWeight: 600,
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            whiteSpace: 'nowrap'
+                          }} title={`Có quà tặng khuyến mãi FOC (+${row.freeGiftsCount || 1} phần)`}>
+                            🎁 Quà KM
+                          </span>
+                        )}
+                        {row.discount > 0 && (
+                          <span style={{
+                            background: '#faf5ff',
+                            color: '#7c3aed',
+                            border: '1px solid #e9d5ff',
+                            fontSize: '10px',
+                            fontWeight: 600,
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            whiteSpace: 'nowrap'
+                          }} title={`Chiết khấu bậc thang: -${formatCurrency(row.discount)} đ`}>
+                            🏷️ -{formatCurrency(row.discount)}đ
+                          </span>
+                        )}
                       </div>
                       <div style={{ fontSize: '11px', color: '#64748b' }}>{row.itemCount} mặt hàng</div>
                     </td>
@@ -771,7 +799,12 @@ const SalesOrderList = () => {
                       )}
                     </td>
                     <td className="money-text">
-                      {formatCurrency(row.totalAmount)} đ
+                      <div>{formatCurrency(row.totalAmount)} đ</div>
+                      {row.discount > 0 && (
+                        <div style={{ fontSize: '11px', color: '#7c3aed', fontWeight: 500 }}>
+                          (Đã giảm {formatCurrency(row.discount)} đ)
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}

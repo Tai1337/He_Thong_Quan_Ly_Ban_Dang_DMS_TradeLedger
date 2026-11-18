@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
 import { PrismaService } from '../../prisma/prisma.service';
 import prisma from '../../prisma/prisma.client';
+import { PromotionService } from '../promotion/promotion.service';
 
 export interface RegisterCustomerDto {
   phone: string;
@@ -496,16 +497,82 @@ export class ShopPortalService {
     const rand = Math.floor(10000 + Math.random() * 90000);
     const orderCode = `R-${yyyymmdd}-${rand}`;
 
+    const promoService = new PromotionService(this.prisma);
+    let promoResult: any = { freeItems: [], invoiceDiscount: null, appliedPromotions: [] };
+    try {
+      promoResult = await promoService.evaluateOrderPromotions(distributor.id, {
+        items: items.map((it) => ({
+          productId: it.productId,
+          quantity: Number(it.quantity || 1),
+          unitPrice: Number(it.unitPrice || 0),
+        })),
+        orderDate: date,
+      });
+    } catch (err) {
+      console.error('Lỗi khi tính khuyến mãi đơn Shop Portal:', err);
+    }
+
+    const promoNotes = promoResult.appliedPromotions?.length > 0
+      ? `Khuyến mãi: ${promoResult.appliedPromotions.map((p: any) => p.name).join(', ')}`
+      : null;
+
     const fullNotes = [
       `[Đơn Web Portal - ${customer.accountType === 'STORE' ? 'Cửa Hàng' : 'Khách Cá Nhân'}]`,
       `Người đặt: ${customer.fullName} (${customer.phone})`,
       customer.storeName ? `Tên tiệm: ${customer.storeName}` : null,
       `Địa chỉ nhận: ${shippingAddress || customer.address || 'Chưa cung cấp'}`,
       `Hình thức thanh toán: ${paymentMethod === 'BANK_TRANSFER' ? 'Chuyển khoản QR' : 'COD (Tiền mặt khi nhận)'}`,
+      promoNotes,
       notes ? `Ghi chú thêm: ${notes}` : null,
     ]
       .filter(Boolean)
       .join(' | ');
+
+    const subtotal = items.reduce(
+      (sum, it) => sum + Number(it.quantity || 1) * Number(it.unitPrice || 0),
+      0,
+    );
+    const totalDiscount = Number(promoResult.invoiceDiscount?.discountAmount) || 0;
+    const invoicePromoId = promoResult.invoiceDiscount?.promotionId || null;
+
+    let distributedDiscountSum = 0;
+    const userItemsWithDiscount = items.map((it, idx) => {
+      const qty = Number(it.quantity || 1);
+      const price = Number(it.unitPrice || 0);
+      const lineTotal = qty * price;
+      let itemDiscount = 0;
+      if (totalDiscount > 0 && subtotal > 0) {
+        if (idx === items.length - 1) {
+          itemDiscount = Math.max(0, totalDiscount - distributedDiscountSum);
+        } else {
+          itemDiscount = Math.round((lineTotal / subtotal) * totalDiscount);
+          distributedDiscountSum += itemDiscount;
+        }
+      }
+      return {
+        product: { connect: { id: BigInt(it.productId) } },
+        quantity: isNaN(qty) || qty <= 0 ? 1 : qty,
+        unitPrice: isNaN(price) || price < 0 ? 0 : price,
+        isPromotion: false,
+        ...(itemDiscount > 0 && invoicePromoId
+          ? { appliedPromotion: { connect: { id: BigInt(invoicePromoId) } } }
+          : {}),
+        discountAmount: itemDiscount,
+      };
+    });
+
+    const promoGiftItems = (promoResult.freeItems || []).map((gift: any) => ({
+      product: { connect: { id: BigInt(gift.productId) } },
+      quantity: Number(gift.quantity),
+      unitPrice: 0,
+      isPromotion: true,
+      ...(gift.appliedPromotionId
+        ? { appliedPromotion: { connect: { id: BigInt(gift.appliedPromotionId) } } }
+        : {}),
+      discountAmount: 0,
+    }));
+
+    const allOrderItems = [...userItemsWithDiscount, ...promoGiftItems];
 
     return this.prisma.$transaction(async (tx: any) => {
       const order = await tx.salesOrder.create({
@@ -517,23 +584,15 @@ export class ShopPortalService {
           customerId: customer.id,
           orderType: 'LATER',
           status: 'PENDING',
+          deliveryNotes: fullNotes,
           createdAt: date,
           items: {
-            create: items.map((it) => {
-              const qty = Number(it.quantity || 1);
-              const price = Number(it.unitPrice || 0);
-              return {
-                product: { connect: { id: BigInt(it.productId) } },
-                quantity: isNaN(qty) || qty <= 0 ? 1 : qty,
-                unitPrice: isNaN(price) || price < 0 ? 0 : price,
-                isPromotion: false,
-              };
-            }),
+            create: allOrderItems,
           },
         },
         include: {
           items: {
-            include: { product: true },
+            include: { product: true, appliedPromotion: true },
           },
           retailer: true,
           customer: true,

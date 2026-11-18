@@ -1143,6 +1143,85 @@ export const changePassword = async (oldPassword, newPassword) => {
   return data;
 };
 
+// --- PROMOTIONS (TRADE MARKETING) ---
+
+export const getPromotions = async (filters = {}) => {
+  const cleanFilters = {};
+  Object.keys(filters).forEach((k) => {
+    if (filters[k] !== undefined && filters[k] !== null && filters[k] !== '') {
+      cleanFilters[k] = filters[k];
+    }
+  });
+
+  const queryParams = new URLSearchParams(cleanFilters).toString();
+  const response = await fetch(`${API_URL}/promotions?${queryParams}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi tải danh sách chương trình khuyến mãi');
+  }
+  return data;
+};
+
+export const getPromotionById = async (id, distributorId = 1) => {
+  const response = await fetch(`${API_URL}/promotions/${id}?distributorId=${distributorId}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi tải thông tin khuyến mãi');
+  }
+  return data;
+};
+
+export const createPromotion = async (payload) => {
+  const response = await fetch(`${API_URL}/promotions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi tạo chương trình khuyến mãi');
+  }
+  return data;
+};
+
+export const updatePromotion = async (id, payload) => {
+  const response = await fetch(`${API_URL}/promotions/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi cập nhật khuyến mãi');
+  }
+  return data;
+};
+
+export const deletePromotion = async (id, distributorId = 1) => {
+  const response = await fetch(`${API_URL}/promotions/${id}?distributorId=${distributorId}`, {
+    method: 'DELETE',
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi xóa chương trình khuyến mãi');
+  }
+  return data;
+};
+
+export const evaluateOrderPromotions = async (payload) => {
+  const response = await fetch(`${API_URL}/promotions/evaluate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi tính toán khuyến mãi');
+  }
+  return data;
+};
+
+
 
 
 

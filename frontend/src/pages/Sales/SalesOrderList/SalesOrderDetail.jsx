@@ -595,19 +595,34 @@ const SalesOrderDetail = () => {
           <div className="info-card-body">
             <div className="info-row">
               <span className="label">Số mặt hàng:</span>
-              <span className="value">{order.items.length} sản phẩm</span>
+              <span className="value">
+                {order.items.length} sản phẩm
+                {order.freeItemsCount > 0 && ` (gồm ${order.freeItemsCount} thùng quà tặng FOC)`}
+              </span>
             </div>
+            {order.freeItemsCount > 0 && (
+              <div className="info-row" style={{ color: '#15803d' }}>
+                <span className="label">🎁 Hàng tặng (FOC):</span>
+                <span className="value" style={{ fontWeight: 700, color: '#15803d' }}>
+                  +{order.freeItemsCount} thùng (0 đ)
+                </span>
+              </div>
+            )}
             <div className="info-row">
-              <span className="label">Tổng tiền hàng:</span>
+              <span className="label">Tiền hàng (chưa giảm):</span>
               <span className="value">{formatCurrency(order.totalAmount)} đ</span>
             </div>
-            <div className="info-row">
-              <span className="label">Chiết khấu:</span>
-              <span className="value">0 đ</span>
+            <div className="info-row" style={{ color: (order.totalDiscountAmount > 0) ? '#7c3aed' : undefined }}>
+              <span className="label">Chiết khấu bậc thang:</span>
+              <span className="value" style={{ fontWeight: (order.totalDiscountAmount > 0) ? 700 : 400 }}>
+                {(order.totalDiscountAmount > 0) ? `- ${formatCurrency(order.totalDiscountAmount)} đ` : '0 đ'}
+              </span>
             </div>
             <div className="info-row total-highlight">
               <span className="label">Tổng thanh toán:</span>
-              <span className="value-total">{formatCurrency(order.totalAmount)} đ</span>
+              <span className="value-total">
+                {formatCurrency(order.finalAmount != null ? order.finalAmount : (order.totalAmount - (order.totalDiscountAmount || 0)))} đ
+              </span>
             </div>
           </div>
         </div>
@@ -676,7 +691,11 @@ const SalesOrderDetail = () => {
           </thead>
           <tbody>
             {(isEditingOrder ? editItems : order.items).map((item, idx) => (
-              <tr key={item.id || idx} className={item.isDeleted ? 'row-will-delete' : ''}>
+              <tr 
+                key={item.id || idx} 
+                className={`${item.isDeleted ? 'row-will-delete' : ''} ${item.isPromotion ? 'promo-row-highlight' : ''}`}
+                style={item.isPromotion ? { backgroundColor: '#f0fdf4' } : {}}
+              >
                 <td style={{ textAlign: 'center' }}>{idx + 1}</td>
                 <td>
                   <code>{item.productSku}</code>
@@ -685,9 +704,45 @@ const SalesOrderDetail = () => {
                   )}
                 </td>
                 <td style={{ fontWeight: 500 }}>
-                  <span style={item.isDeleted ? { textDecoration: 'line-through', color: '#dc2626' } : {}}>
-                    {item.productName}
-                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <span style={item.isDeleted ? { textDecoration: 'line-through', color: '#dc2626' } : {}}>
+                      {item.productName}
+                    </span>
+                    {item.isPromotion && (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        background: '#dcfce7',
+                        color: '#15803d',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        width: 'fit-content',
+                        border: '1px solid #bbf7d0'
+                      }}>
+                        🎁 Hàng tặng 0đ (FOC){item.promotionName ? `: ${item.promotionName}` : ''}
+                      </span>
+                    )}
+                    {Number(item.discountAmount) > 0 && (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        background: '#faf5ff',
+                        color: '#7c3aed',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        width: 'fit-content',
+                        border: '1px solid #e9d5ff'
+                      }}>
+                        🏷️ Chiết khấu bậc thang: -{formatCurrency(item.discountAmount)} đ
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td>{item.unit}</td>
                 <td style={{ textAlign: 'right', fontWeight: 600 }}>
@@ -744,11 +799,21 @@ const SalesOrderDetail = () => {
                     </div>
                   )}
                 </td>
-                <td style={{ textAlign: 'right' }}>{formatCurrency(item.unitPrice)} đ</td>
+                <td style={{ textAlign: 'right' }}>
+                  {item.isPromotion ? (
+                    <span style={{ color: '#15803d', fontWeight: 600 }}>0 đ (Tặng)</span>
+                  ) : (
+                    `${formatCurrency(item.unitPrice)} đ`
+                  )}
+                </td>
                 <td style={{ textAlign: 'right', fontWeight: 600 }}>
-                  <span style={item.isDeleted ? { textDecoration: 'line-through', color: '#94a3b8' } : {}}>
-                    {formatCurrency(item.totalAmount)} đ
-                  </span>
+                  {item.isPromotion ? (
+                    <span style={{ color: '#15803d' }}>0 đ</span>
+                  ) : (
+                    <span style={item.isDeleted ? { textDecoration: 'line-through', color: '#94a3b8' } : {}}>
+                      {formatCurrency(item.totalAmount)} đ
+                    </span>
+                  )}
                 </td>
                 <td>
                   {isEditingOrder ? (
@@ -1090,14 +1155,30 @@ const SalesOrderDetail = () => {
           </thead>
           <tbody>
             {(order.items || []).filter(item => !item.isDeleted && Number(item.quantity) > 0).map((item, idx) => (
-              <tr key={item.id || idx}>
+              <tr key={item.id || idx} style={item.isPromotion ? { backgroundColor: '#f0fdf4' } : {}}>
                 <td style={{ textAlign: 'center' }}>{idx + 1}</td>
                 <td><code>{item.productSku}</code></td>
-                <td><strong>{item.productName}</strong></td>
+                <td>
+                  <strong>{item.productName}</strong>
+                  {item.isPromotion && (
+                    <span style={{ color: '#15803d', fontSize: '11px', marginLeft: '6px', fontWeight: 600 }}>
+                      [🎁 Hàng tặng 0đ{item.promotionName ? ` - ${item.promotionName}` : ''}]
+                    </span>
+                  )}
+                  {Number(item.discountAmount) > 0 && (
+                    <span style={{ color: '#7c3aed', fontSize: '11px', marginLeft: '6px', fontWeight: 600 }}>
+                      [🏷️ Giảm: -{formatCurrency(item.discountAmount)} đ]
+                    </span>
+                  )}
+                </td>
                 <td style={{ textAlign: 'center' }}>{item.unit}</td>
                 <td style={{ textAlign: 'right', fontWeight: 600 }}>{item.quantity}</td>
-                <td style={{ textAlign: 'right' }}>{formatCurrency(item.unitPrice)} đ</td>
-                <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatCurrency(Number(item.quantity) * Number(item.unitPrice))} đ</td>
+                <td style={{ textAlign: 'right' }}>
+                  {item.isPromotion ? '0 đ' : `${formatCurrency(item.unitPrice)} đ`}
+                </td>
+                <td style={{ textAlign: 'right', fontWeight: 600 }}>
+                  {item.isPromotion ? '0 đ' : `${formatCurrency(Number(item.quantity) * Number(item.unitPrice))} đ`}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -1107,9 +1188,27 @@ const SalesOrderDetail = () => {
               <td style={{ textAlign: 'right', fontWeight: 700 }}>
                 {(order.items || []).filter(i => !i.isDeleted).reduce((acc, it) => acc + (Number(it.quantity) || 0), 0)}
               </td>
-              <td style={{ textAlign: 'right', fontWeight: 700 }}>Tổng tiền:</td>
-              <td style={{ textAlign: 'right', fontWeight: 700, fontSize: '14px', color: '#000' }}>
+              <td style={{ textAlign: 'right', fontWeight: 700 }}>Tiền hàng:</td>
+              <td style={{ textAlign: 'right', fontWeight: 700, fontSize: '13px', color: '#000' }}>
                 {formatCurrency(order.totalAmount)} đ
+              </td>
+            </tr>
+            {Number(order.totalDiscountAmount) > 0 && (
+              <tr>
+                <td colSpan="6" style={{ textAlign: 'right', fontWeight: 700, color: '#7c3aed' }}>
+                  Chiết khấu bậc thang:
+                </td>
+                <td style={{ textAlign: 'right', fontWeight: 700, fontSize: '13px', color: '#7c3aed' }}>
+                  -{formatCurrency(order.totalDiscountAmount)} đ
+                </td>
+              </tr>
+            )}
+            <tr>
+              <td colSpan="6" style={{ textAlign: 'right', fontWeight: 700, fontSize: '14px' }}>
+                Tổng thanh toán:
+              </td>
+              <td style={{ textAlign: 'right', fontWeight: 700, fontSize: '15px', color: '#000' }}>
+                {formatCurrency(order.finalAmount != null ? order.finalAmount : (order.totalAmount - (order.totalDiscountAmount || 0)))} đ
               </td>
             </tr>
           </tfoot>

@@ -2,58 +2,62 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Home, 
-  LayoutDashboard, 
-  CreditCard, 
-  List, 
   ShoppingCart, 
   Package, 
   Truck, 
   TrendingUp, 
   Calendar, 
   Box,
-  RotateCcw,
+  PieChart,
+  ShieldCheck,
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
 import './Layout.css';
 
+const catalogSubMenu = [
+  { id: 'cat-products', label: 'Quản lý sản phẩm & SKU', path: '/catalog/products' },
+];
+
+const buyingSubMenu = [
+  { id: 'buy-po', label: 'Đơn đặt hàng mua (PO)', path: '/purchase/purchase-orders' },
+  { id: 'buy-receiving', label: 'Nhập kho mua hàng', path: '/purchase/receiving' },
+];
+
 const salesSubMenu = [
-  { id: 'sub-dhgh', label: 'Đơn hàng giao hộ' },
-  { id: 'sub-dsdhb', label: 'Danh sách đơn hàng bán theo NPP', path: '/sales/sales-orders' },
-  { id: 'sub-reject', label: 'Reject khuyến mãi' },
-  { id: 'sub-qlgh', label: 'Quản lý giao hàng' },
-  { id: 'rpt057', label: 'RPT057 - Báo cáo doanh số và sản lượng', path: '/reports/rpt057' },
-  { id: 'rpt011', label: 'RPT011 - Báo cáo doanh số theo cửa hàng' },
-  { id: 'sub-dsx', label: 'Danh sách xe - NVGH' },
-  { id: 'sub-ldkbh', label: 'Lý do không bán hàng' },
-  { id: 'rpt061', label: 'RPT061 - Báo cáo LineItem' },
-  { id: 'rpt214', label: 'RPT214 - DS đơn thu hồi CH' },
-  { id: 'rpt007', label: 'RPT007 - Công nợ NVGH' },
-  { id: 'sub-bcbh', label: 'Báo cáo bán hàng theo nhân viên' },
-  { id: 'rpt223', label: 'RPT223 - Báo cáo tổng kết đơn hàng và thanh toán' },
-  { id: 'rpt060', label: 'RPT060 - Báo cáo thống kê đơn hàng chưa xử lý' },
+  { id: 'sales-so', label: 'Danh sách đơn hàng bán (SO)', path: '/sales/sales-orders' },
+  { id: 'sales-trips', label: 'Chuyến xe & Điều phối giao', path: '/logistics/delivery-trips' },
+  { id: 'sales-rpt057', label: 'RPT057 - Doanh số & Sản lượng', path: '/reports/rpt057' },
 ];
 
 const inventorySubMenu = [
-  { id: 'inv-adj', label: 'Điều chỉnh tồn kho' },
-  { id: 'inv-transfer', label: 'Điều chuyển hàng' },
-  { id: 'inv-count', label: 'Kiểm kê', path: '/inventory/counts' },
-  { id: 'inv-history', label: 'Danh sách giao dịch kho', path: '/inventory/transactions' },
-  { id: 'inv-detail', label: 'Tra cứu tồn kho chi tiết' },
-  { id: 'rpt083', label: 'RPT083 - Báo cáo tồn kho NPP', path: '/inventory/rpt083' },
-  { id: 'rpt049', label: 'RPT049 - Báo cáo nhập xuất tồn' },
-  { id: 'oos-track', label: 'Báo cáo OOS tracking' },
+  { id: 'inv-transactions', label: 'Nhật ký giao dịch kho', path: '/inventory/transactions' },
+  { id: 'inv-count', label: 'Kiểm kê kho hàng', path: '/inventory/counts' },
+  { id: 'inv-rpt083', label: 'RPT083 - Báo cáo tồn kho NPP', path: '/inventory/rpt083' },
 ];
 
-const catalogSubMenu = [
-  { id: 'cat-products', label: 'Quản lý sản phẩm & Mẫu thử [S]', path: '/catalog/products' },
+const routesSubMenu = [
+  { id: 'routes-mcp', label: 'Lập tuyến bán hàng (MCP)', path: '/operations/calendar' },
+];
+
+const pnlSubMenu = [
+  { id: 'pnl-statement', label: 'Báo cáo KQKD (Profit & Loss)', path: '/reports/profit-and-loss' },
+];
+
+const adminSubMenu = [
+  { id: 'admin-roles', label: 'Ma trận Phân quyền (Roles)', path: '/admin/roles-permissions' },
+  { id: 'admin-users', label: 'Quản lý người dùng', path: '/admin/users' },
 ];
 
 const menuItems = [
   { id: 'home', icon: Home, label: 'Trang chủ', path: '/' },
-  { id: 'catalog', icon: Package, label: 'Quản lý sản phẩm [S]', hasSub: true, subItems: catalogSubMenu },
-  { id: 'sales', icon: TrendingUp, label: 'Quản lý bán hàng', hasSub: true, subItems: salesSubMenu },
+  { id: 'catalog', icon: Package, label: 'Sản phẩm & SKU', hasSub: true, subItems: catalogSubMenu },
+  { id: 'buying', icon: ShoppingCart, label: 'Mua hàng (PO)', hasSub: true, subItems: buyingSubMenu },
+  { id: 'sales', icon: TrendingUp, label: 'Bán hàng (SO)', hasSub: true, subItems: salesSubMenu },
   { id: 'inventory', icon: Box, label: 'Quản lý tồn kho', hasSub: true, subItems: inventorySubMenu },
+  { id: 'routes', icon: Calendar, label: 'Tuyến bán hàng', hasSub: true, subItems: routesSubMenu },
+  { id: 'pnl', icon: PieChart, label: 'Tài chính & P&L', hasSub: true, subItems: pnlSubMenu },
+  { id: 'admin', icon: ShieldCheck, label: 'Quản trị hệ thống', hasSub: true, subItems: adminSubMenu },
 ];
 
 const Sidebar = () => {

@@ -57,8 +57,11 @@ export const getSalesOrdersWithKPIs = async (distributorId, filters = {}) => {
       }
     }
 
-    const orderDiscount = 0;
-    totalAmount += orderTotal;
+    const orderDiscount = (order.items || []).reduce((s, it) => s + (Number(it.discountAmount) || 0), 0);
+    const hasPromotion = (order.items || []).some(it => it.isPromotion);
+    const freeGiftsCount = (order.items || []).filter(it => it.isPromotion).reduce((s, it) => s + (Number(it.quantity) || 0), 0);
+    const payableAmount = Math.max(0, orderTotal - orderDiscount);
+    totalAmount += payableAmount;
     totalDiscount += orderDiscount;
 
     return {
@@ -81,8 +84,11 @@ export const getSalesOrdersWithKPIs = async (distributorId, filters = {}) => {
       status: order.status,
       stockStatus: isShortage ? 'Thiếu tồn' : 'Đủ tồn',
       isShortage,
-      totalAmount: orderTotal,
+      totalAmount: payableAmount,
+      rawTotalAmount: orderTotal,
       discount: orderDiscount,
+      hasPromotion,
+      freeGiftsCount,
       itemCount: order.items?.length || 0,
       orderType: order.orderType
     };
@@ -163,6 +169,9 @@ export const getOrderDetail = async (id, distributorId) => {
       quantity: Number(alloc.quantity)
     }));
 
+    const isPromo = Boolean(item.isPromotion);
+    const itemDiscount = Number(item.discountAmount) || 0;
+
     return {
       id: item.id.toString(),
       productId: item.productId.toString(),
@@ -172,12 +181,19 @@ export const getOrderDetail = async (id, distributorId) => {
       quantity: qty,
       unitPrice: price,
       totalAmount: lineTotal,
-      isPromotion: item.isPromotion,
+      isPromotion: isPromo,
+      appliedPromotionId: item.appliedPromotionId ? item.appliedPromotionId.toString() : null,
+      promotionName: item.appliedPromotion?.name || null,
+      discountAmount: itemDiscount,
       availableStock,
       isShortage: qty > availableStock,
       allocations
     };
   }));
+
+  const totalDiscountAmount = items.reduce((sum, it) => sum + (Number(it.discountAmount) || 0), 0);
+  const finalAmount = Math.max(0, totalAmount - totalDiscountAmount);
+  const freeItemsCount = items.filter(it => it.isPromotion).reduce((sum, it) => sum + it.quantity, 0);
 
   const statusHistory = (order.statusHistory || []).map(h => ({
     id: h.id.toString(),
@@ -202,6 +218,7 @@ export const getOrderDetail = async (id, distributorId) => {
     retailerAddress: order.retailer?.address || '',
     vnbhCode: order.createdBy?.username || '',
     vnbhName: order.createdBy?.fullName || '',
+    deliveryNotes: order.deliveryNotes || '',
     createdAt: order.createdAt,
     expectedDate,
     status: order.status,
@@ -214,6 +231,9 @@ export const getOrderDetail = async (id, distributorId) => {
       status: order.deliveryTrip.status
     } : null,
     totalAmount,
+    totalDiscountAmount,
+    finalAmount,
+    freeItemsCount,
     items,
     statusHistory
   };
@@ -863,7 +883,9 @@ export const updateOrderItemQuantity = async (orderId, itemId, newQuantity, dist
 /**
  * Tạo mới đơn đặt hàng bán (Biểu mẫu BH_BM1)
  */
-export const createNewSalesOrder = async (orderData, distributorId, createdById) => {
+export const createNewSalesOrder = async (orderData, distributorId = 1, createdById = null) => {
+  const actualDistributorId = distributorId || orderData.distributorId || 1;
+  const actualCreatedById = createdById || orderData.createdById || null;
   const { retailerId, warehouseId, orderType = 'LATER', items, notes, orderDate, expectedDeliveryDate } = orderData;
 
   if (!retailerId) throw new Error('Vui lòng chọn khách hàng / đại lý');
@@ -882,22 +904,27 @@ export const createNewSalesOrder = async (orderData, distributorId, createdById)
     const order = await tx.salesOrder.create({
       data: {
         orderCode,
-        distributorId: BigInt(distributorId),
+        distributorId: BigInt(actualDistributorId),
         warehouseId: BigInt(warehouseId),
         retailerId: BigInt(retailerId),
         orderType: orderType || 'LATER',
         status: 'PENDING',
-        createdById: createdById ? BigInt(createdById) : null,
+        createdById: actualCreatedById ? BigInt(actualCreatedById) : null,
         createdAt: date,
         items: {
           create: items.map(it => {
             const qty = Number(it.quantity ?? it.orderedQuantity ?? 1);
             const price = Number(it.unitPrice ?? 0);
+            const isPromo = Boolean(it.isPromotion);
             return {
               product: { connect: { id: BigInt(it.productId) } },
               quantity: isNaN(qty) || qty <= 0 ? 1 : qty,
-              unitPrice: isNaN(price) ? 0 : price,
-              isPromotion: Boolean(it.isPromotion)
+              unitPrice: isPromo ? 0 : (isNaN(price) ? 0 : price),
+              isPromotion: isPromo,
+              ...(it.appliedPromotionId ? {
+                appliedPromotion: { connect: { id: BigInt(it.appliedPromotionId) } }
+              } : {}),
+              discountAmount: Number(it.discountAmount) || 0
             };
           })
         }

@@ -1,11 +1,12 @@
 .receiving-page-container {
-  padding: 0;
+  padding: 24px 32px;
+  background-color: #f8fafc;
+  min-height: calc(100vh - 64px);
+  width: 100%;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: 20px;
-  max-width: 1400px;
-  margin: 0 auto;
-  width: 100%;
 }
 
 .receiving-page-header {

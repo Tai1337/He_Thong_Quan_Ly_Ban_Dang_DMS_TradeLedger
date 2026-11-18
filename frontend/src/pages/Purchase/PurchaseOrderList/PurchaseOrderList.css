@@ -1,7 +1,9 @@
 .po-page-container {
-  max-width: 1400px;
-  margin: 0 auto;
+  padding: 24px 32px;
+  background-color: #f8fafc;
+  min-height: calc(100vh - 64px);
   width: 100%;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -393,6 +395,22 @@
   background: #f1f5f9;
   border-color: #cbd5e1;
   color: #1e293b;
+}
+
+.action-icon-btn.print {
+  color: #2563eb;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  font-weight: 600;
+  padding: 4px 10px;
+}
+
+.action-icon-btn.print:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.15);
 }
 
 .action-icon-btn.primary {

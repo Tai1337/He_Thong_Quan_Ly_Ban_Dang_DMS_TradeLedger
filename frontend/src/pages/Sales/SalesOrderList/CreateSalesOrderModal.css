@@ -174,27 +174,84 @@
 .create-order-footer {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   padding: 14px 24px;
   border-top: 1px solid #e2e8f0;
   background: #f8fafc;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .create-order-summary {
   display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.summary-row {
+  display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  font-size: 13px;
+  color: #475569;
 }
 
 .summary-label {
-  font-size: 14px;
+  font-size: 13.5px;
   color: #475569;
 }
 
 .summary-val {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
+  color: #0f172a;
+}
+
+.summary-val.final-val {
+  font-size: 19px;
   color: #1e40af;
+}
+
+.summary-discount {
+  color: #7c3aed;
+  font-weight: 600;
+}
+
+.promo-gift-row {
+  background-color: #f0fdf4 !important;
+}
+
+.promo-gift-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background-color: #dcfce7;
+  color: #15803d;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid #bbf7d0;
+  white-space: nowrap;
+}
+
+.upsell-alert-box {
+  background: #fefce8;
+  border: 1px solid #fef08a;
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #854d0e;
+  font-size: 12.5px;
+  margin-top: 6px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .create-order-actions {

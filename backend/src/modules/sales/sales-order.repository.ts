@@ -190,6 +190,7 @@ export class SalesOrderRepository {
         items: {
           include: {
             product: true,
+            appliedPromotion: true,
             allocations: {
               include: { stockLot: true },
             },

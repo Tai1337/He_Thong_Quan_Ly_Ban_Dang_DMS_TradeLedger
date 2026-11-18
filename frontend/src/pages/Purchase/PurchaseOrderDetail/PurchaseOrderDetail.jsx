@@ -30,6 +30,7 @@ import {
 import ReceiveGoodsModal from '../PurchaseOrderList/ReceiveGoodsModal';
 import CancelCloseModal from '../PurchaseOrderList/CancelCloseModal';
 import CreatePurchaseOrderModal from '../PurchaseOrderList/CreatePurchaseOrderModal';
+import PrintPurchaseOrderModal from '../PurchaseOrderList/PrintPurchaseOrderModal';
 import './PurchaseOrderDetail.css';
 
 const formatCurrency = (val) => new Intl.NumberFormat('vi-VN').format(val || 0);
@@ -68,6 +69,7 @@ const PurchaseOrderDetail = () => {
   const [isReasonModalOpen, setIsReasonModalOpen] = useState(false);
   const [reasonActionType, setReasonActionType] = useState('CANCEL');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
   const fetchOrderDetail = useCallback(async () => {
     setLoading(true);
@@ -134,7 +136,7 @@ const PurchaseOrderDetail = () => {
   };
 
   const handlePrint = () => {
-    window.print();
+    setIsPrintModalOpen(true);
   };
 
   const handleShare = () => {
@@ -305,16 +307,15 @@ const PurchaseOrderDetail = () => {
               </>
             )}
 
-            {(order.status === 'COMPLETED' || order.status === 'CANCELLED') && (
-              <button 
-                type="button" 
-                className="erp-btn-secondary"
-                onClick={handlePrint}
-              >
-                <Printer size={15} />
-                <span>In chứng từ</span>
-              </button>
-            )}
+            <button 
+              type="button" 
+              className="erp-btn-secondary"
+              onClick={handlePrint}
+              title="In chứng từ Đơn đặt hàng mua (PO)"
+            >
+              <Printer size={15} />
+              <span>In chứng từ</span>
+            </button>
           </div>
         </div>
 
@@ -841,6 +842,15 @@ const PurchaseOrderDetail = () => {
           initialOrder={order}
           onClose={() => setIsEditModalOpen(false)}
           onSuccess={() => fetchOrderDetail()}
+        />
+      )}
+
+      {/* Modal In chứng từ PO */}
+      {isPrintModalOpen && order && (
+        <PrintPurchaseOrderModal
+          isOpen={isPrintModalOpen}
+          onClose={() => setIsPrintModalOpen(false)}
+          order={order}
         />
       )}
     </div>

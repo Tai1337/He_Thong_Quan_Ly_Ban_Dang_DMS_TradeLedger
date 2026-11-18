@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import prisma from '../config/prisma.js';
+import { evaluateOrderPromotions } from '../services/promotionService.js';
 
 /**
  * Lấy Nhà phân phối và Kho hàng bán mặc định
@@ -481,6 +482,25 @@ export const placeShopOrder = async ({
   const rand = Math.floor(10000 + Math.random() * 90000);
   const orderCode = `R-${yyyymmdd}-${rand}`;
 
+  // Đánh giá khuyến mãi (Trade Promotion: Mua N tặng M & Chiết khấu bậc thang)
+  let promoResult = { freeItems: [], invoiceDiscount: null, appliedPromotions: [] };
+  try {
+    promoResult = await evaluateOrderPromotions(distributor.id, {
+      items: items.map(it => ({
+        productId: it.productId,
+        quantity: Number(it.quantity || 1),
+        unitPrice: Number(it.unitPrice || 0)
+      })),
+      orderDate: date
+    });
+  } catch (err) {
+    console.error('Lỗi khi tính khuyến mãi đơn Shop Portal:', err);
+  }
+
+  const promoNotes = promoResult.appliedPromotions?.length > 0
+    ? `Khuyến mãi: ${promoResult.appliedPromotions.map(p => p.name).join(', ')}`
+    : null;
+
   // Chuẩn bị ghi chú giao hàng đầy đủ
   const fullNotes = [
     `[Đơn Web Portal - ${customer.accountType === 'STORE' ? 'Cửa Hàng' : 'Khách Cá Nhân'}]`,
@@ -488,8 +508,52 @@ export const placeShopOrder = async ({
     customer.storeName ? `Tên tiệm: ${customer.storeName}` : null,
     `Địa chỉ nhận: ${shippingAddress || customer.address || 'Chưa cung cấp'}`,
     `Hình thức thanh toán: ${paymentMethod === 'BANK_TRANSFER' ? 'Chuyển khoản QR' : 'COD (Tiền mặt khi nhận)'}`,
+    promoNotes,
     notes ? `Ghi chú thêm: ${notes}` : null
   ].filter(Boolean).join(' | ');
+
+  const subtotal = items.reduce((sum, it) => sum + (Number(it.quantity || 1) * Number(it.unitPrice || 0)), 0);
+  const totalDiscount = Number(promoResult.invoiceDiscount?.discountAmount) || 0;
+  const invoicePromoId = promoResult.invoiceDiscount?.promotionId || null;
+
+  let distributedDiscountSum = 0;
+  const userItemsWithDiscount = items.map((it, idx) => {
+    const qty = Number(it.quantity || 1);
+    const price = Number(it.unitPrice || 0);
+    const lineTotal = qty * price;
+    let itemDiscount = 0;
+    if (totalDiscount > 0 && subtotal > 0) {
+      if (idx === items.length - 1) {
+        itemDiscount = Math.max(0, totalDiscount - distributedDiscountSum);
+      } else {
+        itemDiscount = Math.round((lineTotal / subtotal) * totalDiscount);
+        distributedDiscountSum += itemDiscount;
+      }
+    }
+    return {
+      product: { connect: { id: BigInt(it.productId) } },
+      quantity: isNaN(qty) || qty <= 0 ? 1 : qty,
+      unitPrice: isNaN(price) || price < 0 ? 0 : price,
+      isPromotion: false,
+      ...(itemDiscount > 0 && invoicePromoId ? {
+        appliedPromotion: { connect: { id: BigInt(invoicePromoId) } }
+      } : {}),
+      discountAmount: itemDiscount
+    };
+  });
+
+  const promoGiftItems = (promoResult.freeItems || []).map(gift => ({
+    product: { connect: { id: BigInt(gift.productId) } },
+    quantity: Number(gift.quantity),
+    unitPrice: 0,
+    isPromotion: true,
+    ...(gift.appliedPromotionId ? {
+      appliedPromotion: { connect: { id: BigInt(gift.appliedPromotionId) } }
+    } : {}),
+    discountAmount: 0
+  }));
+
+  const allOrderItems = [...userItemsWithDiscount, ...promoGiftItems];
 
   return prisma.$transaction(async (tx) => {
     // 1. Tạo SalesOrder
@@ -502,23 +566,15 @@ export const placeShopOrder = async ({
         customerId: customer.id,
         orderType: 'LATER',
         status: 'PENDING',
+        deliveryNotes: fullNotes,
         createdAt: date,
         items: {
-          create: items.map(it => {
-            const qty = Number(it.quantity || 1);
-            const price = Number(it.unitPrice || 0);
-            return {
-              product: { connect: { id: BigInt(it.productId) } },
-              quantity: isNaN(qty) || qty <= 0 ? 1 : qty,
-              unitPrice: isNaN(price) || price < 0 ? 0 : price,
-              isPromotion: false
-            };
-          })
+          create: allOrderItems
         }
       },
       include: {
         items: {
-          include: { product: true }
+          include: { product: true, appliedPromotion: true }
         },
         retailer: true,
         customer: true

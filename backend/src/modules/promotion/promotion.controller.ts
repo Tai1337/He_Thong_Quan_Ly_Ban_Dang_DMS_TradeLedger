@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query } from '@nestjs/common';
 import { PromotionService } from './promotion.service';
 import { Public } from '../../common/decorators/public.decorator';
 
@@ -11,6 +11,12 @@ export class PromotionController {
   async getPromotions(@Query() query: any) {
     const { distributorId = 1, ...filters } = query;
     return this.promotionService.getPromotions(distributorId, filters);
+  }
+
+  @Post('evaluate')
+  async evaluateOrderPromotions(@Body() body: any, @Query('distributorId') qDistId?: any) {
+    const distributorId = qDistId || body.distributorId || 1;
+    return this.promotionService.evaluateOrderPromotions(distributorId, body);
   }
 
   @Get(':id')
@@ -35,5 +41,14 @@ export class PromotionController {
   ) {
     const distributorId = qDistId || body.distributorId || 1;
     return this.promotionService.updatePromotion(id, distributorId, body);
+  }
+
+  @Delete(':id')
+  async deletePromotion(
+    @Param('id') id: string,
+    @Query('distributorId') qDistId?: any,
+  ) {
+    const distributorId = qDistId || 1;
+    return this.promotionService.deletePromotion(id, distributorId);
   }
 }

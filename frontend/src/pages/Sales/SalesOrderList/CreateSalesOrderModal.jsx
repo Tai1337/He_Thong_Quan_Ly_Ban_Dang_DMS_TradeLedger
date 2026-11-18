@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { X, Plus, Trash2, ShoppingCart, CheckCircle2 } from 'lucide-react';
+import { X, Plus, Trash2, ShoppingCart, CheckCircle2, Gift, Sparkles } from 'lucide-react';
 import { 
   getRetailers, 
   getWarehouses, 
   getProducts, 
-  createSalesOrder 
+  createSalesOrder,
+  evaluateOrderPromotions 
 } from '../../../services/api';
 import './CreateSalesOrderModal.css';
 
@@ -31,6 +32,17 @@ const CreateSalesOrderModal = ({ isOpen, onClose, onOrderCreated }) => {
     { productId: '', sku: '', name: '', unit: '', quantity: 1, unitPrice: 0, isPromotion: false }
   ]);
 
+  // Promotion calculation state
+  const [promoData, setPromoData] = useState({
+    subtotal: 0,
+    freeItems: [],
+    invoiceDiscount: null,
+    appliedPromotions: [],
+    upsellHints: [],
+    totalDiscountAmount: 0,
+    finalAmount: 0,
+  });
+
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -39,14 +51,19 @@ const CreateSalesOrderModal = ({ isOpen, onClose, onOrderCreated }) => {
     if (isOpen) {
       setLoading(true);
       setError('');
+      // Reset khi mở lại modal
+      setItems([{ productId: '', sku: '', name: '', unit: '', quantity: 1, unitPrice: 0, isPromotion: false }]);
+      setPromoData({ subtotal: 0, freeItems: [], invoiceDiscount: null, appliedPromotions: [], upsellHints: [], totalDiscountAmount: 0, finalAmount: 0 });
+      setNotes('');
       Promise.all([
         getRetailers({ distributorId: 1 }),
         getWarehouses(1),
-        getProducts()
+        getProducts({ limit: 500 })
       ]).then(([retRes, whRes, prodRes]) => {
         setRetailers(retRes || []);
         setWarehouses(whRes || []);
-        setProducts(prodRes || []);
+        const prodList = Array.isArray(prodRes) ? prodRes : (prodRes?.data || []);
+        setProducts(prodList);
         if (whRes && whRes.length > 0) setWarehouseId(whRes[0].id);
         if (retRes && retRes.length > 0) setRetailerId(retRes[0].id);
       }).catch(err => {
@@ -56,6 +73,43 @@ const CreateSalesOrderModal = ({ isOpen, onClose, onOrderCreated }) => {
       });
     }
   }, [isOpen]);
+
+  // Auto calculate trade promotions when items change
+  useEffect(() => {
+    const validPaidItems = items
+      .filter((it) => it.productId && Number(it.quantity) > 0 && !it.isPromotion)
+      .map((it) => ({
+        productId: it.productId,
+        quantity: Number(it.quantity),
+        unitPrice: Number(it.unitPrice),
+      }));
+
+    if (validPaidItems.length === 0) {
+      setPromoData({
+        subtotal: 0,
+        freeItems: [],
+        invoiceDiscount: null,
+        appliedPromotions: [],
+        upsellHints: [],
+        totalDiscountAmount: 0,
+        finalAmount: 0,
+      });
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      evaluateOrderPromotions({ items: validPaidItems })
+        .then((res) => {
+          console.log('[Khuyến mãi] Kết quả evaluate:', res);
+          setPromoData(res);
+        })
+        .catch((err) => {
+          console.error('[Khuyến mãi] Lỗi tính toán khuyến mãi:', err);
+        });
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [items]);
 
   // Thêm dòng sản phẩm
   const handleAddItem = () => {
@@ -76,7 +130,7 @@ const CreateSalesOrderModal = ({ isOpen, onClose, onOrderCreated }) => {
 
   // Thay đổi sản phẩm trong dòng
   const handleProductChange = (index, prodId) => {
-    const p = products.find(prod => prod.id === prodId);
+    const p = products.find(prod => String(prod.id) === String(prodId));
     setItems(prev => {
       const copy = [...prev];
       if (p) {
@@ -111,12 +165,6 @@ const CreateSalesOrderModal = ({ isOpen, onClose, onOrderCreated }) => {
     });
   };
 
-  // Tính tổng tiền
-  const totalAmount = items.reduce((sum, it) => {
-    if (!it.productId || it.isPromotion) return sum;
-    return sum + (Number(it.quantity) || 0) * (Number(it.unitPrice) || 0);
-  }, 0);
-
   // Submit đơn hàng
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -131,11 +179,55 @@ const CreateSalesOrderModal = ({ isOpen, onClose, onOrderCreated }) => {
       return;
     }
 
-    const validItems = items.filter(it => it.productId && Number(it.quantity) > 0);
-    if (validItems.length === 0) {
+    const validUserItems = items
+      .filter((it) => it.productId && Number(it.quantity) > 0)
+      .map((it) => ({
+        productId: it.productId,
+        quantity: Number(it.quantity),
+        unitPrice: it.isPromotion ? 0 : Number(it.unitPrice),
+        isPromotion: Boolean(it.isPromotion),
+      }));
+
+    if (validUserItems.length === 0) {
       setError('Vui lòng chọn ít nhất 1 sản phẩm và nhập số lượng hợp lệ');
       return;
     }
+
+    // Phân bổ chiết khấu bậc thang (Invoice Tier Discount) vào các dòng hàng bán
+    const totalDiscount = Number(promoData.invoiceDiscount?.discountAmount) || 0;
+    const invoicePromoId = promoData.invoiceDiscount?.promotionId || null;
+
+    let distributedDiscountSum = 0;
+    const validUserItemsWithDiscount = validUserItems.map((it, idx) => {
+      const lineTotal = Number(it.quantity) * Number(it.unitPrice);
+      let itemDiscount = 0;
+      if (totalDiscount > 0 && currentSubtotal > 0) {
+        if (idx === validUserItems.length - 1) {
+          // Dòng cuối nhận phần dư để tròn số tiền
+          itemDiscount = Math.max(0, totalDiscount - distributedDiscountSum);
+        } else {
+          itemDiscount = Math.round((lineTotal / currentSubtotal) * totalDiscount);
+          distributedDiscountSum += itemDiscount;
+        }
+      }
+      return {
+        ...it,
+        discountAmount: itemDiscount,
+        appliedPromotionId: itemDiscount > 0 ? invoicePromoId : null,
+      };
+    });
+
+    // Auto-attach calculated Free Items (FOC) from Trade Promotion
+    const promoGifts = (promoData.freeItems || []).map((gift) => ({
+      productId: gift.productId,
+      quantity: Number(gift.quantity),
+      unitPrice: 0,
+      isPromotion: true,
+      appliedPromotionId: gift.appliedPromotionId,
+      discountAmount: 0,
+    }));
+
+    const finalOrderItems = [...validUserItemsWithDiscount, ...promoGifts];
 
     setSubmitting(true);
     try {
@@ -145,13 +237,8 @@ const CreateSalesOrderModal = ({ isOpen, onClose, onOrderCreated }) => {
         warehouseId,
         orderType,
         expectedDate,
-        notes,
-        items: validItems.map(it => ({
-          productId: it.productId,
-          quantity: Number(it.quantity),
-          unitPrice: Number(it.unitPrice),
-          isPromotion: it.isPromotion
-        }))
+        notes: notes ? `${notes} (Khuyến mãi áp dụng: ${promoData.appliedPromotions?.map(p => p.name).join(', ') || 'Không'})` : (promoData.appliedPromotions?.length > 0 ? `Khuyến mãi: ${promoData.appliedPromotions.map(p => p.name).join(', ')}` : ''),
+        items: finalOrderItems,
       };
 
       const res = await createSalesOrder(payload);
@@ -168,6 +255,15 @@ const CreateSalesOrderModal = ({ isOpen, onClose, onOrderCreated }) => {
 
   if (!isOpen) return null;
 
+  const currentSubtotal = items.reduce((sum, it) => {
+    if (!it.productId || it.isPromotion) return sum;
+    return sum + (Number(it.quantity) || 0) * (Number(it.unitPrice) || 0);
+  }, 0);
+
+  const displayPayable = promoData.finalAmount > 0 || promoData.subtotal > 0
+    ? promoData.finalAmount
+    : currentSubtotal;
+
   return (
     <div className="modal-overlay">
       <div className="create-order-modal-container">
@@ -175,7 +271,7 @@ const CreateSalesOrderModal = ({ isOpen, onClose, onOrderCreated }) => {
         <div className="create-order-header">
           <div>
             <h3>Tạo Đơn Đặt Hàng Bán (Biểu mẫu BH_BM1)</h3>
-            <p className="create-order-sub">Đơn hàng mới sẽ ở trạng thái "Chờ xác nhận" (PENDING)</p>
+            <p className="create-order-sub">Tự động áp dụng cơ chế Khuyến mãi FMCG: Hàng tặng FOC (0đ) & Chiết khấu bậc thang</p>
           </div>
           <button className="btn-close-modal" onClick={onClose}>
             <X size={20} />
@@ -255,6 +351,43 @@ const CreateSalesOrderModal = ({ isOpen, onClose, onOrderCreated }) => {
             />
           </div>
 
+          {/* Applied Promotions Panel - hiện khi có khuyến mãi */}
+          {promoData.appliedPromotions?.length > 0 && (
+            <div style={{
+              background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)',
+              border: '1.5px solid #86efac',
+              borderRadius: 10,
+              padding: '10px 16px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 6,
+            }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#15803d', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Gift size={14} /> Khuyến mãi đang được áp dụng
+              </div>
+              {promoData.appliedPromotions.map((p, idx) => (
+                <div key={idx} style={{ fontSize: 13, color: '#166534', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ color: '#16a34a' }}>✓</span>
+                  <strong>{p.name}</strong>
+                  <span style={{ color: '#4ade80' }}>·</span>
+                  <span>{p.description}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Upsell Hints */}
+          {promoData.upsellHints?.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {promoData.upsellHints.map((hint, idx) => (
+                <div key={idx} className="upsell-alert-box">
+                  <Sparkles size={16} color="#d97706" style={{ flexShrink: 0 }} />
+                  <span><strong>Gợi ý Trade Marketing:</strong> {hint}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Line items table */}
           <div className="create-items-section">
             <div className="items-header-bar">
@@ -277,11 +410,12 @@ const CreateSalesOrderModal = ({ isOpen, onClose, onOrderCreated }) => {
                     <th style={{ width: '15%', textAlign: 'right' }}>Số lượng <span style={{ color: 'red' }}>*</span></th>
                     <th style={{ width: '18%', textAlign: 'right' }}>Đơn giá (VNĐ)</th>
                     <th style={{ width: '17%', textAlign: 'right' }}>Thành tiền (VNĐ)</th>
-                    <th style={{ width: '8%', textAlign: 'center' }}>KM</th>
+                    <th style={{ width: '12%', textAlign: 'center' }}>Loại</th>
                     <th style={{ width: '5%', textAlign: 'center' }}></th>
                   </tr>
                 </thead>
                 <tbody>
+                  {/* User items */}
                   {items.map((row, idx) => {
                     const lineTotal = row.isPromotion ? 0 : (Number(row.quantity) || 0) * (Number(row.unitPrice) || 0);
                     return (
@@ -332,12 +466,7 @@ const CreateSalesOrderModal = ({ isOpen, onClose, onOrderCreated }) => {
                           {formatCurrency(lineTotal)} đ
                         </td>
                         <td style={{ textAlign: 'center' }}>
-                          <input 
-                            type="checkbox"
-                            checked={row.isPromotion}
-                            onChange={(e) => handleItemFieldChange(idx, 'isPromotion', e.target.checked)}
-                            title="Hàng khuyến mãi"
-                          />
+                          <span style={{ fontSize: 12, color: '#64748b' }}>Hàng bán</span>
                         </td>
                         <td style={{ textAlign: 'center' }}>
                           <button 
@@ -352,6 +481,45 @@ const CreateSalesOrderModal = ({ isOpen, onClose, onOrderCreated }) => {
                       </tr>
                     );
                   })}
+
+                  {/* Auto-applied Free Promotion Items (FOC) */}
+                  {promoData.freeItems?.map((gift, gIdx) => (
+                    <tr key={`gift-${gIdx}`} className="promo-gift-row">
+                      <td>
+                        <div style={{ fontWeight: 600, color: '#15803d' }}>
+                          [{gift.productSku}] {gift.productName}
+                        </div>
+                        <div style={{ fontSize: 11, color: '#166534', marginTop: 2 }}>
+                          {gift.promotionName}
+                        </div>
+                      </td>
+                      <td>
+                        <input 
+                          type="text" 
+                          className="item-readonly-input" 
+                          value={gift.unit} 
+                          readOnly 
+                        />
+                      </td>
+                      <td style={{ textAlign: 'right', fontWeight: 700, color: '#15803d' }}>
+                        +{gift.quantity}
+                      </td>
+                      <td style={{ textAlign: 'right', color: '#15803d' }}>
+                        0 đ
+                      </td>
+                      <td style={{ textAlign: 'right', fontWeight: 700, color: '#15803d' }}>
+                        0 đ
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        <span className="promo-gift-badge">
+                          <Gift size={11} /> Tặng 0đ (FOC)
+                        </span>
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        <span title="Tự động thêm bởi khuyến mãi" style={{ cursor: 'help' }}>✨</span>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -360,8 +528,30 @@ const CreateSalesOrderModal = ({ isOpen, onClose, onOrderCreated }) => {
           {/* Footer & Total */}
           <div className="create-order-footer">
             <div className="create-order-summary">
-              <span className="summary-label">Tổng tiền đơn hàng:</span>
-              <span className="summary-val">{formatCurrency(totalAmount)} đ</span>
+              <div className="summary-row">
+                <span>Tiền hàng:</span>
+                <span style={{ fontWeight: 600 }}>{formatCurrency(currentSubtotal)} đ</span>
+              </div>
+              {promoData.freeItems?.length > 0 && (
+                <div className="summary-row" style={{ color: '#15803d' }}>
+                  <span>🎁 Hàng tặng (FOC):</span>
+                  <span style={{ fontWeight: 700 }}>
+                    {promoData.freeItems.reduce((acc, g) => acc + Number(g.quantity), 0)} sản phẩm (0 đ)
+                  </span>
+                </div>
+              )}
+              {promoData.invoiceDiscount && (
+                <div className="summary-row summary-discount">
+                  <span>
+                    Chiết khấu {promoData.invoiceDiscount.discountPercent ? `${promoData.invoiceDiscount.discountPercent}%` : 'tiền mặt'}:
+                  </span>
+                  <span style={{ fontWeight: 700 }}>- {formatCurrency(promoData.invoiceDiscount.discountAmount)} đ</span>
+                </div>
+              )}
+              <div className="summary-row" style={{ marginTop: 2, borderTop: '1px dashed #cbd5e1', paddingTop: 6 }}>
+                <span className="summary-label" style={{ fontWeight: 700, color: '#0f172a' }}>Tổng thanh toán:</span>
+                <span className="summary-val final-val">{formatCurrency(displayPayable)} đ</span>
+              </div>
             </div>
 
             <div className="create-order-actions">

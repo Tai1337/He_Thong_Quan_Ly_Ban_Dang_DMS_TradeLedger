@@ -102,8 +102,16 @@ export class SalesOrderService {
           }
         }
 
-        const orderDiscount = 0;
-        totalAmount += orderTotal;
+        const orderDiscount = (order.items || []).reduce(
+          (s: number, it: any) => s + (Number(it.discountAmount) || 0),
+          0,
+        );
+        const hasPromotion = (order.items || []).some((it: any) => it.isPromotion);
+        const freeGiftsCount = (order.items || [])
+          .filter((it: any) => it.isPromotion)
+          .reduce((s: number, it: any) => s + (Number(it.quantity) || 0), 0);
+        const payableAmount = Math.max(0, orderTotal - orderDiscount);
+        totalAmount += payableAmount;
         totalDiscount += orderDiscount;
 
         return {
@@ -126,8 +134,11 @@ export class SalesOrderService {
           status: order.status,
           stockStatus: isShortage ? 'Thiếu tồn' : 'Đủ tồn',
           isShortage,
-          totalAmount: orderTotal,
+          totalAmount: payableAmount,
+          rawTotalAmount: orderTotal,
           discount: orderDiscount,
+          hasPromotion,
+          freeGiftsCount,
           itemCount: order.items?.length || 0,
           orderType: order.orderType,
         };
@@ -206,6 +217,9 @@ export class SalesOrderService {
           quantity: Number(alloc.quantity),
         }));
 
+        const isPromo = Boolean(item.isPromotion);
+        const itemDiscount = Number(item.discountAmount) || 0;
+
         return {
           id: item.id.toString(),
           productId: item.productId.toString(),
@@ -215,13 +229,20 @@ export class SalesOrderService {
           quantity: qty,
           unitPrice: price,
           totalAmount: lineTotal,
-          isPromotion: item.isPromotion,
+          isPromotion: isPromo,
+          appliedPromotionId: item.appliedPromotionId ? item.appliedPromotionId.toString() : null,
+          promotionName: item.appliedPromotion?.name || null,
+          discountAmount: itemDiscount,
           availableStock,
           isShortage: qty > availableStock,
           allocations,
         };
       }),
     );
+
+    const totalDiscountAmount = items.reduce((sum, it) => sum + (Number(it.discountAmount) || 0), 0);
+    const finalAmount = Math.max(0, totalAmount - totalDiscountAmount);
+    const freeItemsCount = items.filter(it => it.isPromotion).reduce((sum, it) => sum + it.quantity, 0);
 
     const statusHistory = (order.statusHistory || []).map((h: any) => ({
       id: h.id.toString(),
@@ -249,6 +270,7 @@ export class SalesOrderService {
 
       vnbhCode: order.createdBy?.username || '',
       vnbhName: order.createdBy?.fullName || '',
+      deliveryNotes: order.deliveryNotes || '',
       createdAt: order.createdAt,
       expectedDate,
       status: order.status,
@@ -263,6 +285,9 @@ export class SalesOrderService {
           }
         : null,
       totalAmount,
+      totalDiscountAmount,
+      finalAmount,
+      freeItemsCount,
       items,
       statusHistory,
     };
@@ -956,13 +981,19 @@ export class SalesOrderService {
           createdAt: date,
           items: {
             create: items.map((it) => {
-              const qty = Number(it.quantity ?? it.orderedQuantity ?? 1);
+              const itAny = it as any;
+              const qty = Number(it.quantity ?? (it as any).orderedQuantity ?? 1);
               const price = Number(it.unitPrice ?? 0);
+              const isPromo = Boolean(itAny.isPromotion);
               return {
                 product: { connect: { id: BigInt(it.productId) } },
                 quantity: isNaN(qty) || qty <= 0 ? 1 : qty,
-                unitPrice: isNaN(price) ? 0 : price,
-                isPromotion: Boolean(it.isPromotion),
+                unitPrice: isPromo ? 0 : (isNaN(price) ? 0 : price),
+                isPromotion: isPromo,
+                ...(itAny.appliedPromotionId
+                  ? { appliedPromotion: { connect: { id: BigInt(itAny.appliedPromotionId) } } }
+                  : {}),
+                discountAmount: Number(itAny.discountAmount) || 0,
               };
             }),
           },

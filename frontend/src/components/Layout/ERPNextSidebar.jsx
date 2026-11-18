@@ -249,9 +249,13 @@ const ERPNextSidebar = ({ user, onLogout }) => {
             <div className="erp-sub-group-label">Chứng từ & Nghiệp vụ</div>
             {filteredSubItems.map(item => {
               const ItemIcon = item.icon;
-              // Kiểm tra xem subItem có đang active dựa trên pathname và query
-              const isItemActive = location.pathname === item.path.split('?')[0] && 
-                (!item.path.includes('?') || location.search === item.path.substring(item.path.indexOf('?')));
+              const [itemBasePath, itemQuery] = item.path.split('?');
+              const currentParams = new URLSearchParams(location.search);
+              const isItemActive = location.pathname === itemBasePath && (
+                itemQuery 
+                  ? Array.from(new URLSearchParams(itemQuery).entries()).every(([k, v]) => currentParams.get(k) === v)
+                  : (currentParams.get('create') !== 'true' && currentParams.get('rpt005') !== 'true')
+              );
 
               return (
                 <button

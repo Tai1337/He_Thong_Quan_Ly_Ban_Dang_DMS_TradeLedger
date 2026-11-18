@@ -1,8 +1,13 @@
 /* src/pages/Sales/SalesOrderList/SalesOrderList.css */
 .sales-order-list-container {
+  padding: 24px 32px;
+  background-color: #f8fafc;
+  min-height: calc(100vh - 64px);
+  box-sizing: border-box;
+  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
   font-family: Inter, system-ui, -apple-system, sans-serif;
 }
 
@@ -114,15 +119,17 @@
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .filter-item {
-  flex: 1;
-  min-width: 180px;
+  flex: 1 1 190px;
+  max-width: 260px;
 }
 
 .date-type-item {
-  max-width: 180px;
+  max-width: 170px;
+  flex: 0 0 170px;
 }
 
 .date-range-inputs {
@@ -130,6 +137,8 @@
   align-items: center;
   gap: 6px;
   min-width: 250px;
+  max-width: 290px;
+  flex: 0 0 290px;
 }
 
 .date-sep {
@@ -334,8 +343,8 @@
 /* KPI Cards Row - Căn chỉnh cùng hàng, đầu - cuối với bộ lọc */
 .kpi-cards-row {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+  gap: 12px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -343,7 +352,7 @@
 .kpi-card {
   background: white;
   border-radius: 8px;
-  padding: 12px 14px;
+  padding: 12px 16px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   display: flex;
   justify-content: space-between;
@@ -431,7 +440,7 @@
 
 .table-toolbar-row-top {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   align-items: center;
   width: 100%;
   gap: 10px;
@@ -709,8 +718,69 @@
 }
 
 .checkbox-cell {
-  width: 32px;
+  width: 38px;
+  min-width: 38px;
   text-align: center;
+}
+
+.so-table th:nth-child(1), .so-table td:nth-child(1) {
+  width: 38px;
+  min-width: 38px;
+  text-align: center;
+}
+
+.so-table th:nth-child(2), .so-table td:nth-child(2) {
+  width: 155px;
+  min-width: 140px;
+  white-space: nowrap;
+}
+
+.so-table th:nth-child(3), .so-table td:nth-child(3) {
+  min-width: 170px;
+}
+
+.so-table th:nth-child(4), .so-table td:nth-child(4) {
+  min-width: 150px;
+  max-width: 220px;
+}
+
+.so-table th:nth-child(5), .so-table td:nth-child(5) {
+  width: 165px;
+  min-width: 150px;
+  white-space: nowrap;
+}
+
+.so-table th:nth-child(6), .so-table td:nth-child(6) {
+  width: 130px;
+  min-width: 120px;
+  white-space: nowrap;
+}
+
+.so-table th:nth-child(7), .so-table td:nth-child(7) {
+  width: 125px;
+  min-width: 110px;
+  white-space: nowrap;
+}
+
+.so-table th:nth-child(8), .so-table td:nth-child(8) {
+  width: 125px;
+  min-width: 115px;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.so-table th:nth-child(9), .so-table td:nth-child(9) {
+  width: 115px;
+  min-width: 105px;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.so-table th:nth-child(10), .so-table td:nth-child(10) {
+  width: 145px;
+  min-width: 130px;
+  white-space: nowrap;
+  text-align: right;
 }
 
 .order-code-cell {

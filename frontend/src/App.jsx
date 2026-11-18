@@ -23,6 +23,7 @@ import ShopProductDetail from './pages/Shop/ShopProductDetail';
 import ProductManagement from './pages/Catalog/ProductManagement/ProductManagement';
 import RolesPermissions from './pages/Admin/RolesPermissions/RolesPermissions';
 import UserManagement from './pages/Admin/UserManagement/UserManagement';
+import PromotionList from './pages/Promotions/PromotionList';
 import Layout from './components/Layout/Layout';
 import ErrorBoundary from './components/Common/ErrorBoundary';
 import './index.css';
@@ -114,6 +115,18 @@ function App() {
             user ? (
               <Layout user={user} onLogout={handleLogout}>
                 <SalesOrderDetail />
+              </Layout>
+            ) : (
+              <Navigate to="/login" />
+            )
+          } 
+        />
+        <Route 
+          path="/promotions" 
+          element={
+            user ? (
+              <Layout user={user} onLogout={handleLogout}>
+                <PromotionList />
               </Layout>
             ) : (
               <Navigate to="/login" />
@@ -243,6 +256,10 @@ function App() {
               <Navigate to="/login" />
             )
           } 
+        />
+        <Route 
+          path="/accounting/pnl" 
+          element={<Navigate to="/reports/profit-and-loss" replace />} 
         />
         <Route 
           path="/reports/profit-and-loss" 

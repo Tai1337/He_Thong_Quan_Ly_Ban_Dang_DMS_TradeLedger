@@ -13,6 +13,7 @@ import ppoRoutes from './routes/ppoRoutes.js';
 import purchaseReceivingRoutes from './routes/purchaseReceivingRoutes.js';
 import deliveryTripRoutes from './routes/deliveryTripRoutes.js';
 import invoiceRoutes from './routes/invoiceRoutes.js';
+import promotionRoutes from './routes/promotionRoutes.js';
 import { setupShopRoutes } from './portal/shopRoutes.js';
 
 const app = express();
@@ -43,6 +44,8 @@ app.use('/api/delivery-trips', deliveryTripRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/master', masterDataRoutes);
 app.use('/api/shop', setupShopRoutes(io));
+app.use('/api', invoiceRoutes);
+app.use('/api', promotionRoutes);
 
 const PORT = process.env.PORT || 3001;
 httpServer.listen(PORT, () => {

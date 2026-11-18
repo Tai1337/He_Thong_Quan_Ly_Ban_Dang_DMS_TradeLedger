@@ -18,7 +18,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Truck,
-  Layers
+  Layers,
+  Printer
 } from 'lucide-react';
 import { usePurchaseOrders } from '../../../hooks/usePurchaseOrders';
 import { 
@@ -31,6 +32,7 @@ import CreatePurchaseOrderModal from './CreatePurchaseOrderModal';
 import ReceiveGoodsModal from './ReceiveGoodsModal';
 import CancelCloseModal from './CancelCloseModal';
 import DiscrepancyModal from './DiscrepancyModal';
+import PrintPurchaseOrderModal from './PrintPurchaseOrderModal';
 import './PurchaseOrderList.css';
 
 const formatCurrency = (val) => new Intl.NumberFormat('vi-VN').format(val || 0);
@@ -72,6 +74,9 @@ const PurchaseOrderList = () => {
   const [reasonOrder, setReasonOrder] = useState(null);
 
   const [isDiscrepancyModalOpen, setIsDiscrepancyModalOpen] = useState(false);
+
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [printingOrder, setPrintingOrder] = useState(null);
 
   // Fetch POs with Custom Hook
   const { orders, summary, total, loading, error, refetch } = usePurchaseOrders(filters);
@@ -411,7 +416,7 @@ const PurchaseOrderList = () => {
                 <th style={{ width: '150px', textAlign: 'right' }}>Tổng tiền đặt (đ)</th>
                 <th style={{ width: '180px' }}>Tiến độ nhận hàng</th>
                 <th style={{ width: '130px', textAlign: 'center' }}>Trạng thái</th>
-                <th style={{ width: '160px', textAlign: 'center' }}>Thao tác</th>
+                <th style={{ width: '220px', textAlign: 'center' }}>Thao tác</th>
               </tr>
             </thead>
             <tbody>
@@ -532,6 +537,20 @@ const PurchaseOrderList = () => {
                           >
                             <Eye size={15} />
                           </Link>
+
+                          {/* Nút In chứng từ PO luôn sẵn sàng */}
+                          <button 
+                            type="button" 
+                            className="action-icon-btn print"
+                            onClick={() => {
+                              setPrintingOrder(po);
+                              setIsPrintModalOpen(true);
+                            }}
+                            title="In chứng từ Đơn đặt hàng mua (PO)"
+                          >
+                            <Printer size={15} />
+                            <span>In PO</span>
+                          </button>
 
                           {/* Trạng thái Nháp (DRAFT) */}
                           {po.status === 'DRAFT' && (
@@ -694,6 +713,18 @@ const PurchaseOrderList = () => {
         <DiscrepancyModal
           isOpen={isDiscrepancyModalOpen}
           onClose={() => setIsDiscrepancyModalOpen(false)}
+        />
+      )}
+
+      {/* Modal In chứng từ PO */}
+      {isPrintModalOpen && (
+        <PrintPurchaseOrderModal
+          isOpen={isPrintModalOpen}
+          onClose={() => {
+            setIsPrintModalOpen(false);
+            setPrintingOrder(null);
+          }}
+          order={printingOrder}
         />
       )}
     </div>

@@ -178,6 +178,7 @@ export const findSalesOrderById = async (id, distributorId) => {
       items: {
         include: {
           product: true,
+          appliedPromotion: true,
           allocations: {
             include: { stockLot: true }
           }

@@ -488,7 +488,7 @@ model SalesOrderItem {
   appliedPromotion Promotion? @relation(fields: [appliedPromotionId], references: [id], onDelete: SetNull)
   allocations     SalesOrderItemAllocation[]
 
-  @@unique([salesOrderId, productId])
+  @@unique([salesOrderId, productId, isPromotion])
   @@map("sales_order_items")
 }
 

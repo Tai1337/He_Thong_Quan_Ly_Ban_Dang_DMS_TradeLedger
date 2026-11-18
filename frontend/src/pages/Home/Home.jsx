@@ -144,7 +144,7 @@ const Home = ({ user }) => {
 
         {/* Card 4: Accounting Profit Loss */}
         {canPnL && (
-          <Link to="/accounting/pnl" className="bento-metric-card border-amber">
+          <Link to="/reports/profit-and-loss" className="bento-metric-card border-amber">
             <div className="metric-header">
               <div className="metric-icon-box bg-amber-light text-amber">
                 <DollarSign size={20} />
