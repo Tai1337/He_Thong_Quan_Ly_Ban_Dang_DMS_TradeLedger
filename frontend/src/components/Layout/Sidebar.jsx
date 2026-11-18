@@ -17,6 +17,7 @@ import './Layout.css';
 
 const catalogSubMenu = [
   { id: 'cat-products', label: 'Quản lý sản phẩm & SKU', path: '/catalog/products' },
+  { id: 'cat-promotions', label: 'Chương trình khuyến mãi', path: '/catalog/promotions' },
 ];
 
 const buyingSubMenu = [

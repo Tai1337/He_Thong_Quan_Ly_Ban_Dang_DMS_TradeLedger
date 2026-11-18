@@ -25,7 +25,8 @@ import {
   Search,
   Palette,
   ClipboardCheck,
-  Gift
+  Gift,
+  Tag
 } from 'lucide-react';
 import './Layout.css';
 import { hasPermission } from '../../utils/authPermission';
@@ -86,6 +87,7 @@ const modulesData = {
     requiredPermission: ['inventory:view', 'master_data:view', 'inventory_counts:view'],
     subItems: [
       { label: 'Quản lý sản phẩm & SKU', path: '/catalog/products', icon: Box, requiredPermission: 'master_data:view' },
+      { label: 'Chương trình khuyến mãi', path: '/catalog/promotions', icon: Tag, requiredPermission: 'master_data:view' },
       { label: 'Nhật ký giao dịch kho', path: '/inventory/transactions', icon: FileText, requiredPermission: 'inventory:view' },
       { label: 'Kiểm kê kho hàng', path: '/inventory/counts', icon: ClipboardCheck, requiredPermission: 'inventory_counts:view' },
       { label: 'RPT083 - Báo cáo tồn kho NPP', path: '/inventory/rpt083', icon: BarChart3, requiredPermission: 'inventory:view' },

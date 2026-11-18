@@ -21,6 +21,7 @@ export default function CheckoutModal({
   onClose,
   customer,
   cartItems,
+  promoData,
   onOrderSuccess
 }) {
   const [shippingAddress, setShippingAddress] = useState(customer?.address || '');
@@ -35,10 +36,15 @@ export default function CheckoutModal({
   if (!isOpen) return null;
 
   const isStore = customer?.accountType === 'STORE';
-  const totalAmount = cartItems.reduce((sum, item) => {
+  const subtotal = cartItems.reduce((sum, item) => {
     const price = isStore ? item.wholesalePrice : item.basePrice;
     return sum + price * item.quantity;
   }, 0);
+
+  const discountAmount = promoData?.totalDiscount || 0;
+  const totalAmount = promoData?.finalTotal !== undefined && discountAmount > 0
+    ? promoData.finalTotal
+    : Math.max(0, subtotal - discountAmount);
 
   const handleConfirmOrder = async (e) => {
     e.preventDefault();
@@ -210,6 +216,21 @@ export default function CheckoutModal({
                   <span>Số lượng mặt hàng:</span>
                   <strong>{cartItems.length} mặt hàng ({cartItems.reduce((s, it) => s + it.quantity, 0)} kiện)</strong>
                 </div>
+                <div className="checkout-summary-row">
+                  <span>Tiền hàng:</span>
+                  <span>{subtotal.toLocaleString('vi-VN')} ₫</span>
+                </div>
+                {discountAmount > 0 && (
+                  <div className="checkout-summary-row discount" style={{ color: '#15803d' }}>
+                    <span style={{ fontWeight: 600 }}>Khuyến mãi giảm trừ:</span>
+                    <strong style={{ color: '#15803d' }}>-{discountAmount.toLocaleString('vi-VN')} ₫</strong>
+                  </div>
+                )}
+                {promoData?.appliedPromotions?.map((p, idx) => (
+                  <div key={idx} className="checkout-summary-row" style={{ fontSize: 12, color: '#166534', paddingLeft: 8 }}>
+                    <span>• {p.message}</span>
+                  </div>
+                ))}
                 <div className="checkout-summary-row total">
                   <span>Tổng tiền thanh toán:</span>
                   <span className="checkout-total-val">

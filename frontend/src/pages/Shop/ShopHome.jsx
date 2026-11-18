@@ -78,6 +78,7 @@ export default function ShopHome() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [appliedPromoData, setAppliedPromoData] = useState(null);
   const [isMyOrdersOpen, setIsMyOrdersOpen] = useState(false);
   const [isLookupOpen, setIsLookupOpen] = useState(false);
 
@@ -499,7 +500,8 @@ export default function ShopHome() {
         onUpdateQty={handleUpdateQty}
         onRemoveItem={handleRemoveItem}
         customer={customer}
-        onProceedCheckout={() => {
+        onProceedCheckout={(promos) => {
+          setAppliedPromoData(promos);
           setIsCartOpen(false);
           setIsCheckoutOpen(true);
         }}
@@ -520,6 +522,7 @@ export default function ShopHome() {
         onClose={() => setIsCheckoutOpen(false)}
         customer={customer}
         cartItems={cartItems}
+        promoData={appliedPromoData}
         onOrderSuccess={handleOrderSuccess}
       />
 

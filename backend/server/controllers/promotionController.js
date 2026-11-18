@@ -66,3 +66,36 @@ export const evaluateOrderPromotions = async (req, res) => {
   }
 };
 
+export const getClearanceCandidates = async (req, res) => {
+  try {
+    const distributorId = req.query.distributorId || req.user?.distributorId || 1;
+    const result = await promotionService.getClearanceCandidates(distributorId);
+    res.json(result);
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách xả tồn kho:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const autoGeneratePromotion = async (req, res) => {
+  try {
+    const distributorId = req.query.distributorId || req.user?.distributorId || 1;
+    const result = await promotionService.autoGeneratePromotion(distributorId, req.body);
+    res.status(201).json(result);
+  } catch (error) {
+    console.error('Lỗi khi tự động tạo khuyến mãi:', error);
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const evaluateCartPromotions = async (req, res) => {
+  try {
+    const distributorId = req.query.distributorId || req.user?.distributorId || 1;
+    const result = await promotionService.evaluateCartPromotions(distributorId, req.body);
+    res.json(result);
+  } catch (error) {
+    console.error('Lỗi khi đánh giá khuyến mãi giỏ hàng:', error);
+    res.status(400).json({ error: error.message });
+  }
+};
+

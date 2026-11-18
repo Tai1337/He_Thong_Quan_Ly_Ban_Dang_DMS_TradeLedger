@@ -21,6 +21,7 @@ import DeliveryTripList from './pages/Logistics/DeliveryTripList';
 import ShopHome from './pages/Shop/ShopHome';
 import ShopProductDetail from './pages/Shop/ShopProductDetail';
 import ProductManagement from './pages/Catalog/ProductManagement/ProductManagement';
+import CatalogPromotionList from './pages/Catalog/Promotions/PromotionList';
 import RolesPermissions from './pages/Admin/RolesPermissions/RolesPermissions';
 import UserManagement from './pages/Admin/UserManagement/UserManagement';
 import PromotionList from './pages/Promotions/PromotionList';
@@ -91,6 +92,18 @@ function App() {
             user ? (
               <Layout user={user} onLogout={handleLogout}>
                 <ProductManagement />
+              </Layout>
+            ) : (
+              <Navigate to="/login" />
+            )
+          } 
+        />
+        <Route 
+          path="/catalog/promotions" 
+          element={
+            user ? (
+              <Layout user={user} onLogout={handleLogout}>
+                <CatalogPromotionList />
               </Layout>
             ) : (
               <Navigate to="/login" />

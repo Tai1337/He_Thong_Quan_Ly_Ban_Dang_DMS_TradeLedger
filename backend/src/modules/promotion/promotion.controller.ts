@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  Query,
+} from '@nestjs/common';
 import { PromotionService } from './promotion.service';
 import { Public } from '../../common/decorators/public.decorator';
 
@@ -17,6 +26,30 @@ export class PromotionController {
   async evaluateOrderPromotions(@Body() body: any, @Query('distributorId') qDistId?: any) {
     const distributorId = qDistId || body.distributorId || 1;
     return this.promotionService.evaluateOrderPromotions(distributorId, body);
+  }
+
+  @Get('clearance-candidates')
+  async getClearanceCandidates(@Query('distributorId') qDistId?: any) {
+    const distributorId = qDistId || 1;
+    return this.promotionService.getClearanceCandidates(distributorId);
+  }
+
+  @Post('auto-generate')
+  async autoGeneratePromotion(
+    @Body() body: any,
+    @Query('distributorId') qDistId?: any,
+  ) {
+    const distributorId = qDistId || body.distributorId || 1;
+    return this.promotionService.autoGeneratePromotion(distributorId, body);
+  }
+
+  @Post('evaluate-cart')
+  async evaluateCartPromotions(
+    @Body() body: any,
+    @Query('distributorId') qDistId?: any,
+  ) {
+    const distributorId = qDistId || body.distributorId || 1;
+    return this.promotionService.evaluateCartPromotions(distributorId, body);
   }
 
   @Get(':id')
