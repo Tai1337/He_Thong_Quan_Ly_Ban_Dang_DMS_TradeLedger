@@ -76,7 +76,7 @@ export default function RPT006PrintView({ trip = {}, accountantName = 'Kế toá
         </div>
 
         {/* Table of Stops / Deliveries */}
-        <table className="rpt-table">
+        <table className="rpt-print-table">
           <thead>
             <tr>
               <th style={{ width: '4%' }}>STT</th>

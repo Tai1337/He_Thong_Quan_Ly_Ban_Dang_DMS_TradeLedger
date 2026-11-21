@@ -131,24 +131,30 @@
 }
 
 /* Bảng dữ liệu in ấn chuẩn fixed table */
+.rpt-print-table,
 .rpt-table {
-  width: 100%;
-  table-layout: fixed;
-  border-collapse: collapse;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
   font-size: 11.5px;
   margin-bottom: 16px;
   background-color: #ffffff;
 }
 
+.rpt-print-table th,
+.rpt-print-table td,
 .rpt-table th,
 .rpt-table td {
-  border: 1px solid #cbd5e1;
-  padding: 6px 7px;
+  border: 1px solid #cbd5e1 !important;
+  padding: 6px 7px !important;
   vertical-align: middle;
   word-break: break-word;
   overflow-wrap: break-word;
 }
 
+.rpt-print-table th,
 .rpt-table th {
   background-color: #f1f5f9;
   color: #0f172a;
@@ -159,6 +165,7 @@
   letter-spacing: 0.02em;
 }
 
+.rpt-print-table tbody tr:nth-child(even),
 .rpt-table tbody tr:nth-child(even) {
   background-color: #fafbfc;
 }
@@ -334,12 +341,15 @@
     break-after: avoid !important;
   }
 
+  .rpt-print-table th,
+  .rpt-print-table td,
   .rpt-table th,
   .rpt-table td {
     border-color: #000000 !important;
   }
 
   .rpt-meta-grid,
+  .rpt-print-table th,
   .rpt-table th,
   .rpt-table-total-row,
   .rpt-payment-summary-box {

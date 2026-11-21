@@ -3,13 +3,13 @@
    ======================================================== */
 
 .trip-detail-page {
-  padding: 24px;
-  max-width: 1440px;
-  margin: 0 auto;
-  min-height: calc(100vh - 80px);
+  padding: 24px 32px;
+  width: 100%;
+  min-height: calc(100vh - 60px);
   background-color: #f8fafc;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   color: #1e293b;
+  box-sizing: border-box;
 }
 
 /* 1. Breadcrumb & Top Bar */

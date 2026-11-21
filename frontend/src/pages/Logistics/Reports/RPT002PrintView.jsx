@@ -151,7 +151,7 @@ export default function RPT002PrintView({ trips = [], currentUserName = 'Thủ k
         </div>
 
         {/* Table of Goods to Pick & Load */}
-        <table className="rpt-table">
+        <table className="rpt-print-table">
           <thead>
             <tr>
               <th style={{ width: '5%' }}>STT</th>

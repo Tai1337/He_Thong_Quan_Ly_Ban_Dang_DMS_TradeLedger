@@ -82,7 +82,7 @@ export default function RPT004PrintView({ trip = {}, orders = [] }) {
             </div>
 
             {/* Items Table */}
-            <table className="rpt-table">
+            <table className="rpt-print-table">
               <thead>
                 <tr>
                   <th style={{ width: '4%' }}>STT</th>
