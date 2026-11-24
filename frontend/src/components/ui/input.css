@@ -1,0 +1,72 @@
+/* src/components/ui/input.css */
+.ui-input-field {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: #1e293b;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  font-family: inherit;
+}
+
+.ui-input-field::placeholder {
+  color: #94a3b8;
+}
+
+.ui-input-field:focus {
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.12);
+}
+
+.ui-input-field:disabled {
+  background-color: #f8fafc;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.ui-input-field.has-error {
+  border-color: #ef4444;
+}
+
+.ui-input-field.has-error:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+}
+
+/* Wrapper with icons */
+.ui-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.ui-input-left-icon {
+  position: absolute;
+  left: 12px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.ui-input-right-icon {
+  position: absolute;
+  right: 12px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+}
+
+.ui-input-field.pl-icon {
+  padding-left: 36px;
+}
+
+.ui-input-field.pr-icon {
+  padding-right: 36px;
+}
+

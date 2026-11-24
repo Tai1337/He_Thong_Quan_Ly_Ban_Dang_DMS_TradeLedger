@@ -1,0 +1,36 @@
+/* src/components/ui/card.css */
+.ui-card {
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
+}
+
+.ui-card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.ui-card-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.ui-card-description {
+  margin: 4px 0 0 0;
+  font-size: 12.5px;
+  color: #64748b;
+}
+
+.ui-card-content {
+  padding: 16px 20px;
+}
+
+.ui-card-footer {
+  padding: 12px 20px;
+  border-top: 1px solid #f1f5f9;
+}
+

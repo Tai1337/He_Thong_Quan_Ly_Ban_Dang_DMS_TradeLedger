@@ -1,0 +1,102 @@
+.erp-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.erp-status-badge.badge-size-sm {
+  padding: 2px 7px;
+  font-size: 11px;
+  gap: 4px;
+}
+
+.erp-status-badge.badge-size-lg {
+  padding: 6px 14px;
+  font-size: 13px;
+  gap: 8px;
+}
+
+.erp-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Biến thể Success - Đã cân kho, Đã khớp 100% */
+.erp-status-badge.badge-success {
+  background-color: #ecfdf5;
+  color: #059669;
+  border: 1px solid #d1fae5;
+}
+.erp-status-badge.badge-success .erp-status-dot {
+  background-color: #10b981;
+}
+
+/* Biến thể Danger - Lệch, Cần xử lý */
+.erp-status-badge.badge-danger {
+  background-color: #fff1f2;
+  color: #e11d48;
+  border: 1px solid #ffe4e6;
+}
+.erp-status-badge.badge-danger .erp-status-dot {
+  background-color: #f43f5e;
+}
+
+/* Biến thể Warning - Chờ cân kho */
+.erp-status-badge.badge-warning {
+  background-color: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fef3c7;
+}
+.erp-status-badge.badge-warning .erp-status-dot {
+  background-color: #f59e0b;
+}
+
+/* Biến thể Primary - Đang kiểm kê */
+.erp-status-badge.badge-primary {
+  background-color: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #dbeafe;
+}
+.erp-status-badge.badge-primary .erp-status-dot {
+  background-color: #3b82f6;
+}
+
+/* Biến thể Muted - Từ chối / Đã hủy */
+.erp-status-badge.badge-muted {
+  background-color: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+.erp-status-badge.badge-muted .erp-status-dot {
+  background-color: #94a3b8;
+}
+
+/* Biến thể Neutral (không viền rực rỡ, xám thanh lịch cho hình thức) */
+.erp-status-badge.badge-neutral {
+  background-color: #f1f5f9;
+  color: #334155;
+  border: 1px solid transparent;
+  font-weight: 500;
+}
+.erp-status-badge.badge-neutral .erp-status-dot {
+  display: none;
+}
+
+/* Biến thể Secondary */
+.erp-status-badge.badge-secondary {
+  background-color: #f8fafc;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+.erp-status-badge.badge-secondary .erp-status-dot {
+  background-color: #64748b;
+}
+

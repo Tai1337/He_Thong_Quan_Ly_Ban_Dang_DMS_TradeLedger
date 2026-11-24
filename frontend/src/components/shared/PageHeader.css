@@ -1,0 +1,74 @@
+.erp-page-header {
+  margin-bottom: 20px;
+}
+
+.erp-page-header-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.erp-breadcrumb-dot {
+  color: #2563eb;
+  font-size: 10px;
+}
+
+.erp-page-header-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.erp-page-header-left {
+  flex: 1;
+  min-width: 280px;
+}
+
+.erp-page-header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.erp-page-header-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.erp-page-header-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  background-color: #e2e8f0;
+  color: #475569;
+  letter-spacing: 0.03em;
+}
+
+.erp-page-header-desc {
+  font-size: 13.5px;
+  color: #64748b;
+  margin: 5px 0 0 0;
+  line-height: 1.4;
+}
+
+.erp-page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+

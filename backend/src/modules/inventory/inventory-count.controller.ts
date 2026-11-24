@@ -28,6 +28,15 @@ export class InventoryCountController {
     return this.countService.getCounts(distributorId, query);
   }
 
+  @Get('warehouse-skus')
+  async getWarehouseSkus(
+    @Query('warehouseId') warehouseId: string,
+    @Query('distributorId') distributorIdQuery?: string,
+  ) {
+    const distributorId = distributorIdQuery || 1;
+    return this.countService.getWarehouseSkus(distributorId, warehouseId);
+  }
+
   @Get(':id')
   async getCountById(@Param('id') id: string, @Query('distributorId') distributorIdQuery?: string) {
     const distributorId = distributorIdQuery || 1;

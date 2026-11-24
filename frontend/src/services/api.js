@@ -853,6 +853,15 @@ export const closeDeliveryTrip = async (tripId, payload) => {
 
 // --- KIỂM KÊ KHO (INVENTORY COUNT) ---
 
+export const getWarehouseSkus = async (warehouseId, distributorId = 1) => {
+  const response = await fetch(`${API_URL}/inventory/counts/warehouse-skus?warehouseId=${warehouseId}&distributorId=${distributorId}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Lỗi khi tải danh sách sản phẩm trong kho');
+  }
+  return data;
+};
+
 export const getInventoryCounts = async (filters = {}) => {
   const cleanFilters = {};
   Object.keys(filters).forEach(k => {

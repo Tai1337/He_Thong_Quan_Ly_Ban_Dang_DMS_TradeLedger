@@ -23,6 +23,10 @@ export class CreateInventoryCountDto {
   countType?: 'MONTHLY' | 'BY_SKU';
 
   @IsOptional()
+  @IsArray()
+  skuIds?: (string | number)[];
+
+  @IsOptional()
   notes?: string;
 
   @IsOptional()

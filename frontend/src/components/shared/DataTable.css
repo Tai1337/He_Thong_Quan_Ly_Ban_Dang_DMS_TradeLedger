@@ -1,0 +1,54 @@
+.erp-data-table-wrapper {
+  background-color: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  overflow-x: auto;
+}
+
+.erp-table-checkbox {
+  width: 15px;
+  height: 15px;
+  accent-color: #2563eb;
+  cursor: pointer;
+}
+
+.erp-data-table-wrapper tr.row-selected {
+  background-color: #eff6ff;
+}
+
+.erp-table-loading,
+.erp-table-empty {
+  text-align: center;
+  padding: 40px 16px;
+  color: #64748b;
+}
+
+.erp-table-spinner {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 8px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.empty-box-icon {
+  font-size: 32px;
+  margin-bottom: 6px;
+  opacity: 0.6;
+}
+
+.empty-box-text {
+  font-size: 13.5px;
+  color: #64748b;
+}
+

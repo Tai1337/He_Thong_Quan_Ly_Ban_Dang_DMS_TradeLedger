@@ -191,6 +191,70 @@ export class InventoryCountRepository {
   }
 
   /**
+   * Lấy danh sách sản phẩm (SKU) có trong kho cùng tổng tồn hệ thống
+   */
+  async getWarehouseSkus(distributorId: string | number | bigint, warehouseId: string | number | bigint) {
+    const lots = await this.prisma.stockLot.findMany({
+      where: {
+        warehouseId: BigInt(warehouseId),
+        warehouse: { distributorId: BigInt(distributorId) },
+      },
+      include: {
+        product: {
+          select: {
+            id: true,
+            sku: true,
+            name: true,
+            unit: true,
+            category: { select: { id: true, name: true } },
+          },
+        },
+        stockBalance: {
+          select: {
+            quantityOnHand: true,
+            quantityReserved: true,
+          },
+        },
+      },
+      orderBy: { product: { sku: 'asc' } },
+    });
+
+    const skuMap = new Map<string, {
+      id: string;
+      sku: string;
+      name: string;
+      unit: string;
+      categoryName: string;
+      totalQuantityOnHand: number;
+      lotCount: number;
+    }>();
+
+    for (const lot of lots) {
+      if (!lot.product) continue;
+      const pid = lot.product.id.toString();
+      const qty = lot.stockBalance ? Number(lot.stockBalance.quantityOnHand) : 0;
+
+      if (!skuMap.has(pid)) {
+        skuMap.set(pid, {
+          id: pid,
+          sku: lot.product.sku,
+          name: lot.product.name,
+          unit: lot.product.unit || 'Cái',
+          categoryName: lot.product.category?.name || 'Khác',
+          totalQuantityOnHand: qty,
+          lotCount: 1,
+        });
+      } else {
+        const item = skuMap.get(pid)!;
+        item.totalQuantityOnHand += qty;
+        item.lotCount += 1;
+      }
+    }
+
+    return Array.from(skuMap.values());
+  }
+
+  /**
    * Lấy danh sách lô hàng trong kho để tạo phiếu kiểm kê
    */
   async getWarehouseStockLots(distributorId: string | number | bigint, warehouseId: string | number | bigint, skuIds?: (string | number)[]) {

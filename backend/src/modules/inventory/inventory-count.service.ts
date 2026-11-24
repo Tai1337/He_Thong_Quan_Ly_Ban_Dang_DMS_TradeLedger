@@ -29,6 +29,16 @@ export class InventoryCountService {
   }
 
   /**
+   * Danh sách SKU trong kho để chọn kiểm kê
+   */
+  async getWarehouseSkus(distributorId: string | number, warehouseId: string | number) {
+    if (!warehouseId) {
+      throw new BadRequestException('Vui lòng chọn kho hàng');
+    }
+    return this.countRepo.getWarehouseSkus(distributorId, warehouseId);
+  }
+
+  /**
    * Tạo mới phiếu kiểm kê
    */
   async createCount(distributorId: string | number, dto: CreateInventoryCountDto) {
@@ -39,57 +49,36 @@ export class InventoryCountService {
     const countCode = await this.countRepo.generateCountCode();
     const countType = dto.countType === 'BY_SKU' ? CountType.BY_SKU : CountType.MONTHLY;
 
-    let itemsToCreate: Array<{
-      lotId: bigint;
-      systemQuantity: number;
-      actualQuantity?: number | null;
-      variance?: number | null;
-      reason?: string | null;
-    }> = [];
-
-    // Nếu kiểm kê định kỳ (MONTHLY) hoặc không truyền mảng items: tự động load toàn bộ tồn kho của kho
-    if (countType === CountType.MONTHLY || !dto.items || dto.items.length === 0) {
-      const stockLots = await this.countRepo.getWarehouseStockLots(distributorId, dto.warehouseId);
-      
-      itemsToCreate = stockLots.map((lot) => {
-        const sysQty = lot.stockBalance ? Number(lot.stockBalance.quantityOnHand) : 0;
-        return {
-          lotId: lot.id,
-          systemQuantity: sysQty,
-          actualQuantity: null,
-          variance: null,
-          reason: null,
-        };
-      });
-    } else {
-      // Kiểm kê theo SKU/Lô được chọn trước
-      const lotIds = dto.items.map((i) => BigInt(i.lotId));
-      const stockLots = await this.countRepo.getWarehouseStockLots(distributorId, dto.warehouseId);
-      const stockMap = new Map(stockLots.map((l) => [l.id.toString(), l]));
-
-      for (const itemDto of dto.items) {
-        const lot = stockMap.get(itemDto.lotId.toString());
-        if (lot) {
-          const sysQty = lot.stockBalance ? Number(lot.stockBalance.quantityOnHand) : 0;
-          const actQty = itemDto.actualQuantity !== undefined && itemDto.actualQuantity !== null
-            ? Number(itemDto.actualQuantity)
-            : null;
-          const variance = actQty !== null ? actQty - sysQty : null;
-
-          itemsToCreate.push({
-            lotId: lot.id,
-            systemQuantity: sysQty,
-            actualQuantity: actQty,
-            variance,
-            reason: itemDto.reason || null,
-          });
-        }
-      }
+    if (countType === CountType.BY_SKU && (!dto.skuIds || dto.skuIds.length === 0)) {
+      throw new BadRequestException('Vui lòng chọn ít nhất 1 sản phẩm (SKU) để kiểm kê');
     }
 
-    if (itemsToCreate.length === 0) {
-      throw new BadRequestException('Kho hàng đã chọn hiện không có mặt hàng hoặc lô hàng nào để kiểm kê');
+    // Nếu kiểm kê đột xuất theo SKU thì truyền skuIds vào getWarehouseStockLots
+    const skuFilter = countType === CountType.BY_SKU ? dto.skuIds : undefined;
+    const stockLots = await this.countRepo.getWarehouseStockLots(distributorId, dto.warehouseId, skuFilter);
+
+    if (stockLots.length === 0) {
+      throw new BadRequestException('Kho hàng đã chọn không có mặt hàng hoặc lô hàng nào phù hợp để kiểm kê');
     }
+
+    const itemMap = new Map((dto.items || []).map((i) => [i.lotId.toString(), i]));
+
+    const itemsToCreate = stockLots.map((lot) => {
+      const sysQty = lot.stockBalance ? Number(lot.stockBalance.quantityOnHand) : 0;
+      const itemDto = itemMap.get(lot.id.toString());
+      const actQty = itemDto && itemDto.actualQuantity !== undefined && itemDto.actualQuantity !== null
+        ? Number(itemDto.actualQuantity)
+        : null;
+      const variance = actQty !== null ? actQty - sysQty : null;
+
+      return {
+        lotId: lot.id,
+        systemQuantity: sysQty,
+        actualQuantity: actQty,
+        variance,
+        reason: itemDto?.reason || null,
+      };
+    });
 
     return this.countRepo.createCount({
       countCode,

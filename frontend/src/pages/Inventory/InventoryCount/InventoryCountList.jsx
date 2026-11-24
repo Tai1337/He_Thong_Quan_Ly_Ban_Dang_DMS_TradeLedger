@@ -1,48 +1,75 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ClipboardCheck,
+  FileSpreadsheet,
+  Printer,
   Plus,
   Search,
-  Filter,
-  Calendar,
-  Warehouse as WarehouseIcon,
-  AlertCircle,
+  MoreVertical,
   CheckCircle2,
+  AlertTriangle,
   Clock,
-  FileText,
   ArrowRight,
-  RotateCcw,
-  Layers,
-  ChevronLeft,
-  ChevronRight,
-  TrendingDown,
-  TrendingUp,
-  X
+  Eye,
+  FileDown,
+  Trash2,
+  Send,
+  Boxes,
 } from 'lucide-react';
-import { getInventoryCounts, createInventoryCount, getWarehouses } from '../../../services/api';
-import './InventoryCountList.css';
+import {
+  getInventoryCounts,
+  createInventoryCount,
+  getWarehouses,
+  getWarehouseSkus,
+  cancelInventoryCount,
+} from '../../../services/api';
 
-const statusConfig = {
-  DRAFT: { label: 'Bản nháp', color: '#64748b', bg: '#f1f5f9' },
-  WAITING_APPROVAL: { label: 'Chờ duyệt', color: '#d97706', bg: '#fef3c7' },
-  APPROVED: { label: 'Đã duyệt', color: '#0284c7', bg: '#e0f2fe' },
-  COMPLETED: { label: 'Đã cân kho', color: '#16a34a', bg: '#dcfce7' },
-  REJECTED: { label: 'Từ chối', color: '#dc2626', bg: '#fee2e2' },
-  CANCELLED: { label: 'Đã hủy', color: '#94a3b8', bg: '#f8fafc' },
-};
+// UI & Shared ERP Components
+import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
+import { Card } from '../../../components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '../../../components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '../../../components/ui/dropdown-menu';
+import {
+  PageHeader,
+  FilterToolbar,
+  StatusBadge,
+  DataTable,
+  Pagination,
+  ConfirmDialog,
+} from '../../../components/shared';
+
+import './InventoryCountList.css';
 
 const InventoryCountList = () => {
   const navigate = useNavigate();
 
-  // State
+  // Danh sách dữ liệu & Trạng thái tải
   const [counts, setCounts] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [warehouses, setWarehouses] = useState([]);
 
-  // Filters
+  // Checkbox selection
+  const [selectedIds, setSelectedIds] = useState([]);
+
+  // Bộ lọc
+  const [activeTab, setActiveTab] = useState('all');
+  const [syncTime, setSyncTime] = useState('');
   const [filters, setFilters] = useState({
     search: '',
     warehouseId: '',
@@ -51,33 +78,71 @@ const InventoryCountList = () => {
     fromDate: '',
     toDate: '',
     page: 1,
-    limit: 15,
+    limit: 10,
   });
 
-  // Modal tạo phiếu mới
+  // Modal Tạo phiếu kiểm kê
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createForm, setCreateForm] = useState({
     warehouseId: '',
-    countType: 'MONTHLY',
+    countType: 'MONTHLY', // 'MONTHLY' hoặc 'BY_SKU'
     notes: '',
   });
   const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState('');
 
-  // Load kho hàng
+  // Nghiệp vụ chọn SKU khi kiểm kê đột xuất (Phương án A)
+  const [warehouseSkus, setWarehouseSkus] = useState([]);
+  const [loadingSkus, setLoadingSkus] = useState(false);
+  const [skuSearchQuery, setSkuSearchQuery] = useState('');
+  const [selectedSkuIds, setSelectedSkuIds] = useState([]);
+
+  // Modal xác nhận hủy phiếu
+  const [confirmCancelModal, setConfirmCancelModal] = useState({
+    open: false,
+    countId: null,
+    countCode: '',
+    loading: false,
+  });
+
+  // Tải danh sách kho khi khởi tạo
   useEffect(() => {
     getWarehouses(1)
       .then((data) => setWarehouses(data || []))
       .catch((err) => console.error('Lỗi tải danh sách kho:', err));
   }, []);
 
+  // Format giờ đồng bộ
+  const updateSyncTimestamp = () => {
+    const now = new Date();
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const ampm = now.getHours() >= 12 ? 'CH' : 'SA';
+    setSyncTime(`${hours}:${minutes} ${ampm}`);
+  };
+
   // Fetch danh sách phiếu kiểm kê
   const fetchCounts = async () => {
     setLoading(true);
     setError('');
     try {
-      const res = await getInventoryCounts(filters);
+      const queryParams = { ...filters };
+
+      // Áp dụng bộ lọc tab
+      if (activeTab === 'variance') {
+        queryParams.hasVariance = 'true';
+      } else if (activeTab === 'waiting') {
+        queryParams.status = 'WAITING_APPROVAL';
+      } else if (activeTab === 'completed') {
+        queryParams.status = 'COMPLETED';
+      } else if (activeTab === 'cancelled') {
+        queryParams.status = 'CANCELLED';
+      }
+
+      const res = await getInventoryCounts(queryParams);
       setCounts(res.data || []);
       setTotal(res.total || 0);
+      updateSyncTimestamp();
     } catch (err) {
       setError(err.message || 'Không thể tải danh sách phiếu kiểm kê');
     } finally {
@@ -87,417 +152,828 @@ const InventoryCountList = () => {
 
   useEffect(() => {
     fetchCounts();
-  }, [filters.page, filters.warehouseId, filters.status, filters.countType]);
+  }, [
+    filters.page,
+    filters.limit,
+    filters.warehouseId,
+    filters.status,
+    filters.countType,
+    filters.fromDate,
+    filters.toDate,
+    activeTab,
+  ]);
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    setFilters((prev) => ({ ...prev, page: 1 }));
-    fetchCounts();
+  // Load danh sách SKU của kho được chọn khi kiểm kê đột xuất
+  useEffect(() => {
+    if (showCreateModal && createForm.countType === 'BY_SKU' && createForm.warehouseId) {
+      setLoadingSkus(true);
+      setSelectedSkuIds([]);
+      getWarehouseSkus(createForm.warehouseId, 1)
+        .then((skus) => {
+          setWarehouseSkus(skus || []);
+        })
+        .catch((err) => {
+          console.error('Lỗi tải SKU kho:', err);
+          setWarehouseSkus([]);
+        })
+        .finally(() => setLoadingSkus(false));
+    } else {
+      setWarehouseSkus([]);
+      setSelectedSkuIds([]);
+    }
+  }, [showCreateModal, createForm.countType, createForm.warehouseId]);
+
+  // Lọc SKU theo thanh tìm kiếm trong modal
+  const filteredSkus = useMemo(() => {
+    if (!skuSearchQuery.trim()) return warehouseSkus;
+    const q = skuSearchQuery.toLowerCase();
+    return warehouseSkus.filter(
+      (s) =>
+        (s.sku && s.sku.toLowerCase().includes(q)) ||
+        (s.name && s.name.toLowerCase().includes(q))
+    );
+  }, [warehouseSkus, skuSearchQuery]);
+
+  // Xử lý chọn SKU
+  const handleToggleSelectAllSkus = () => {
+    if (selectedSkuIds.length === filteredSkus.length) {
+      setSelectedSkuIds([]);
+    } else {
+      setSelectedSkuIds(filteredSkus.map((s) => s.id));
+    }
+  };
+
+  const handleToggleSku = (skuId) => {
+    if (selectedSkuIds.includes(skuId)) {
+      setSelectedSkuIds(selectedSkuIds.filter((id) => id !== skuId));
+    } else {
+      setSelectedSkuIds([...selectedSkuIds, skuId]);
+    }
   };
 
   // Submit tạo phiếu mới
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
+    setCreateError('');
+
     if (!createForm.warehouseId) {
-      alert('Vui lòng chọn kho hàng cần kiểm kê!');
+      setCreateError('Vui lòng chọn kho hàng cần kiểm kê!');
+      return;
+    }
+
+    if (createForm.countType === 'BY_SKU' && selectedSkuIds.length === 0) {
+      setCreateError('Vui lòng chọn ít nhất 1 sản phẩm (SKU) để kiểm kê đột xuất!');
       return;
     }
 
     setCreating(true);
     try {
-      const newCount = await createInventoryCount({
+      const payload = {
         warehouseId: createForm.warehouseId,
         countType: createForm.countType,
         notes: createForm.notes,
-      }, 1);
+        ...(createForm.countType === 'BY_SKU' ? { skuIds: selectedSkuIds } : {}),
+      };
 
+      const newCount = await createInventoryCount(payload, 1);
       setShowCreateModal(false);
-      // Điều hướng ngay sang trang chi tiết để kiểm đếm
+      setCreateForm({ warehouseId: '', countType: 'MONTHLY', notes: '' });
+      setSelectedSkuIds([]);
+
+      // Chuyển hướng ngay sang trang chi tiết đợt kiểm kê
       navigate(`/inventory/counts/${newCount.id}`);
     } catch (err) {
-      alert(err.message || 'Không thể tạo phiếu kiểm kê');
+      setCreateError(err.message || 'Không thể tạo phiếu kiểm kê');
     } finally {
       setCreating(false);
     }
   };
 
-  // Tính toán KPI nhanh
-  const waitingApprovalCount = counts.filter((c) => c.status === 'WAITING_APPROVAL').length;
+  // Xác nhận hủy phiếu
+  const handleCancelCount = async () => {
+    if (!confirmCancelModal.countId) return;
+    setConfirmCancelModal((prev) => ({ ...prev, loading: true }));
+    try {
+      await cancelInventoryCount(confirmCancelModal.countId, 1);
+      setConfirmCancelModal({ open: false, countId: null, countCode: '', loading: false });
+      fetchCounts();
+    } catch (err) {
+      alert(err.message || 'Lỗi khi hủy phiếu kiểm kê');
+      setConfirmCancelModal((prev) => ({ ...prev, loading: false }));
+    }
+  };
+
+  // Tính toán KPI
+  const waitingApprovalCount = counts.filter((c) => c.status === 'WAITING_APPROVAL' || c.status === 'PENDING_APPROVAL').length;
   const completedCount = counts.filter((c) => c.status === 'COMPLETED').length;
   const varianceCount = counts.filter((c) => c.summary?.hasVariance).length;
+  const cancelledCount = counts.filter((c) => c.status === 'CANCELLED' || c.status === 'REJECTED').length;
 
-  const totalPages = Math.ceil(total / filters.limit) || 1;
+  // Tabs cho FilterToolbar
+  const toolbarTabs = [
+    { id: 'all', label: 'Tất cả phiếu', count: total },
+    { id: 'variance', label: 'Cần xử lý lệch', count: varianceCount, variant: 'danger' },
+    { id: 'waiting', label: 'Chờ cân kho', count: waitingApprovalCount, variant: 'warning' },
+    { id: 'completed', label: 'Đã cân kho', count: completedCount, variant: 'success' },
+    { id: 'cancelled', label: 'Đã hủy', count: cancelledCount, variant: 'muted' },
+  ];
+
+  // Xuất file Excel danh sách các phiếu kiểm kê
+  const handleExportList = () => {
+    if (counts.length === 0) {
+      alert('Không có dữ liệu phiếu kiểm kê để xuất!');
+      return;
+    }
+    const headers = ['Mã phiếu', 'Kho kiểm kê', 'Hình thức', 'Ngày tạo', 'Người lập', 'Số lượng SKU', 'Đối soát', 'Trạng thái'];
+    const rows = counts.map((c) => [
+      c.countCode,
+      c.warehouse?.name || '',
+      c.countType === 'MONTHLY' ? 'Định kỳ tháng' : 'Đột xuất SKU',
+      new Date(c.createdAt).toLocaleDateString('vi-VN'),
+      c.createdBy?.fullName || 'Hệ thống',
+      c.summary?.totalSkus || c._count?.items || 0,
+      c.summary?.hasVariance ? `Lệch: +${c.summary?.surplusCount || 0} / -${c.summary?.deficitCount || 0}` : 'Đã khớp 100%',
+      c.status,
+    ]);
+
+    const csvContent =
+      'data:text/csv;charset=utf-8,\uFEFF' +
+      [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `DanhSachPhieuKiemKe_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Định nghĩa các cột cho DataTable bám sát ảnh thiết kế
+  const columns = [
+    {
+      title: 'MÃ PHIẾU',
+      key: 'countCode',
+      render: (_, row) => (
+        <span
+          className="erp-count-code"
+          onClick={() => navigate(`/inventory/counts/${row.id}`)}
+          title="Bấm để xem chi tiết"
+        >
+          {row.countCode}
+        </span>
+      ),
+    },
+    {
+      title: 'KHO KIỂM KÊ',
+      key: 'warehouse',
+      render: (_, row) => (
+        <div className="erp-warehouse-cell">
+          <span className="wh-name">{row.warehouse?.name || 'Kho NPP mặc định'}</span>
+          <span className="wh-code">{row.warehouse?.code || 'G-10KF1292'}</span>
+        </div>
+      ),
+    },
+    {
+      title: 'HÌNH THỨC',
+      key: 'countType',
+      render: (_, row) => (
+        <StatusBadge
+          variant="neutral"
+          dot={false}
+          label={row.countType === 'MONTHLY' ? 'Định kỳ tháng' : 'Đột xuất SKU'}
+        />
+      ),
+    },
+    {
+      title: 'NGÀY TẠO',
+      key: 'createdAt',
+      render: (_, row) => {
+        const dateObj = new Date(row.createdAt);
+        const dateStr = dateObj.toLocaleDateString('vi-VN', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        });
+        const timeStr = dateObj.toLocaleTimeString('vi-VN', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        });
+        return (
+          <div className="erp-date-cell">
+            <span className="date-part">{dateStr}</span>
+            <span className="time-part">{timeStr}</span>
+          </div>
+        );
+      },
+    },
+    {
+      title: 'NGƯỜI LẬP',
+      key: 'createdBy',
+      render: (_, row) => (
+        <span className="erp-author-text">
+          {row.createdBy?.fullName || 'Hệ thống'}
+        </span>
+      ),
+    },
+    {
+      title: 'SỐ LƯỢNG SKU',
+      key: 'skuCount',
+      align: 'center',
+      render: (_, row) => (
+        <span className="erp-sku-number">
+          {row.summary?.totalSkus || row._count?.items || 0}
+        </span>
+      ),
+    },
+    {
+      title: 'KẾT QUẢ ĐỐI SOÁT',
+      key: 'auditResult',
+      render: (_, row) => {
+        const summary = row.summary || {};
+        if (row.status === 'DRAFT' && !summary.hasVariance && (!summary.totalSkus || summary.uncountedCount > 0)) {
+          return <StatusBadge variant="secondary" dot={false} label="Chưa kiểm đếm" />;
+        }
+        if (summary.hasVariance) {
+          return (
+            <StatusBadge
+              variant="danger"
+              dot
+              label={`Lệch: +${summary.surplusCount || 0} / -${summary.deficitCount || 0}`}
+            />
+          );
+        }
+        return <StatusBadge variant="success" dot label="Đã khớp 100%" />;
+      },
+    },
+    {
+      title: 'TRẠNG THÁI',
+      key: 'status',
+      render: (_, row) => {
+        if (row.status === 'COMPLETED') {
+          return <StatusBadge variant="success" dot label="Đã cân kho" />;
+        }
+        if (row.status === 'WAITING_APPROVAL' || row.status === 'PENDING_APPROVAL') {
+          return <StatusBadge variant="warning" dot label="Chờ cân kho" />;
+        }
+        if (row.status === 'IN_PROGRESS') {
+          return <StatusBadge variant="primary" dot label="Đang kiểm kê" />;
+        }
+        if (row.status === 'REJECTED') {
+          return <StatusBadge variant="muted" dot label="Từ chối" />;
+        }
+        if (row.status === 'CANCELLED') {
+          return <StatusBadge variant="muted" dot label="Đã hủy" />;
+        }
+        return <StatusBadge variant="secondary" dot label="Bản nháp" />;
+      },
+    },
+    {
+      title: 'THAO TÁC',
+      key: 'actions',
+      align: 'right',
+      render: (_, row) => (
+        <div className="erp-table-actions">
+          <button
+            type="button"
+            className="erp-action-link"
+            onClick={() => navigate(`/inventory/counts/${row.id}`)}
+          >
+            Xem chi tiết
+          </button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button type="button" className="erp-action-more-btn" title="Thao tác khác">
+                ⋮
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => navigate(`/inventory/counts/${row.id}`)}>
+                <Eye size={14} style={{ marginRight: 8 }} /> Xem chi tiết
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  window.open(
+                    `${window.location.origin}/inventory/counts/${row.id}?autoPrint=true`,
+                    '_blank'
+                  );
+                }}
+              >
+                <Printer size={14} style={{ marginRight: 8 }} /> In biên bản
+              </DropdownMenuItem>
+              {(row.status === 'DRAFT' || row.status === 'WAITING_APPROVAL') && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="danger-item"
+                    onClick={() =>
+                      setConfirmCancelModal({
+                        open: true,
+                        countId: row.id,
+                        countCode: row.countCode,
+                        loading: false,
+                      })
+                    }
+                  >
+                    <Trash2 size={14} style={{ marginRight: 8 }} /> Hủy phiếu kiểm kê
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <div className="count-page-container">
-      {/* Page Header */}
-      <div className="count-page-header">
-        <div className="header-left">
-          <div className="header-icon-box">
-            <ClipboardCheck size={28} color="#0b3d70" />
-          </div>
-          <div>
-            <h1 className="header-title">Kiểm Kê Kho Hàng</h1>
-            <p className="header-subtitle">
-              Quản lý các đợt kiểm kê định kỳ tháng & đột xuất, đối soát số dư tồn và cân kho tự động
-            </p>
-          </div>
-        </div>
+    <div className="inventory-count-erp-page">
+      {/* 1. Header chuẩn ERP */}
+      <PageHeader
+        breadcrumb="DMS-NPP TradeLedger / Kho bãi / Kiểm kê kho"
+        title="Kiểm Kê Kho Hàng"
+        badge="ERP Module"
+        description="Quản lý các đợt kiểm kê định kỳ & đột xuất, đối soát số dư tồn và cân kho tự động."
+        actions={
+          <>
+            <Button
+              variant="outline"
+              onClick={handleExportList}
+              className="btn-erp-header-action"
+            >
+              <FileSpreadsheet size={16} />
+              <span>Xuất Excel</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => window.print()}
+              className="btn-erp-header-icon"
+              title="In trang"
+            >
+              <Printer size={16} />
+            </Button>
+            <Button
+              variant="default"
+              onClick={() => {
+                setShowCreateModal(true);
+                setCreateError('');
+              }}
+              className="btn-erp-header-primary"
+            >
+              <Plus size={16} />
+              <span>Mở Phiếu Kiểm Kê Mới</span>
+            </Button>
+          </>
+        }
+      />
 
-        <div className="header-actions">
-          <button
-            className="btn-create-count"
-            onClick={() => setShowCreateModal(true)}
-          >
-            <Plus size={18} />
-            <span>Mở Phiếu Kiểm Kê Mới</span>
-          </button>
-        </div>
+      {/* 2. Hàng 4 Card KPI (Đúng bố cục 3 dòng chuẩn ảnh mẫu) */}
+      <div className="erp-kpi-grid">
+        {/* KPI 1: Tổng số phiếu */}
+        <Card className="erp-kpi-card">
+          <div className="erp-kpi-row-1">
+            <span className="erp-kpi-label">Tổng số phiếu</span>
+            <span className="erp-kpi-tag-neutral">Tất cả đợt</span>
+          </div>
+          <div className="erp-kpi-row-2">
+            <span className="erp-kpi-value">{total}</span>
+            <span className="erp-kpi-subtext">Toàn hệ thống</span>
+          </div>
+          <div className="erp-kpi-row-3">
+            <span>{warehouses.length > 0 ? `${warehouses.length} kho hàng trực thuộc NPP` : 'Tất cả kho'}</span>
+          </div>
+        </Card>
+
+        {/* KPI 2: Chờ duyệt cân kho */}
+        <Card className="erp-kpi-card">
+          <div className="erp-kpi-row-1">
+            <span className="erp-kpi-label">Chờ duyệt cân kho</span>
+            <span className="erp-kpi-dot dot-warning" />
+          </div>
+          <div className="erp-kpi-row-2">
+            <span className="erp-kpi-value">{waitingApprovalCount}</span>
+            <span className="erp-kpi-badge badge-warning-soft">
+              {waitingApprovalCount} chờ xử lý
+            </span>
+          </div>
+          <div className="erp-kpi-row-3">
+            <span>{waitingApprovalCount === 0 ? 'Không có phiếu đọng' : 'Cần kiểm tra trước khi cân kho'}</span>
+          </div>
+        </Card>
+
+        {/* KPI 3: Đã cân kho hoàn tất */}
+        <Card className="erp-kpi-card">
+          <div className="erp-kpi-row-1">
+            <span className="erp-kpi-label">Đã cân kho hoàn tất</span>
+            <span className="erp-kpi-dot dot-success" />
+          </div>
+          <div className="erp-kpi-row-2">
+            <span className="erp-kpi-value">{completedCount}</span>
+            <span className="erp-kpi-badge badge-success-soft">Đã cập nhật thẻ kho</span>
+          </div>
+          <div className="erp-kpi-row-3">
+            <span>Số dư đã khóa sổ kỳ này</span>
+          </div>
+        </Card>
+
+        {/* KPI 4: Phiếu có chênh lệch */}
+        <Card className="erp-kpi-card">
+          <div className="erp-kpi-row-1">
+            <span className="erp-kpi-label">Phiếu có chênh lệch</span>
+            <span className="erp-kpi-dot dot-danger" />
+          </div>
+          <div className="erp-kpi-row-2">
+            <span className="erp-kpi-value">{varianceCount}</span>
+            <span className={`erp-kpi-badge ${varianceCount > 0 ? 'badge-danger-soft' : 'badge-neutral-soft'}`}>
+              {varianceCount > 0 ? 'Cần xử lý' : 'Đã cân bằng'}
+            </span>
+          </div>
+          <div className="erp-kpi-row-3">
+            <span>
+              {varianceCount > 0
+                ? `Phát hiện chênh lệch - ${varianceCount} phiếu`
+                : 'Tồn kho khớp với hệ thống'}
+            </span>
+          </div>
+        </Card>
       </div>
 
-      {/* KPI Cards */}
-      <div className="count-kpi-grid">
-        <div className="kpi-card">
-          <div className="kpi-icon-wrapper blue">
-            <FileText size={22} />
-          </div>
-          <div className="kpi-info">
-            <span className="kpi-label">Tổng số phiếu kiểm kê</span>
-            <span className="kpi-value">{total}</span>
-          </div>
-        </div>
-
-        <div className="kpi-card">
-          <div className="kpi-icon-wrapper amber">
-            <Clock size={22} />
-          </div>
-          <div className="kpi-info">
-            <span className="kpi-label">Chờ duyệt cân kho</span>
-            <span className="kpi-value">{waitingApprovalCount}</span>
-          </div>
-        </div>
-
-        <div className="kpi-card">
-          <div className="kpi-icon-wrapper green">
-            <CheckCircle2 size={22} />
-          </div>
-          <div className="kpi-info">
-            <span className="kpi-label">Đã cân kho hoàn tất</span>
-            <span className="kpi-value">{completedCount}</span>
-          </div>
-        </div>
-
-        <div className="kpi-card">
-          <div className="kpi-icon-wrapper red">
-            <AlertCircle size={22} />
-          </div>
-          <div className="kpi-info">
-            <span className="kpi-label">Phiếu có chênh lệch</span>
-            <span className="kpi-value">{varianceCount}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Filter Toolbar */}
-      <div className="count-filter-toolbar">
-        <form onSubmit={handleSearchSubmit} className="count-search-form">
-          <div className="count-search-input-wrapper">
-            <Search size={18} className="search-icon" />
-            <input
-              type="text"
-              placeholder="Tìm theo mã phiếu KKxxxxxx..."
-              value={filters.search}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-            />
-          </div>
-          <button type="submit" className="count-btn-search">Tìm</button>
-        </form>
-
-        <div className="count-filter-group">
-          {/* Lọc theo kho */}
-          <div className="count-filter-select-wrapper">
-            <WarehouseIcon size={16} className="select-icon" />
+      {/* 3. FilterToolbar: Hàng Tabs + Controls lọc */}
+      <FilterToolbar
+        tabs={toolbarTabs}
+        activeTab={activeTab}
+        onTabChange={(tabId) => {
+          setActiveTab(tabId);
+          setFilters((prev) => ({ ...prev, page: 1 }));
+        }}
+        syncTime={syncTime}
+        onRefresh={fetchCounts}
+        searchValue={filters.search}
+        onSearchChange={(val) => setFilters((prev) => ({ ...prev, search: val, page: 1 }))}
+        searchPlaceholder="Tìm mã phiếu, mã SKU, người lập..."
+        filters={
+          <>
+            {/* Lọc theo kho */}
             <select
+              className="erp-filter-select"
               value={filters.warehouseId}
-              onChange={(e) => setFilters({ ...filters, warehouseId: e.target.value, page: 1 })}
+              onChange={(e) => setFilters((prev) => ({ ...prev, warehouseId: e.target.value, page: 1 }))}
             >
               <option value="">Tất cả kho hàng</option>
               {warehouses.map((w) => (
-                <option key={w.id} value={w.id}>{w.name}</option>
+                <option key={w.id} value={w.id}>
+                  {w.name}
+                </option>
               ))}
             </select>
-          </div>
 
-          {/* Lọc theo trạng thái */}
-          <div className="count-filter-select-wrapper">
-            <Filter size={16} className="select-icon" />
+            {/* Lọc theo trạng thái */}
             <select
+              className="erp-filter-select"
               value={filters.status}
-              onChange={(e) => setFilters({ ...filters, status: e.target.value, page: 1 })}
+              onChange={(e) => setFilters((prev) => ({ ...prev, status: e.target.value, page: 1 }))}
             >
               <option value="">Tất cả trạng thái</option>
               <option value="DRAFT">Bản nháp</option>
-              <option value="WAITING_APPROVAL">Chờ duyệt</option>
+              <option value="WAITING_APPROVAL">Chờ duyệt cân kho</option>
               <option value="COMPLETED">Đã cân kho</option>
-              <option value="REJECTED">Bị từ chối</option>
+              <option value="REJECTED">Từ chối</option>
               <option value="CANCELLED">Đã hủy</option>
             </select>
-          </div>
 
-          {/* Lọc theo hình thức */}
-          <div className="count-filter-select-wrapper">
-            <Layers size={16} className="select-icon" />
+            {/* Lọc theo hình thức */}
             <select
+              className="erp-filter-select"
               value={filters.countType}
-              onChange={(e) => setFilters({ ...filters, countType: e.target.value, page: 1 })}
+              onChange={(e) => setFilters((prev) => ({ ...prev, countType: e.target.value, page: 1 }))}
             >
               <option value="">Tất cả hình thức</option>
               <option value="MONTHLY">Định kỳ tháng</option>
-              <option value="BY_SKU">Theo mặt hàng (Đột xuất)</option>
+              <option value="BY_SKU">Đột xuất SKU</option>
             </select>
-          </div>
 
-          <button
-            type="button"
-            className="count-btn-refresh"
-            onClick={fetchCounts}
-            title="Tải lại danh sách"
-          >
-            <RotateCcw size={16} />
-          </button>
-        </div>
-      </div>
+            {/* Bộ lọc khoảng ngày / tháng */}
+            <button
+              type="button"
+              className="erp-date-filter-btn"
+              onClick={() => {
+                const now = new Date();
+                const from = new Date(now.getFullYear(), now.getMonth(), 1)
+                  .toISOString()
+                  .slice(0, 10);
+                const to = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+                  .toISOString()
+                  .slice(0, 10);
+                setFilters((prev) => ({
+                  ...prev,
+                  fromDate: prev.fromDate ? '' : from,
+                  toDate: prev.toDate ? '' : to,
+                  page: 1,
+                }));
+              }}
+              title="Lọc theo tháng hiện tại"
+            >
+              📅 {filters.fromDate ? 'Đang lọc tháng' : 'Tháng này'}
+            </button>
+          </>
+        }
+        onReset={() => {
+          setActiveTab('all');
+          setFilters({
+            search: '',
+            warehouseId: '',
+            status: '',
+            countType: '',
+            fromDate: '',
+            toDate: '',
+            page: 1,
+            limit: 10,
+          });
+        }}
+      />
 
-      {/* Main Table */}
-      <div className="count-table-container">
-        {loading ? (
-          <div className="loading-state">
-            <div className="spinner"></div>
-            <p>Đang tải dữ liệu kiểm kê kho...</p>
-          </div>
-        ) : error ? (
-          <div className="error-state">
-            <AlertCircle size={32} color="#dc2626" />
-            <p>{error}</p>
-            <button onClick={fetchCounts} className="btn-retry">Thử lại</button>
-          </div>
-        ) : counts.length === 0 ? (
-          <div className="empty-state">
-            <ClipboardCheck size={48} color="#94a3b8" />
-            <h3>Chưa có phiếu kiểm kê nào</h3>
-            <p>Bấm nút "Mở Phiếu Kiểm Kê Mới" phía trên để khởi tạo đợt kiểm kho.</p>
-          </div>
-        ) : (
-          <table className="count-table">
-            <thead>
-              <tr>
-                <th>Mã phiếu</th>
-                <th>Kho kiểm kê</th>
-                <th>Hình thức</th>
-                <th>Ngày tạo</th>
-                <th>Người lập</th>
-                <th>Số lượng SKU</th>
-                <th>Kết quả đối soát</th>
-                <th>Trạng thái</th>
-                <th style={{ textAlign: 'right' }}>Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {counts.map((c) => {
-                const cfg = statusConfig[c.status] || statusConfig.DRAFT;
-                const summary = c.summary || {};
+      {/* 4. DataTable hiển thị danh sách phiếu kiểm kê */}
+      <DataTable
+        columns={columns}
+        data={counts}
+        selectable
+        selectedIds={selectedIds}
+        onSelectionChange={setSelectedIds}
+        loading={loading}
+        emptyText="Không tìm thấy phiếu kiểm kê nào phù hợp"
+      />
 
-                return (
-                  <tr key={c.id}>
-                    <td>
-                      <span className="count-code-badge">{c.countCode}</span>
-                    </td>
-                    <td>
-                      <div className="warehouse-cell">
-                        <span className="wh-name">{c.warehouse?.name}</span>
-                        <span className="wh-code">{c.warehouse?.code}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <span className="count-type-badge">
-                        {c.countType === 'MONTHLY' ? 'Định kỳ tháng' : 'Đột xuất SKU'}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="date-cell">
-                        {new Date(c.createdAt).toLocaleDateString('vi-VN')}
-                      </span>
-                    </td>
-                    <td>{c.createdBy?.fullName || 'Hệ thống'}</td>
-                    <td>
-                      <span className="sku-count-pill">{summary.totalSkus || c._count?.items || 0} SKU</span>
-                    </td>
-                    <td>
-                      {summary.uncountedCount > 0 ? (
-                        <span className="audit-pill pending">
-                          <Clock size={13} />
-                          Còn {summary.uncountedCount} chưa đếm
-                        </span>
-                      ) : summary.hasVariance ? (
-                        <span className="audit-pill variance">
-                          <AlertCircle size={13} />
-                          Lệch: +{summary.surplusCount || 0} / -{summary.deficitCount || 0}
-                        </span>
-                      ) : (
-                        <span className="audit-pill match">
-                          <CheckCircle2 size={13} />
-                          Khớp 100%
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                      <span
-                        className="status-badge"
-                        style={{ color: cfg.color, backgroundColor: cfg.bg }}
-                      >
-                        {cfg.label}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <button
-                        className="btn-view-detail"
-                        onClick={() => navigate(`/inventory/counts/${c.id}`)}
-                      >
-                        <span>Chi tiết</span>
-                        <ArrowRight size={14} />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
+      {/* 5. Pagination */}
+      {!loading && total > 0 && (
+        <Pagination
+          page={filters.page}
+          pageSize={filters.limit}
+          total={total}
+          itemLabel="phiếu kiểm kê"
+          onPageChange={(p) => setFilters((prev) => ({ ...prev, page: p }))}
+          onPageSizeChange={(sz) => setFilters((prev) => ({ ...prev, limit: sz, page: 1 }))}
+          pageSizeOptions={[10, 20, 50, 100]}
+        />
+      )}
 
-        {/* Pagination */}
-        {!loading && total > 0 && (
-          <div className="count-pagination">
-            <span className="pagination-info">
-              Hiển thị {counts.length} / {total} phiếu
-            </span>
-            <div className="pagination-controls">
-              <button
-                disabled={filters.page <= 1}
-                onClick={() => setFilters({ ...filters, page: filters.page - 1 })}
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <span className="page-current">Trang {filters.page} / {totalPages}</span>
-              <button
-                disabled={filters.page >= totalPages}
-                onClick={() => setFilters({ ...filters, page: filters.page + 1 })}
-              >
-                <ChevronRight size={16} />
-              </button>
+      {/* 6. Modal Tạo Mới Phiếu Kiểm Kê (Tích hợp chọn SKU theo Phương án A) */}
+      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+        <DialogContent className="create-count-dialog-content">
+          <DialogHeader>
+            <DialogTitle>Mở Phiếu Kiểm Kê Mới</DialogTitle>
+            <DialogDescription>
+              Khởi tạo đợt kiểm kê kho để đối soát tồn thực tế và tự động tạo bút toán cân kho.
+            </DialogDescription>
+          </DialogHeader>
+
+          {createError && (
+            <div className="create-modal-error">
+              <AlertTriangle size={16} />
+              <span>{createError}</span>
             </div>
-          </div>
-        )}
-      </div>
+          )}
 
-      {/* Modal Mở phiếu kiểm kê mới */}
-      {showCreateModal && (
-        <div className="modal-overlay">
-          <div className="create-modal-card">
-            <div className="modal-header">
-              <div className="modal-title-box">
-                <ClipboardCheck size={22} color="#0b3d70" />
-                <h3>Mở Đợt Kiểm Kê Kho Mới</h3>
-              </div>
-              <button
-                className="btn-close-modal"
-                onClick={() => setShowCreateModal(false)}
+          <form onSubmit={handleCreateSubmit} className="create-count-form">
+            {/* Chọn kho hàng */}
+            <div className="form-item">
+              <label className="form-label">
+                Kho hàng cần kiểm kê <span className="text-danger">*</span>
+              </label>
+              <select
+                required
+                className="form-select"
+                value={createForm.warehouseId}
+                onChange={(e) =>
+                  setCreateForm({ ...createForm, warehouseId: e.target.value })
+                }
               >
-                <X size={20} />
-              </button>
+                <option value="">-- Chọn kho hàng kiểm kê --</option>
+                {warehouses.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name} ({w.code})
+                  </option>
+                ))}
+              </select>
             </div>
 
-            <form onSubmit={handleCreateSubmit} className="modal-body">
-              <div className="form-group">
-                <label>Kho hàng cần kiểm kê <span className="required">*</span></label>
-                <select
-                  required
-                  value={createForm.warehouseId}
-                  onChange={(e) => setCreateForm({ ...createForm, warehouseId: e.target.value })}
+            {/* Chọn hình thức */}
+            <div className="form-item">
+              <label className="form-label">Hình thức kiểm kê</label>
+              <div className="count-type-selector">
+                <label
+                  className={`type-radio-card ${
+                    createForm.countType === 'MONTHLY' ? 'selected' : ''
+                  }`}
                 >
-                  <option value="">-- Chọn kho hàng --</option>
-                  {warehouses.map((w) => (
-                    <option key={w.id} value={w.id}>
-                      {w.name} ({w.code})
-                    </option>
-                  ))}
-                </select>
-                <span className="form-help">Hệ thống sẽ tự động chốt số dư tồn kho hiện hành để đối chiếu</span>
+                  <input
+                    type="radio"
+                    name="countType"
+                    value="MONTHLY"
+                    checked={createForm.countType === 'MONTHLY'}
+                    onChange={() =>
+                      setCreateForm({ ...createForm, countType: 'MONTHLY' })
+                    }
+                  />
+                  <div className="radio-content">
+                    <span className="radio-title">Định kỳ tháng (Toàn kho)</span>
+                    <span className="radio-desc">
+                      Tự động nạp toàn bộ danh mục sản phẩm và lô hàng có trong kho
+                    </span>
+                  </div>
+                </label>
+
+                <label
+                  className={`type-radio-card ${
+                    createForm.countType === 'BY_SKU' ? 'selected' : ''
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="countType"
+                    value="BY_SKU"
+                    checked={createForm.countType === 'BY_SKU'}
+                    onChange={() =>
+                      setCreateForm({ ...createForm, countType: 'BY_SKU' })
+                    }
+                  />
+                  <div className="radio-content">
+                    <span className="radio-title">Đột xuất theo SKU</span>
+                    <span className="radio-desc">
+                      Chỉ định danh sách mặt hàng cụ thể cần đối soát
+                    </span>
+                  </div>
+                </label>
               </div>
+            </div>
 
-              <div className="form-group">
-                <label>Hình thức kiểm kê</label>
-                <div className="count-type-options">
-                  <label className={`type-option ${createForm.countType === 'MONTHLY' ? 'active' : ''}`}>
-                    <input
-                      type="radio"
-                      name="countType"
-                      value="MONTHLY"
-                      checked={createForm.countType === 'MONTHLY'}
-                      onChange={() => setCreateForm({ ...createForm, countType: 'MONTHLY' })}
-                    />
-                    <div>
-                      <strong>Định kỳ toàn kho (Tháng)</strong>
-                      <p>Tự động nạp toàn bộ danh mục sản phẩm và lô hàng có trong kho</p>
-                    </div>
-                  </label>
+            {/* BẢNG CHỌN SKU (Phương án A - Khi chọn Đột xuất theo SKU) */}
+            {createForm.countType === 'BY_SKU' && (
+              <div className="sku-picker-container">
+                <div className="sku-picker-header">
+                  <div className="picker-title-row">
+                    <span className="picker-title">
+                      Danh sách sản phẩm trong kho ({warehouseSkus.length})
+                    </span>
+                    <span className="picker-selected-count">
+                      Đã chọn: <strong>{selectedSkuIds.length}</strong> SKU
+                    </span>
+                  </div>
 
-                  <label className={`type-option ${createForm.countType === 'BY_SKU' ? 'active' : ''}`}>
-                    <input
-                      type="radio"
-                      name="countType"
-                      value="BY_SKU"
-                      checked={createForm.countType === 'BY_SKU'}
-                      onChange={() => setCreateForm({ ...createForm, countType: 'BY_SKU' })}
-                    />
-                    <div>
-                      <strong>Đột xuất theo SKU</strong>
-                      <p>Kiểm tra chọn lọc danh sách mặt hàng chỉ định</p>
+                  {!createForm.warehouseId ? (
+                    <div className="sku-picker-warning">
+                      ⚠️ Vui lòng chọn kho hàng trước để tải danh sách sản phẩm.
                     </div>
-                  </label>
+                  ) : loadingSkus ? (
+                    <div className="sku-picker-loading">
+                      <div className="sku-spinner" />
+                      <span>Đang nạp dữ liệu tồn kho...</span>
+                    </div>
+                  ) : warehouseSkus.length === 0 ? (
+                    <div className="sku-picker-empty">
+                      Kho hàng này hiện không có mặt hàng hoặc lô hàng nào có tồn kho.
+                    </div>
+                  ) : (
+                    <>
+                      {/* Search và nút chọn tất cả */}
+                      <div className="sku-picker-toolbar">
+                        <div className="sku-picker-search-wrapper">
+                          <Search size={14} className="sku-search-icon" />
+                          <input
+                            type="text"
+                            className="sku-picker-search-input"
+                            placeholder="Tìm mã SKU hoặc tên sản phẩm..."
+                            value={skuSearchQuery}
+                            onChange={(e) => setSkuSearchQuery(e.target.value)}
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleToggleSelectAllSkus}
+                        >
+                          {selectedSkuIds.length === filteredSkus.length
+                            ? 'Bỏ chọn tất cả'
+                            : 'Chọn tất cả'}
+                        </Button>
+                      </div>
+
+                      {/* Bảng danh sách SKU thu nhỏ có scroll */}
+                      <div className="sku-picker-table-wrapper">
+                        <table className="sku-picker-table">
+                          <thead>
+                            <tr>
+                              <th style={{ width: '38px', textAlign: 'center' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={
+                                    filteredSkus.length > 0 &&
+                                    selectedSkuIds.length === filteredSkus.length
+                                  }
+                                  onChange={handleToggleSelectAllSkus}
+                                />
+                              </th>
+                              <th>MÃ SKU</th>
+                              <th>TÊN SẢN PHẨM</th>
+                              <th>ĐVT</th>
+                              <th style={{ textAlign: 'right' }}>TỒN HỆ THỐNG</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filteredSkus.map((sku) => {
+                              const isChecked = selectedSkuIds.includes(sku.id);
+                              return (
+                                <tr
+                                  key={sku.id}
+                                  className={isChecked ? 'sku-row-checked' : ''}
+                                  onClick={() => handleToggleSku(sku.id)}
+                                >
+                                  <td
+                                    style={{ textAlign: 'center' }}
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={isChecked}
+                                      onChange={() => handleToggleSku(sku.id)}
+                                    />
+                                  </td>
+                                  <td>
+                                    <span className="sku-code">{sku.sku}</span>
+                                  </td>
+                                  <td>
+                                    <span className="sku-name">{sku.name}</span>
+                                  </td>
+                                  <td>
+                                    <span className="sku-unit">{sku.unit || 'Cái'}</span>
+                                  </td>
+                                  <td style={{ textAlign: 'right' }}>
+                                    <span className="sku-stock">
+                                      {sku.totalQuantityOnHand}
+                                    </span>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
+            )}
 
-              <div className="form-group">
-                <label>Ghi chú kiểm kê</label>
-                <textarea
-                  rows={3}
-                  placeholder="Nhập mục đích hoặc lý do đợt kiểm kho (ví dụ: Kiểm kê cuối tháng 10/2026)..."
-                  value={createForm.notes}
-                  onChange={(e) => setCreateForm({ ...createForm, notes: e.target.value })}
-                />
-              </div>
+            {/* Ghi chú */}
+            <div className="form-item">
+              <label className="form-label">Ghi chú đợt kiểm kê</label>
+              <textarea
+                rows={2}
+                className="form-textarea"
+                placeholder="Nhập lý do hoặc mục đích kiểm kho (VD: Đối soát trước nhập hàng tháng 11)..."
+                value={createForm.notes}
+                onChange={(e) =>
+                  setCreateForm({ ...createForm, notes: e.target.value })
+                }
+              />
+            </div>
 
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn-cancel"
-                  onClick={() => setShowCreateModal(false)}
-                  disabled={creating}
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  className="btn-submit"
-                  disabled={creating}
-                >
-                  {creating ? 'Đang khởi tạo...' : 'Tạo Phiếu Kiểm Kê '}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowCreateModal(false)}
+                disabled={creating}
+              >
+                Hủy
+              </Button>
+              <Button
+                type="submit"
+                variant="default"
+                loading={creating}
+              >
+                Tạo Phiếu Kiểm Kê
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* 7. Modal xác nhận hủy phiếu */}
+      <ConfirmDialog
+        open={confirmCancelModal.open}
+        onOpenChange={(open) =>
+          setConfirmCancelModal((prev) => ({ ...prev, open }))
+        }
+        title="Xác nhận hủy phiếu kiểm kê"
+        description={`Bạn có chắc chắn muốn hủy phiếu kiểm kê ${confirmCancelModal.countCode}? Hành động này sẽ hủy bỏ các kết quả kiểm đếm và không thể khôi phục.`}
+        confirmText="Hủy phiếu"
+        confirmVariant="destructive"
+        loading={confirmCancelModal.loading}
+        onConfirm={handleCancelCount}
+      />
     </div>
   );
 };
