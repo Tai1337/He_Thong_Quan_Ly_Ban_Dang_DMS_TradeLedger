@@ -14,9 +14,11 @@ import {
   Truck
 } from 'lucide-react';
 import { getTripReturnSummary, closeDeliveryTrip } from '../../services/api';
+import { useNotification } from '../../components/Common/NotificationProvider';
 import './TripClosingModal.css';
 
 export default function TripClosingModal({ isOpen, onClose, tripId, onTripClosed }) {
+  const { notify, confirm } = useNotification();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -79,15 +81,27 @@ export default function TripClosingModal({ isOpen, onClose, tripId, onTripClosed
     if (isClosed) return;
 
     if (!warehouseConfirmed && data?.returnedItems?.length > 0) {
-      setError('Vui lòng xác nhận thủ kho đã kiểm đếm và nhận lại hàng rớt vào kho!');
+      setActiveTab('cargo');
+      const msg = 'Vui lòng tích xác nhận Thủ kho đã kiểm đếm và nhận lại hàng rớt vào kho!';
+      setError(msg);
+      notify.warning(msg);
       return;
     }
     if (!cashierConfirmed && expectedCod > 0) {
-      setError('Vui lòng xác nhận thủ quỹ đã đối chiếu và thu tiền COD từ tài xế!');
+      setActiveTab('cod');
+      const msg = 'Vui lòng tích xác nhận Thủ quỹ đã đối chiếu và thu tiền COD từ tài xế!';
+      setError(msg);
+      notify.warning(msg);
       return;
     }
 
-    if (!window.confirm(`Xác nhận đóng chuyến xe [${data?.trip?.tripCode}]? Sau khi đóng, toàn bộ dữ liệu chuyến xe sẽ bị khóa vĩnh viễn (CLOSED).`)) {
+    const ok = await confirm({
+      title: 'Đóng chuyến xe',
+      message: `Xác nhận đóng chuyến xe [${data?.trip?.tripCode}]? Sau khi đóng, toàn bộ dữ liệu chuyến xe sẽ bị khóa vĩnh viễn (CLOSED).`,
+      confirmText: 'Đóng chuyến',
+      variant: 'danger'
+    });
+    if (!ok) {
       return;
     }
 
@@ -100,6 +114,7 @@ export default function TripClosingModal({ isOpen, onClose, tripId, onTripClosed
         closeNotes: closeNotes.trim(),
         closedById: 1
       });
+      notify.success(`Đã đóng chuyến xe [${data?.trip?.tripCode}] thành công!`);
 
       if (onTripClosed) {
         try {
@@ -206,6 +221,9 @@ export default function TripClosingModal({ isOpen, onClose, tripId, onTripClosed
           >
             <DollarSign size={16} />
             <span>Quyết Toán Tiền Mặt COD</span>
+            {expectedCod > 0 && !cashierConfirmed && !isClosed && (
+              <span className="closing-tab-badge">Chưa xác nhận</span>
+            )}
           </button>
         </div>
 
@@ -305,21 +323,6 @@ export default function TripClosingModal({ isOpen, onClose, tripId, onTripClosed
                       </div>
                     </>
                   )}
-
-                  {/* Checkbox Thủ Kho Xác Nhận */}
-                  <div className="confirmation-box warehouse">
-                    <label className="checkbox-label">
-                      <input 
-                        type="checkbox" 
-                        checked={warehouseConfirmed}
-                        disabled={isClosed}
-                        onChange={(e) => setWarehouseConfirmed(e.target.checked)}
-                      />
-                      <span>
-                        <strong>Thủ kho xác nhận:</strong> Đã kiểm đếm thực tế toàn bộ {data?.totalReturnedPackages || 0} thùng hàng rớt mang về bãi và hoàn tất nhập kho an toàn.
-                      </span>
-                    </label>
-                  </div>
                 </div>
               )}
 
@@ -381,23 +384,45 @@ export default function TripClosingModal({ isOpen, onClose, tripId, onTripClosed
                       </div>
                     )}
                   </div>
-
-                  {/* Checkbox Thủ Quỹ Xác Nhận */}
-                  <div className="confirmation-box cashier">
-                    <label className="checkbox-label">
-                      <input 
-                        type="checkbox" 
-                        checked={cashierConfirmed}
-                        disabled={isClosed}
-                        onChange={(e) => setCashierConfirmed(e.target.checked)}
-                      />
-                      <span>
-                        <strong>Thủ quỹ xác nhận:</strong> Đã kiểm đếm và nhận đủ {actualCodNum.toLocaleString('vi-VN')} đ tiền mặt COD từ tài xế nộp vào quỹ Nhà phân phối.
-                      </span>
-                    </label>
-                  </div>
                 </div>
               )}
+
+              {/* Xác nhận bàn giao chung (luôn hiển thị rõ cả 2 bước kiểm đếm kho & thu tiền COD) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div className="confirmation-box warehouse">
+                  <label className="checkbox-label">
+                    <input 
+                      type="checkbox" 
+                      checked={warehouseConfirmed}
+                      disabled={isClosed}
+                      onChange={(e) => {
+                        setWarehouseConfirmed(e.target.checked);
+                        if (error) setError('');
+                      }}
+                    />
+                    <span>
+                      <strong>Thủ kho xác nhận:</strong> Đã kiểm đếm thực tế toàn bộ {data?.totalReturnedPackages || 0} thùng hàng rớt mang về bãi và hoàn tất nhập kho an toàn.
+                    </span>
+                  </label>
+                </div>
+
+                <div className="confirmation-box cashier">
+                  <label className="checkbox-label">
+                    <input 
+                      type="checkbox" 
+                      checked={cashierConfirmed}
+                      disabled={isClosed}
+                      onChange={(e) => {
+                        setCashierConfirmed(e.target.checked);
+                        if (error) setError('');
+                      }}
+                    />
+                    <span>
+                      <strong>Thủ quỹ xác nhận:</strong> Đã kiểm đếm và nhận đủ {actualCodNum.toLocaleString('vi-VN')} đ tiền mặt COD từ tài xế nộp vào quỹ Nhà phân phối.
+                    </span>
+                  </label>
+                </div>
+              </div>
 
               {/* Ghi chú chung & Ký biên bản */}
               <div className="closing-notes-wrap">

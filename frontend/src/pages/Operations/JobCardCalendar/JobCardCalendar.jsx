@@ -17,6 +17,7 @@ import {
   updateSalesRoute,
   deleteSalesRoute,
 } from '../../../services/api';
+import { useNotification } from '../../../components/Common/NotificationProvider';
 import './JobCardCalendar.css';
 
 const WEEKDAY_LABELS = {
@@ -56,6 +57,7 @@ const formatDate = (d) =>
   `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`;
 
 const JobCardCalendar = () => {
+  const { notify, confirm } = useNotification();
   const [viewMode, setViewMode] = useState('week'); // 'week' | 'sales'
   const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
   const [weeklyData, setWeeklyData] = useState({ 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] });
@@ -163,14 +165,21 @@ const JobCardCalendar = () => {
   };
 
   const handleDeleteRoute = async (routeId) => {
-    if (!window.confirm('Xóa tuyến này? Tất cả điểm ghé cũng sẽ bị xóa.')) return;
+    const ok = await confirm({
+      title: 'Xóa tuyến bán hàng',
+      message: 'Xóa tuyến này? Tất cả điểm ghé cũng sẽ bị xóa.',
+      confirmText: 'Xóa tuyến',
+      variant: 'danger'
+    });
+    if (!ok) return;
     try {
       await deleteSalesRoute(routeId);
+      notify.success('Đã xóa tuyến bán hàng');
       setDetailPanel(null);
       fetchCalendar();
       fetchRoutes();
     } catch (err) {
-      alert(err.message);
+      notify.error(err.message);
     }
   };
 

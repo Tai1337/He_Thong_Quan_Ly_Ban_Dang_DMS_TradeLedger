@@ -812,10 +812,11 @@
 }
 
 .frappe-icon-sidebar {
-  width: 52px;
+  width: 56px;
   height: 100%;
-  border-right: 1px solid #e5e7eb;
-  background-color: #ffffff;
+  border-right: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(180deg, #1e3a8a 0%, #172554 100%);
+  box-shadow: 2px 0 10px rgba(15, 23, 42, 0.1);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -828,13 +829,14 @@
 /* Flyout Drawer xuất hiện khi rà chuột */
 .frappe-sub-flyout-drawer {
   position: absolute;
-  left: 52px;
+  left: 56px;
   top: 0;
   bottom: 0;
-  width: 260px;
-  background-color: #ffffff;
-  border-right: 1px solid #e5e7eb;
-  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
+  width: 264px;
+  background: linear-gradient(180deg, #1d4ed8 0%, #1e40af 55%, #1e3a8a 100%);
+  border-right: 1px solid #1e3a8a;
+  box-shadow: 6px 0 24px rgba(15, 23, 42, 0.18);
+  color: #ffffff;
   display: flex;
   flex-direction: column;
   padding: 16px 14px;
@@ -859,7 +861,7 @@
   align-items: center;
   justify-content: space-between;
   padding-bottom: 12px;
-  border-bottom: 1px solid #f1f3f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
   margin-bottom: 12px;
 }
 
@@ -873,8 +875,8 @@
   width: 32px;
   height: 32px;
   border-radius: 6px;
-  background-color: #eff6ff;
-  color: #1a73e8;
+  background-color: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -891,67 +893,72 @@
   margin: 0;
   font-size: 14px;
   font-weight: 700;
-  color: #111827;
+  color: #ffffff;
 }
 
 .frappe-flyout-desc {
-  font-size: 10.5px;
-  color: #9ca3af;
+  font-size: 11px;
+  color: rgba(219, 234, 254, 0.88);
 }
 
 .frappe-pin-btn {
-  background: transparent;
-  border: 1px solid #e5e7eb;
-  border-radius: 4px;
-  width: 26px;
-  height: 26px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #9ca3af;
+  color: rgba(255, 255, 255, 0.9);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .frappe-pin-btn:hover {
-  background-color: #f3f4f6;
-  color: #111827;
+  background-color: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .frappe-pin-btn.pinned {
-  background-color: #eff6ff;
-  color: #1a73e8;
-  border-color: #bfdbfe;
+  background-color: #ffffff;
+  color: #1d4ed8;
+  border-color: #ffffff;
 }
 
 .frappe-flyout-search {
   display: flex;
   align-items: center;
   gap: 6px;
-  background-color: #f3f4f6;
+  background-color: rgba(15, 23, 42, 0.22);
   border-radius: 6px;
-  padding: 5px 8px;
+  padding: 6px 8px;
   margin-bottom: 14px;
-  border: 1px solid transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .frappe-flyout-search:focus-within {
-  background-color: #ffffff;
-  border-color: #1a73e8;
-  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.12);
+  background-color: rgba(15, 23, 42, 0.34);
+  border-color: rgba(255, 255, 255, 0.65);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.16);
 }
 
 .flyout-search-icon {
-  color: #9ca3af;
+  color: rgba(219, 234, 254, 0.8);
 }
 
 .frappe-flyout-search input {
   border: none;
   background: transparent;
   outline: none;
-  font-size: 12px;
+  font-size: 12.5px;
   width: 100%;
-  color: #111827;
+  color: #ffffff;
+}
+
+.frappe-flyout-search input::placeholder {
+  color: rgba(219, 234, 254, 0.72);
 }
 
 .frappe-flyout-items-list {
@@ -967,7 +974,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #9ca3af;
+  color: rgba(191, 219, 254, 0.9);
   padding: 4px 8px;
   margin-bottom: 2px;
 }
@@ -981,23 +988,25 @@
   border: 1px solid transparent;
   background: transparent;
   font-size: 13px;
-  color: #4b5563;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.92);
   cursor: pointer;
   text-align: left;
   transition: all 0.15s ease;
 }
 
 .frappe-flyout-sub-item:hover {
-  background-color: #f3f4f6;
-  color: #111827;
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
   transform: translateX(2px);
 }
 
 .frappe-flyout-sub-item.active {
-  background-color: #eef2ff;
-  color: #4f46e5;
+  background-color: #ffffff;
+  color: #1d4ed8;
   font-weight: 600;
-  border-color: #c7d2fe;
+  border-color: #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
 }
 
 .frappe-sub-ico {
@@ -1017,8 +1026,8 @@
   font-weight: 700;
   padding: 1px 5px;
   border-radius: 4px;
-  background-color: #e5e7eb;
-  color: #4b5563;
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
 }
 
 .frappe-sub-tag.ai {
@@ -1028,50 +1037,56 @@
 }
 
 .frappe-sub-tag.mới {
-  background-color: #eef2ff;
-  color: #4f46e5;
-  border: 1px solid #c7d2fe;
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
 }
 
 .frappe-sub-arrow {
-  color: #9ca3af;
-  opacity: 0.4;
+  color: inherit;
+  opacity: 0.55;
   transition: transform 0.15s ease, opacity 0.15s ease;
 }
 
-.frappe-flyout-sub-item:hover .frappe-sub-arrow {
+.frappe-flyout-sub-item:hover .frappe-sub-arrow,
+.frappe-flyout-sub-item.active .frappe-sub-arrow {
   opacity: 1;
   transform: translateX(2px);
 }
 
 .frappe-logo-slot {
-  margin-bottom: 14px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  width: 36px;
+  display: flex;
+  justify-content: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   cursor: pointer;
 }
 
 .frappe-brand-badge {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  background: #4f46e5;
-  color: #ffffff;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1d4ed8;
   font-weight: 800;
-  font-size: 14px;
+  font-size: 15px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 5px rgba(79, 70, 229, 0.35);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.22);
   transition: transform 0.15s ease;
 }
 
 .frappe-brand-badge:hover {
-  transform: scale(1.08);
+  transform: scale(1.06);
 }
 
 .frappe-nav-icons-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   align-items: center;
   width: 100%;
   overflow-y: auto;
@@ -1087,12 +1102,12 @@
 }
 
 .frappe-nav-icon-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 6px;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
   border: 1px solid transparent;
   background: transparent;
-  color: #6b7280;
+  color: rgba(255, 255, 255, 0.88);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1100,16 +1115,23 @@
   transition: all 0.15s ease;
 }
 
-.frappe-nav-icon-btn:hover {
-  background-color: #f3f4f6;
-  color: #111827;
-  transform: scale(1.05);
+.frappe-nav-icon-btn:hover,
+.frappe-nav-icon-btn.hovered {
+  background-color: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  transform: scale(1.04);
 }
 
 .frappe-nav-icon-btn.active {
-  background-color: #f1f3f5;
-  color: #111827;
-  border-color: #e5e7eb;
+  background-color: #ffffff;
+  color: #1d4ed8;
+  border-color: #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.22);
+}
+
+.frappe-nav-icon-btn:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
 }
 
 .frappe-tooltip {
@@ -1145,9 +1167,11 @@
 }
 
 .frappe-topbar {
-  height: 48px;
-  border-bottom: 1px solid #e5e7eb;
-  background-color: #ffffff;
+  height: 50px;
+  border-bottom: 1px solid #1e3a8a;
+  background: linear-gradient(90deg, #1e3a8a 0%, #1d4ed8 60%, #2563eb 100%);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1168,7 +1192,7 @@
   align-items: center;
   gap: 8px;
   text-decoration: none;
-  color: #111827;
+  color: #ffffff;
   font-size: 14.5px;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -1178,12 +1202,12 @@
   width: 28px;
   height: 28px;
   border-radius: 6px;
-  background: #4f46e5;
-  color: #ffffff;
+  background: #ffffff;
+  color: #1d4ed8;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 5px rgba(79, 70, 229, 0.35);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2);
   transition: transform 150ms ease;
 }
 
@@ -1198,20 +1222,25 @@
 }
 
 .frappe-crumb-sep {
-  color: #9ca3af;
+  color: rgba(191, 219, 254, 0.8);
   font-size: 14px;
 }
 
 .frappe-crumb-text {
   font-size: 13px;
-  color: #4b5563;
+  color: rgba(219, 234, 254, 0.92);
   text-decoration: none;
   font-weight: 500;
   transition: color 0.15s;
 }
 
 .frappe-crumb-text:hover {
-  color: #111827;
+  color: #ffffff;
+}
+
+.frappe-breadcrumb-item:last-child .frappe-crumb-text {
+  color: #ffffff;
+  font-weight: 600;
 }
 
 /* Right Section */
@@ -1222,25 +1251,30 @@
 }
 
 .frappe-search-box {
-  width: 270px;
-  background-color: #f3f4f6;
-  border: 1px solid transparent;
+  width: 280px;
+  background-color: rgba(15, 23, 42, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 6px;
-  padding: 4px 10px;
+  padding: 5px 10px;
   display: flex;
   align-items: center;
   gap: 8px;
   transition: all 0.15s ease;
 }
 
+.frappe-search-box:hover {
+  background-color: rgba(15, 23, 42, 0.3);
+  border-color: rgba(255, 255, 255, 0.38);
+}
+
 .frappe-search-box:focus-within {
-  background-color: #ffffff;
-  border-color: #1a73e8;
-  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.12);
+  background-color: rgba(15, 23, 42, 0.36);
+  border-color: rgba(255, 255, 255, 0.65);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.16);
 }
 
 .frappe-search-ico {
-  color: #9ca3af;
+  color: rgba(219, 234, 254, 0.85);
   flex-shrink: 0;
 }
 
@@ -1249,57 +1283,64 @@
   background: transparent;
   outline: none;
   font-size: 12px;
-  color: #111827;
+  color: #ffffff;
   width: 100%;
+}
+
+.frappe-search-input::placeholder {
+  color: rgba(219, 234, 254, 0.78);
 }
 
 .frappe-tool-btn {
   background: transparent;
   border: none;
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #4b5563;
+  color: rgba(255, 255, 255, 0.92);
   cursor: pointer;
   position: relative;
   transition: background-color 0.15s ease;
 }
 
 .frappe-tool-btn:hover {
-  background-color: #f3f4f6;
-  color: #111827;
+  background-color: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
 }
 
 .frappe-notif-dot {
   position: absolute;
   top: 5px;
   right: 5px;
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background-color: #ef4444;
+  border: 1.5px solid #1d4ed8;
 }
 
 .frappe-help-btn {
-  background: transparent;
-  border: 1px solid #e5e7eb;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 6px;
-  padding: 4px 8px;
+  padding: 5px 10px;
   display: flex;
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: #4b5563;
+  color: #ffffff;
   font-weight: 500;
   cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .frappe-help-btn:hover {
-  background-color: #f3f4f6;
-  color: #111827;
+  background-color: rgba(255, 255, 255, 0.24);
+  border-color: rgba(255, 255, 255, 0.45);
+  color: #ffffff;
 }
 
 .frappe-theme-review-badge {
@@ -1335,17 +1376,18 @@
 }
 
 .frappe-avatar-img {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background-color: #fee2e2;
-  color: #b91c1c;
+  background-color: #ffffff;
+  color: #1d4ed8;
   font-size: 11px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #fca5a5;
+  border: 2px solid rgba(255, 255, 255, 0.78);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.2);
   transition: transform 0.15s ease;
 }
 

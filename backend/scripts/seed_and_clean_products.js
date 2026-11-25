@@ -2,7 +2,9 @@
  * Script dọn dẹp sản phẩm tên tiếng Khmer (Campuchia)
  * và sinh thêm dữ liệu sản phẩm FMCG đa dạng, chuẩn chỉ cho DMS-NPP
  */
-import prisma from '../src/prisma/prisma.client.js';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 const NEW_PRODUCTS = [
   // --- DANH MỤC 1: Mì Ăn Liền & Phở (categoryId: 1) ---

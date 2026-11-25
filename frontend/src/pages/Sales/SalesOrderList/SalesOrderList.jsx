@@ -281,9 +281,9 @@ const SalesOrderList = () => {
       {/* Filters Section */}
       {isFilterExpanded && (
         <div className="filters-section">
-          <div className="filter-row">
-            {/* Loại ngày & Date Range */}
-            <div className="filter-item date-type-item">
+          <div className="filter-grid">
+            {/* Hàng 1: Loại ngày (2) + Khoảng ngày (4) + NPP (2) + Kho (2) + Mã đơn (2) = 12 cột */}
+            <div className="filter-item filter-col-2">
               <select 
                 value={filterForm.dateType} 
                 onChange={(e) => handleFilterChange('dateType', e.target.value)}
@@ -293,14 +293,14 @@ const SalesOrderList = () => {
               </select>
             </div>
 
-            <div className="filter-item date-range-inputs">
+            <div className="filter-item filter-col-4 date-range-inputs">
               <input 
                 type="date" 
                 value={filterForm.startDate} 
                 onChange={(e) => handleFilterChange('startDate', e.target.value)} 
                 title="Từ ngày"
               />
-              <span className="date-sep">-</span>
+              <span className="date-sep">–</span>
               <input 
                 type="date" 
                 value={filterForm.endDate} 
@@ -309,14 +309,13 @@ const SalesOrderList = () => {
               />
             </div>
 
-            {/* NPP & Kho */}
-            <div className="filter-item">
+            <div className="filter-item filter-col-2">
               <select disabled title="Nhà phân phối hiện tại">
                 <option>[NPP-TEST] Nhà Phân Phối Test</option>
               </select>
             </div>
 
-            <div className="filter-item">
+            <div className="filter-item filter-col-2">
               <select 
                 value={filterForm.warehouseId}
                 onChange={(e) => handleFilterChange('warehouseId', e.target.value)}
@@ -328,8 +327,7 @@ const SalesOrderList = () => {
               </select>
             </div>
 
-            {/* Mã đơn hàng */}
-            <div className="filter-item">
+            <div className="filter-item filter-col-2">
               <input 
                 type="text" 
                 placeholder="Mã đơn hàng (SO-...)" 
@@ -338,11 +336,9 @@ const SalesOrderList = () => {
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
             </div>
-          </div>
-          
-          <div className="filter-row">
-            {/* VNBH Mã / Tên */}
-            <div className="filter-item" style={{ position: 'relative' }}>
+
+            {/* Hàng 2: VNBH (3) + Cửa hàng (3) + Trạng thái (3) + Nút thao tác (3) = 12 cột */}
+            <div className="filter-item filter-col-3" style={{ position: 'relative' }}>
               <input 
                 type="text" 
                 placeholder="Mã hoặc Tên VNBH" 
@@ -384,8 +380,7 @@ const SalesOrderList = () => {
               )}
             </div>
 
-            {/* Khách hàng / Cửa hàng Autocomplete */}
-            <div className="filter-item" style={{ position: 'relative' }}>
+            <div className="filter-item filter-col-3" style={{ position: 'relative' }}>
               <input 
                 type="text" 
                 placeholder="Mã hoặc Tên Cửa hàng / Đại lý" 
@@ -415,14 +410,13 @@ const SalesOrderList = () => {
               )}
             </div>
 
-            {/* Trạng thái Multi-select dropdown */}
-            <div className="filter-item" style={{ position: 'relative' }}>
+            <div className="filter-item filter-col-3" style={{ position: 'relative' }}>
               <button 
                 type="button"
                 className="btn-status-multiselect"
                 onClick={() => setShowStatusDropdown(!showStatusDropdown)}
               >
-                <span>
+                <span className="status-multiselect-text">
                   {selectedStatusList.length === 0 
                     ? 'Tất cả trạng thái' 
                     : `Đã chọn (${selectedStatusList.length}) trạng thái`}
@@ -461,8 +455,7 @@ const SalesOrderList = () => {
               )}
             </div>
 
-            {/* Nút lọc & Reset */}
-            <div className="filter-item filter-actions">
+            <div className="filter-item filter-col-3 filter-actions">
               <button className="btn-search" onClick={handleSearch} disabled={loading}>
                 <Search size={15} /> Tìm kiếm
               </button>

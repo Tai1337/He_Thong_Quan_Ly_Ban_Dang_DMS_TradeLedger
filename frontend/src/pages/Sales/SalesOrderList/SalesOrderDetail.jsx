@@ -21,7 +21,8 @@ import {
   Save,
   AlertCircle,
   Plus,
-  Trash2
+  Trash2,
+  SlidersHorizontal
 } from 'lucide-react';
 import { 
   getSalesOrderById, 
@@ -37,6 +38,10 @@ import {
   getProducts
 } from '../../../services/api';
 import { MiniDeliveryMap } from '../../../components/Map/DeliveryMap';
+import TripDispatchConsoleModal from '../../Logistics/TripDispatchConsoleModal';
+import CreateTripModal from '../../Logistics/CreateTripModal';
+import TripReportPrintModal from '../../Logistics/TripReportPrintModal';
+import { useNotification } from '../../../components/Common/NotificationProvider';
 import './SalesOrderDetail.css';
 
 const formatCurrency = (val) => new Intl.NumberFormat('vi-VN').format(val || 0);
@@ -53,6 +58,7 @@ const STATUS_LABELS = {
 const SalesOrderDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { confirm } = useNotification();
 
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -70,6 +76,9 @@ const SalesOrderDetail = () => {
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
   const [deliverySuccess, setDeliverySuccess] = useState(true);
   const [deliveryNote, setDeliveryNote] = useState('');
+  const [isDispatchConsoleOpen, setIsDispatchConsoleOpen] = useState(false);
+  const [isCreateTripModalOpen, setIsCreateTripModalOpen] = useState(false);
+  const [isRpt004PrintOpen, setIsRpt004PrintOpen] = useState(false);
 
   // Sửa số lượng sản phẩm trong đơn
   const [editingItemId, setEditingItemId] = useState(null);
@@ -165,7 +174,12 @@ const SalesOrderDetail = () => {
       return;
     }
     if (num === 0) {
-      const confirmZero = window.confirm(`Bạn có chắc chắn muốn cắt giảm số lượng sản phẩm "${item.productName}" về 0 (do hết hàng)?`);
+      const confirmZero = await confirm({
+        title: 'Cắt giảm sản phẩm về 0',
+        message: `Bạn có chắc chắn muốn cắt giảm số lượng sản phẩm "${item.productName}" về 0 (do hết hàng)?`,
+        confirmText: 'Xác nhận cắt giảm',
+        variant: 'warning'
+      });
       if (!confirmZero) return;
     }
     setSavingItem(true);
@@ -454,8 +468,27 @@ const SalesOrderDetail = () => {
         {/* Action Buttons */}
         <div className="detail-header-actions">
           <button className="btn-outline" onClick={() => window.print()}>
-            <Printer size={15} /> In phiếu
+            <Printer size={15} /> In phiếu đơn
           </button>
+
+          {order.deliveryTrip && (
+            <>
+              <button
+                type="button"
+                className="btn-outline"
+                onClick={() => setIsRpt004PrintOpen(true)}
+              >
+                <Printer size={15} /> In RPT004
+              </button>
+              <button
+                type="button"
+                className="btn-outline"
+                onClick={() => setIsDispatchConsoleOpen(true)}
+              >
+                <SlidersHorizontal size={15} /> Điều phối xe
+              </button>
+            </>
+          )}
 
           {order.status === 'PENDING' && (
             <>
@@ -569,7 +602,17 @@ const SalesOrderDetail = () => {
             <div className="info-row">
               <span className="label">Chuyến xe:</span>
               <span className="value">
-                {order.deliveryTrip ? order.deliveryTrip.tripCode : 'Chưa điều phối'}
+                {order.deliveryTrip ? (
+                  <Link
+                    to={`/logistics/delivery-trips/${order.deliveryTrip.id}`}
+                    className="order-trip-link"
+                    title="Xem chi tiết chuyến xe"
+                  >
+                    {order.deliveryTrip.tripCode}
+                  </Link>
+                ) : (
+                  'Chưa điều phối'
+                )}
               </span>
             </div>
             <div className="info-row">
@@ -583,6 +626,27 @@ const SalesOrderDetail = () => {
               <span className="value">
                 {order.vnbhName} ({order.vnbhCode})
               </span>
+            </div>
+            <div className="order-dispatch-inline">
+              {order.deliveryTrip ? (
+                <button
+                  type="button"
+                  className="btn-dispatch-inline"
+                  onClick={() => setIsDispatchConsoleOpen(true)}
+                >
+                  <SlidersHorizontal size={14} /> Mở bàn điều phối & bốc xếp xe
+                </button>
+              ) : (
+                order.status === 'ALLOCATED' && (
+                  <button
+                    type="button"
+                    className="btn-dispatch-inline"
+                    onClick={() => setTripModalOpen(true)}
+                  >
+                    <Truck size={14} /> Điều phối / Gán chuyến xe
+                  </button>
+                )
+              )}
             </div>
           </div>
         </div>
@@ -1029,7 +1093,7 @@ const SalesOrderDetail = () => {
             </div>
             <div className="modal-body">
               <div className="form-group">
-                <label>Chuyến xe <span style={{ color: 'red' }}>*</span></label>
+                <label>Chọn chuyến xe có sẵn <span style={{ color: 'red' }}>*</span></label>
                 <select 
                   className="modal-select"
                   value={selectedTripId}
@@ -1042,6 +1106,19 @@ const SalesOrderDetail = () => {
                     </option>
                   ))}
                 </select>
+              </div>
+              <div className="trip-create-inline-box">
+                <span>Hoặc khởi tạo chuyến xe mới và xếp đơn này lên xe ngay:</span>
+                <button
+                  type="button"
+                  className="btn-outline"
+                  onClick={() => {
+                    setTripModalOpen(false);
+                    setIsCreateTripModalOpen(true);
+                  }}
+                >
+                  <Plus size={14} /> Tạo chuyến xe mới cho đơn này
+                </button>
               </div>
             </div>
             <div className="modal-footer">
@@ -1247,6 +1324,40 @@ const SalesOrderDetail = () => {
           <p>Chứng từ in tự động từ Hệ thống DMS-TradeLedger - Ngày in: {new Date().toLocaleString('vi-VN')}</p>
         </div>
       </div>
+
+      {/* Modal Bàn Điều Phối Chuyến Xe trực tiếp trong Chi tiết đơn */}
+      {isDispatchConsoleOpen && order.deliveryTrip?.id && (
+        <TripDispatchConsoleModal
+          tripId={order.deliveryTrip.id}
+          isOpen={isDispatchConsoleOpen}
+          onClose={() => {
+            setIsDispatchConsoleOpen(false);
+            loadOrderDetail();
+          }}
+          onRefreshList={loadOrderDetail}
+        />
+      )}
+
+      {/* Modal Tạo Chuyến Xe Mới trực tiếp từ Chi tiết đơn */}
+      {isCreateTripModalOpen && (
+        <CreateTripModal
+          isOpen={isCreateTripModalOpen}
+          onClose={() => setIsCreateTripModalOpen(false)}
+          onSuccess={loadOrderDetail}
+          initialOrderIds={[order.id]}
+        />
+      )}
+
+      {/* Modal In Phiếu Giao Nhận RPT004 từ Chi tiết đơn */}
+      {isRpt004PrintOpen && order.deliveryTrip?.id && (
+        <TripReportPrintModal
+          isOpen={isRpt004PrintOpen}
+          onClose={() => setIsRpt004PrintOpen(false)}
+          reportType="rpt004"
+          tripId={order.deliveryTrip.id}
+          initialOrder={{ id: order.id }}
+        />
+      )}
     </div>
   );
 };

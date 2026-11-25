@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { X, Download, AlertTriangle, CheckCircle, Edit2, Check, RefreshCw } from 'lucide-react';
 import { getReportRpt005, updateSalesOrderItemQty, exportReportExcel } from '../../../services/api';
+import { useNotification } from '../../../components/Common/NotificationProvider';
 import './Rpt005Modal.css';
 
 const formatCurrency = (val) => new Intl.NumberFormat('vi-VN').format(val || 0);
 
 const Rpt005Modal = ({ isOpen, onClose, appliedFilters = {}, onOrderUpdated }) => {
+  const { confirm } = useNotification();
   const [mode, setMode] = useState('missing_only'); // 'missing_only' | 'all'
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -55,7 +57,12 @@ const Rpt005Modal = ({ isOpen, onClose, appliedFilters = {}, onOrderUpdated }) =
     }
 
     if (qtyNum === 0) {
-      const confirmZero = window.confirm(`Sản phẩm "${row.productName}" sẽ được cắt giảm số lượng về 0 (do hết tồn kho). Bạn có chắc chắn muốn lưu?`);
+      const confirmZero = await confirm({
+        title: 'Cắt giảm sản phẩm về 0',
+        message: `Sản phẩm "${row.productName}" sẽ được cắt giảm số lượng về 0 (do hết tồn kho). Bạn có chắc chắn muốn lưu?`,
+        confirmText: 'Xác nhận lưu',
+        variant: 'warning'
+      });
       if (!confirmZero) return;
     }
 

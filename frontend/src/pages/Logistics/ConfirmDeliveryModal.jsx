@@ -12,6 +12,7 @@ import {
   Phone
 } from 'lucide-react';
 import { confirmStopDelivery } from '../../services/api';
+import { useNotification } from '../../components/Common/NotificationProvider';
 import './ConfirmDeliveryModal.css';
 
 export default function ConfirmDeliveryModal({ 
@@ -21,6 +22,7 @@ export default function ConfirmDeliveryModal({
   order, 
   onDeliveryConfirmed 
 }) {
+  const { notify } = useNotification();
   const [deliveryResult, setDeliveryResult] = useState('DELIVERED_FULL'); // 'DELIVERED_FULL', 'DELIVERED_PARTIAL', 'DELIVERY_FAILED'
   const [itemsState, setItemsState] = useState([]);
   const [notes, setNotes] = useState('');
@@ -98,7 +100,7 @@ export default function ConfirmDeliveryModal({
         failedReason: notes
       }));
 
-      await confirmStopDelivery(tripId, {
+      const res = await confirmStopDelivery(tripId, {
         orderId: order.id,
         distributorId: 1,
         deliveryResult,
@@ -107,6 +109,7 @@ export default function ConfirmDeliveryModal({
         changedById: 1
       });
 
+      notify.success(res.message || `Đã xác nhận kết quả giao đơn ${order.orderCode}`);
       onDeliveryConfirmed && onDeliveryConfirmed();
       onClose();
     } catch (err) {

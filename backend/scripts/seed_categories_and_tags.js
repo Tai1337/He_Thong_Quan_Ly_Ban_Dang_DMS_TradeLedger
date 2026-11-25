@@ -2,7 +2,9 @@
  * Script phân loại và gán Tag ngành hàng FMCG chuẩn xác cho toàn bộ sản phẩm
  * Khởi tạo danh mục ngành hàng (ProductCategory) và map categoryId vào Product
  */
-import prisma from '../src/prisma/prisma.client.js';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 const CATEGORIES_DATA = [
   {

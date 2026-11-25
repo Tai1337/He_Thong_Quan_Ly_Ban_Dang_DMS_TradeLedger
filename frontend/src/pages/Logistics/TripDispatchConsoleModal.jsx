@@ -34,9 +34,11 @@ import {
 import DeliveryMap from '../../components/Map/DeliveryMap';
 import ConfirmDeliveryModal from './ConfirmDeliveryModal';
 import TripClosingModal from './TripClosingModal';
+import { useNotification } from '../../components/Common/NotificationProvider';
 import './TripDispatchConsoleModal.css';
 
 export default function TripDispatchConsoleModal({ tripId, isOpen, onClose, onRefreshList }) {
+  const { notify, confirm } = useNotification();
   const [trip, setTrip] = useState(null);
   const [dispatchableOrders, setDispatchableOrders] = useState([]);
   const [manifest, setManifest] = useState(null);
@@ -130,11 +132,18 @@ export default function TripDispatchConsoleModal({ tripId, isOpen, onClose, onRe
 
   // Remove an order from trip
   const handleRemoveOrder = async (orderId, orderCode) => {
-    if (!window.confirm(`Bạn có chắc muốn gỡ đơn [${orderCode}] khỏi chuyến xe này?`)) return;
+    const ok = await confirm({
+      title: 'Gỡ đơn khỏi chuyến xe',
+      message: `Bạn có chắc muốn gỡ đơn [${orderCode}] khỏi chuyến xe này?`,
+      confirmText: 'Gỡ đơn',
+      variant: 'danger'
+    });
+    if (!ok) return;
     setActionLoading(true);
     setError('');
     try {
       await removeOrderFromTrip(tripId, orderId, 'Gỡ điều chuyển');
+      notify.success(`Đã gỡ đơn [${orderCode}] khỏi chuyến xe`);
       await loadTripData();
       onRefreshList && onRefreshList();
     } catch (err) {
@@ -155,16 +164,23 @@ export default function TripDispatchConsoleModal({ tripId, isOpen, onClose, onRe
       confirmMsg = `Xác nhận hoàn tất chuyến xe? Các đơn hàng còn lại sẽ được xác nhận giao hoàn tất.`;
     }
 
-    if (!window.confirm(confirmMsg)) return;
+    const ok = await confirm({
+      title: 'Cập nhật trạng thái chuyến xe',
+      message: confirmMsg,
+      confirmText: 'Xác nhận'
+    });
+    if (!ok) return;
 
     setActionLoading(true);
     setError('');
     try {
-      await updateDeliveryTripStatus(tripId, toStatus);
+      const res = await updateDeliveryTripStatus(tripId, toStatus);
+      notify.success(res.message || `Đã chuyển trạng thái chuyến xe sang ${toStatus}`);
       await loadTripData();
       onRefreshList && onRefreshList();
     } catch (err) {
       setError(err.message || 'Lỗi khi cập nhật trạng thái');
+      notify.error(err.message || 'Lỗi khi cập nhật trạng thái');
     } finally {
       setActionLoading(false);
     }

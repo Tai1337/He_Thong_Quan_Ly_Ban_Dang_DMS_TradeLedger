@@ -31,6 +31,7 @@ import ReceiveGoodsModal from '../PurchaseOrderList/ReceiveGoodsModal';
 import CancelCloseModal from '../PurchaseOrderList/CancelCloseModal';
 import CreatePurchaseOrderModal from '../PurchaseOrderList/CreatePurchaseOrderModal';
 import PrintPurchaseOrderModal from '../PurchaseOrderList/PrintPurchaseOrderModal';
+import { useNotification } from '../../../components/Common/NotificationProvider';
 import './PurchaseOrderDetail.css';
 
 const formatCurrency = (val) => new Intl.NumberFormat('vi-VN').format(val || 0);
@@ -38,6 +39,7 @@ const formatCurrency = (val) => new Intl.NumberFormat('vi-VN').format(val || 0);
 const PurchaseOrderDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { notify, confirm } = useNotification();
 
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -96,15 +98,21 @@ const PurchaseOrderDetail = () => {
   };
 
   const handleSendPO = async () => {
-    if (!window.confirm('Xác nhận gửi đơn đặt hàng này cho Nhà cung cấp?')) return;
+    const ok = await confirm({
+      title: 'Gửi đơn đặt hàng cho NCC',
+      message: 'Xác nhận gửi đơn đặt hàng này cho Nhà cung cấp?',
+      confirmText: 'Gửi đơn'
+    });
+    if (!ok) return;
     try {
       await sendPurchaseOrderToSupplier(order.id, {
         distributorId: 1,
         notes: 'Gửi đơn hàng mua từ màn hình chi tiết PO'
       });
+      notify.success('Đã gửi đơn đặt hàng cho Nhà cung cấp!');
       fetchOrderDetail();
     } catch (err) {
-      alert(err.message || 'Lỗi khi gửi đơn hàng');
+      notify.error(err.message || 'Lỗi khi gửi đơn hàng');
     }
   };
 

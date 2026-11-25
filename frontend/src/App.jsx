@@ -29,6 +29,7 @@ import UserManagement from './pages/Admin/UserManagement/UserManagement';
 import PromotionList from './pages/Promotions/PromotionList';
 import Layout from './components/Layout/Layout';
 import ErrorBoundary from './components/Common/ErrorBoundary';
+import { NotificationProvider } from './components/Common/NotificationProvider';
 import './index.css';
 
 function App() {
@@ -65,9 +66,10 @@ function App() {
   }, [user]);
 
   return (
-    <BrowserRouter>
-      <ErrorBoundary>
-        <Routes>
+    <NotificationProvider>
+      <BrowserRouter>
+        <ErrorBoundary>
+          <Routes>
         {/* Cổng Đặt Hàng Trực Tuyến (Public Web Bán Hàng) */}
         <Route path="/shop" element={<ShopHome />} />
         <Route path="/shop/product/:id" element={<ShopProductDetail />} />
@@ -375,8 +377,9 @@ function App() {
         {/* Catch-all route: Redirect everything else to Home (which then checks login) */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </ErrorBoundary>
-  </BrowserRouter>
+        </ErrorBoundary>
+      </BrowserRouter>
+    </NotificationProvider>
   );
 }
 

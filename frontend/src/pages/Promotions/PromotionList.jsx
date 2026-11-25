@@ -14,9 +14,11 @@ import {
 } from 'lucide-react';
 import { getPromotions, updatePromotion, deletePromotion } from '../../services/api';
 import CreatePromotionModal from './CreatePromotionModal';
+import { useNotification } from '../../components/Common/NotificationProvider';
 import './PromotionList.css';
 
 export default function PromotionList() {
+  const { notify, confirm } = useNotification();
   const [promotions, setPromotions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -52,12 +54,19 @@ export default function PromotionList() {
   };
 
   const handleDelete = async (promo) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa chương trình "${promo.name}"?`)) return;
+    const ok = await confirm({
+      title: 'Xóa chương trình khuyến mãi',
+      message: `Bạn có chắc chắn muốn xóa chương trình "${promo.name}"?`,
+      confirmText: 'Xóa',
+      variant: 'danger'
+    });
+    if (!ok) return;
     try {
       await deletePromotion(promo.id);
+      notify.success(`Đã xóa chương trình "${promo.name}"`);
       setPromotions((prev) => prev.filter((p) => p.id !== promo.id));
     } catch (err) {
-      alert('Không thể xóa khuyến mãi: ' + err.message);
+      notify.error('Không thể xóa khuyến mãi: ' + err.message);
     }
   };
 

@@ -199,12 +199,13 @@ export class DeliveryController {
     const {
       distributorId = 1,
       orderId,
+      deliveryResult,
       status,
-      deliveryFailedReason,
+      itemsDelivery,
       returnedItems,
+      notes,
+      deliveryFailedReason,
       returnNotes,
-      paymentCollected,
-      paymentMethod,
       changedById,
     } = body;
 
@@ -212,41 +213,46 @@ export class DeliveryController {
       tripId,
       distributorId,
       orderId,
-      status,
-      deliveryFailedReason,
-      returnedItems,
-      returnNotes,
-      paymentCollected,
-      paymentMethod,
+      deliveryResult: deliveryResult || status,
+      itemsDelivery: itemsDelivery || returnedItems || [],
+      notes: notes ?? deliveryFailedReason ?? returnNotes ?? '',
       changedById,
     });
   }
 
   @Post(':id/close-trip')
   async closeDeliveryTrip(@Param('id') tripId: string, @Body() body: any) {
-    const { distributorId = 1, destinationWarehouseId, notes, changedById } = body;
+    const {
+      distributorId = 1,
+      codHandedOver,
+      closeNotes,
+      notes,
+      closedById,
+      changedById,
+    } = body;
 
     return this.deliveryService.closeDeliveryTrip({
       tripId,
       distributorId,
-      destinationWarehouseId,
-      notes,
-      changedById,
+      codHandedOver,
+      closeNotes: closeNotes ?? notes ?? '',
+      closedById: closedById ?? changedById ?? null,
     });
   }
 
   @Patch(':id/status')
   async updateDeliveryTripStatus(@Param('id') id: string, @Body() body: any) {
-    const { distributorId = 1, status, changedById, notes } = body;
+    const { distributorId = 1, status, toStatus, changedById, notes } = body;
+    const targetStatus = status || toStatus;
 
-    if (!status) {
+    if (!targetStatus) {
       throw new BadRequestException('Trạng thái chuyến xe là bắt buộc');
     }
 
     return this.deliveryService.updateTripStatus({
       tripId: id,
       distributorId,
-      toStatus: status,
+      toStatus: targetStatus,
       changedById,
       notes,
     });

@@ -237,7 +237,24 @@ export class DeliveryTripService {
       const orderRawTotal = items.reduce((s: number, it: any) => s + (it.isPromotion ? 0 : it.totalAmount), 0);
       const invoiceTotal = order.invoice ? formatNumber(order.invoice.totalAmount) : orderRawTotal;
       const invoicePaid = order.invoice ? formatNumber(order.invoice.paidAmount) : 0;
-      const codAmount = Math.max(0, invoiceTotal - invoicePaid);
+
+      const totalOrderedQty = items.reduce((s: number, it: any) => s + it.quantity, 0);
+      const totalFailedQty = items.reduce((s: number, it: any) => s + (it.failedQuantity || 0), 0);
+      const totalDeliveredQty = items.reduce(
+        (s: number, it: any) => s + (it.deliveredQuantity !== null ? it.deliveredQuantity : it.quantity),
+        0,
+      );
+      const droppedValue = items.reduce(
+        (s: number, it: any) => s + (it.isPromotion ? 0 : (it.failedQuantity || 0) * it.unitPrice),
+        0,
+      );
+      const effectiveOrderTotal =
+        order.status === 'DELIVERY_FAILED'
+          ? 0
+          : totalFailedQty > 0
+            ? Math.max(0, invoiceTotal - droppedValue)
+            : invoiceTotal;
+      const codAmount = Math.max(0, effectiveOrderTotal - invoicePaid);
 
       return {
         id: order.id.toString(),
@@ -245,10 +262,15 @@ export class DeliveryTripService {
         status: order.status,
         deliveryNotes: order.deliveryNotes || '',
         orderWeightKg: Math.round(orderWeight * 10) / 10,
+        totalOrderedQty,
+        totalDeliveredQty,
+        totalFailedQty,
+        droppedValue: Math.round(droppedValue),
         totalAmount: invoiceTotal,
+        effectiveAmount: Math.round(effectiveOrderTotal),
         paidAmount: invoicePaid,
         remainingAmount: codAmount,
-        codAmount,
+        codAmount: Math.round(codAmount),
         invoiceStatus: order.invoice?.status || (codAmount === 0 ? 'PAID' : 'UNPAID'),
         invoiceCode: order.invoice?.invoiceCode || '',
         retailer: order.retailer
@@ -772,6 +794,120 @@ export class DeliveryTripService {
   }
 
   /**
+   * Helper: Trừ tồn kho vật lý và ghi nhật ký xuất kho (TXN-OUT) cho một dòng hàng đã giao
+   * Có fallback tìm/tạo lô tại kho đơn hàng nếu đơn mẫu chưa có bản ghi phân bổ lô (allocations).
+   */
+  private async deductStockAndRecordTxn(
+    tx: any,
+    {
+      order,
+      item,
+      deliveredQty,
+      changedById = null,
+    }: { order: any; item: any; deliveredQty: number; changedById?: any },
+  ) {
+    const allocations = item.allocations || [];
+
+    if (allocations.length > 0) {
+      let remainingToDeduct = deliveredQty;
+      for (const alloc of allocations) {
+        const allocQty = formatNumber(alloc.quantity);
+        const allocDelivered = Math.min(remainingToDeduct, allocQty);
+        remainingToDeduct = Math.max(0, remainingToDeduct - allocDelivered);
+
+        const balanceUpdate: any = {
+          quantityReserved: { decrement: allocQty },
+        };
+        if (allocDelivered > 0) {
+          balanceUpdate.quantityOnHand = { decrement: allocDelivered };
+        }
+
+        await tx.stockBalance.update({
+          where: { lotId: alloc.lotId },
+          data: balanceUpdate,
+        });
+
+        if (allocDelivered > 0) {
+          await tx.inventoryTransaction.create({
+            data: {
+              transactionCode: `TXN-OUT-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
+              direction: 'OUT',
+              lotId: alloc.lotId,
+              warehouseId: order.warehouseId,
+              quantity: allocDelivered,
+              unitPrice: item.unitPrice,
+              referenceType: 'SALES_ORDER',
+              referenceId: order.id,
+              createdById: changedById ? BigInt(changedById) : null,
+            },
+          });
+        }
+      }
+      return;
+    }
+
+    if (deliveredQty <= 0) return;
+
+    // Fallback khi đơn không có allocations: tìm lô theo kho của đơn (ưu tiên GOOD, FEFO)
+    let fallbackLot = await tx.stockLot.findFirst({
+      where: {
+        productId: item.productId,
+        warehouseId: order.warehouseId,
+      },
+      include: { stockBalance: true },
+      orderBy: [{ status: 'asc' }, { expiryDate: 'asc' }],
+    });
+
+    if (!fallbackLot) {
+      fallbackLot = await tx.stockLot.create({
+        data: {
+          productId: item.productId,
+          warehouseId: order.warehouseId,
+          lotNumber: `LOT-OUT-${new Date().getFullYear()}`,
+          status: 'GOOD',
+          locationCode: 'DEFAULT',
+          locationName: 'Kho xuất bán',
+        },
+      });
+    }
+
+    const existingBalance = await tx.stockBalance.findUnique({
+      where: { lotId: fallbackLot.id },
+    });
+
+    if (existingBalance) {
+      const currentOnHand = formatNumber(existingBalance.quantityOnHand);
+      const nextOnHand = Math.max(0, currentOnHand - deliveredQty);
+      await tx.stockBalance.update({
+        where: { lotId: fallbackLot.id },
+        data: { quantityOnHand: nextOnHand },
+      });
+    } else {
+      await tx.stockBalance.create({
+        data: {
+          lotId: fallbackLot.id,
+          quantityOnHand: 0,
+          quantityReserved: 0,
+        },
+      });
+    }
+
+    await tx.inventoryTransaction.create({
+      data: {
+        transactionCode: `TXN-OUT-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
+        direction: 'OUT',
+        lotId: fallbackLot.id,
+        warehouseId: order.warehouseId,
+        quantity: deliveredQty,
+        unitPrice: item.unitPrice,
+        referenceType: 'SALES_ORDER',
+        referenceId: order.id,
+        createdById: changedById ? BigInt(changedById) : null,
+      },
+    });
+  }
+
+  /**
    * 7. Cập nhật trạng thái chuyến xe
    */
   async updateTripStatus({ tripId, distributorId = 1, toStatus, changedById = null, notes = '' }: UpdateTripStatusParams) {
@@ -782,7 +918,13 @@ export class DeliveryTripService {
           distributorId: BigInt(distributorId),
         },
         include: {
-          salesOrders: true,
+          salesOrders: {
+            include: {
+              items: {
+                include: { allocations: true },
+              },
+            },
+          },
         },
       });
 
@@ -827,6 +969,24 @@ export class DeliveryTripService {
 
         const pendingShippedOrders = trip.salesOrders.filter((o: any) => o.status === 'SHIPPED');
         for (const order of pendingShippedOrders) {
+          for (const item of order.items || []) {
+            const itemQty = formatNumber(item.quantity);
+            await tx.salesOrderItem.update({
+              where: { id: item.id },
+              data: {
+                deliveredQuantity: itemQty,
+                failedQuantity: 0,
+              },
+            });
+
+            await this.deductStockAndRecordTxn(tx, {
+              order,
+              item,
+              deliveredQty: itemQty,
+              changedById,
+            });
+          }
+
           await tx.salesOrder.update({
             where: { id: order.id },
             data: { status: 'DELIVERED', deliveryNotes: 'Xác nhận hoàn tất theo chuyến xe' },
@@ -838,7 +998,7 @@ export class DeliveryTripService {
               fromStatus: 'SHIPPED',
               toStatus: 'DELIVERED',
               changedById: changedById ? BigInt(changedById) : null,
-              notes: `Chuyến xe [${trip.tripCode}] hoàn tất. Đơn hàng tự động xác nhận đã giao.`,
+              notes: `Chuyến xe [${trip.tripCode}] hoàn tất. Đơn hàng tự động xác nhận đã giao đủ.`,
             },
           });
         }
@@ -1056,31 +1216,12 @@ export class DeliveryTripService {
             },
           });
 
-          for (const alloc of item.allocations || []) {
-            const allocQty = formatNumber(alloc.quantity);
-
-            await tx.stockBalance.update({
-              where: { lotId: alloc.lotId },
-              data: {
-                quantityOnHand: { decrement: allocQty },
-                quantityReserved: { decrement: allocQty },
-              },
-            });
-
-            await tx.inventoryTransaction.create({
-              data: {
-                transactionCode: `TXN-OUT-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
-                direction: 'OUT',
-                lotId: alloc.lotId,
-                warehouseId: order.warehouseId,
-                quantity: allocQty,
-                unitPrice: item.unitPrice,
-                referenceType: 'SALES_ORDER',
-                referenceId: order.id,
-                createdById: changedById ? BigInt(changedById) : null,
-              },
-            });
-          }
+          await this.deductStockAndRecordTxn(tx, {
+            order,
+            item,
+            deliveredQty: itemQty,
+            changedById,
+          });
         }
 
         await tx.salesOrder.update({
@@ -1122,40 +1263,12 @@ export class DeliveryTripService {
             },
           });
 
-          let remainingToDeduct = deliveredQty;
-          for (const alloc of item.allocations || []) {
-            const allocQty = formatNumber(alloc.quantity);
-            const allocDelivered = Math.min(remainingToDeduct, allocQty);
-            remainingToDeduct = Math.max(0, remainingToDeduct - allocDelivered);
-
-            const balanceUpdate: any = {
-              quantityReserved: { decrement: allocQty },
-            };
-            if (allocDelivered > 0) {
-              balanceUpdate.quantityOnHand = { decrement: allocDelivered };
-            }
-
-            await tx.stockBalance.update({
-              where: { lotId: alloc.lotId },
-              data: balanceUpdate,
-            });
-
-            if (allocDelivered > 0) {
-              await tx.inventoryTransaction.create({
-                data: {
-                  transactionCode: `TXN-OUT-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
-                  direction: 'OUT',
-                  lotId: alloc.lotId,
-                  warehouseId: order.warehouseId,
-                  quantity: allocDelivered,
-                  unitPrice: item.unitPrice,
-                  referenceType: 'SALES_ORDER',
-                  referenceId: order.id,
-                  createdById: changedById ? BigInt(changedById) : null,
-                },
-              });
-            }
-          }
+          await this.deductStockAndRecordTxn(tx, {
+            order,
+            item,
+            deliveredQty,
+            changedById,
+          });
         }
 
         const noteContent = `Giao một phần (Thực giao: ${totalDeliveredItemsCount} thùng, rớt: ${totalFailedItemsCount} thùng). ${notes ? `Lý do: ${notes}` : ''}`;

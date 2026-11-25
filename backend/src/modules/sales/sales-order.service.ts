@@ -671,31 +671,78 @@ export class SalesOrderService {
       }
 
       for (const item of order.items) {
-        for (const alloc of item.allocations || []) {
-          const qty = Number(alloc.quantity);
+        const allocations = item.allocations || [];
+        if (allocations.length > 0) {
+          for (const alloc of allocations) {
+            const qty = Number(alloc.quantity);
 
-          await tx.stockBalance.update({
-            where: { lotId: alloc.lotId },
-            data: {
-              quantityOnHand: { decrement: qty },
-              quantityReserved: { decrement: qty },
-            },
-          });
+            await tx.stockBalance.update({
+              where: { lotId: alloc.lotId },
+              data: {
+                quantityOnHand: { decrement: qty },
+                quantityReserved: { decrement: qty },
+              },
+            });
 
-          const txnCode = `TXN-OUT-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-          await tx.inventoryTransaction.create({
-            data: {
-              transactionCode: txnCode,
-              direction: 'OUT',
-              lotId: alloc.lotId,
-              warehouseId: order.warehouseId,
-              quantity: qty,
-              unitPrice: item.unitPrice,
-              referenceType: 'SALES_ORDER',
-              referenceId: order.id,
-              createdById: changedById ? BigInt(changedById) : null,
-            },
-          });
+            const txnCode = `TXN-OUT-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+            await tx.inventoryTransaction.create({
+              data: {
+                transactionCode: txnCode,
+                direction: 'OUT',
+                lotId: alloc.lotId,
+                warehouseId: order.warehouseId,
+                quantity: qty,
+                unitPrice: item.unitPrice,
+                referenceType: 'SALES_ORDER',
+                referenceId: order.id,
+                createdById: changedById ? BigInt(changedById) : null,
+              },
+            });
+          }
+        } else {
+          const itemQty = Number(item.quantity) || 0;
+          if (itemQty > 0) {
+            let fallbackLot = await tx.stockLot.findFirst({
+              where: { productId: item.productId, warehouseId: order.warehouseId },
+              orderBy: [{ status: 'asc' }, { expiryDate: 'asc' }],
+            });
+            if (!fallbackLot) {
+              fallbackLot = await tx.stockLot.create({
+                data: {
+                  productId: item.productId,
+                  warehouseId: order.warehouseId,
+                  lotNumber: `LOT-OUT-${new Date().getFullYear()}`,
+                  status: 'GOOD',
+                  locationCode: 'DEFAULT',
+                  locationName: 'Kho xuất bán',
+                },
+              });
+              await tx.stockBalance.create({
+                data: { lotId: fallbackLot.id, quantityOnHand: 0, quantityReserved: 0 },
+              });
+            } else {
+              const bal = await tx.stockBalance.findUnique({ where: { lotId: fallbackLot.id } });
+              if (bal) {
+                await tx.stockBalance.update({
+                  where: { lotId: fallbackLot.id },
+                  data: { quantityOnHand: Math.max(0, Number(bal.quantityOnHand) - itemQty) },
+                });
+              }
+            }
+            await tx.inventoryTransaction.create({
+              data: {
+                transactionCode: `TXN-OUT-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
+                direction: 'OUT',
+                lotId: fallbackLot.id,
+                warehouseId: order.warehouseId,
+                quantity: itemQty,
+                unitPrice: item.unitPrice,
+                referenceType: 'SALES_ORDER',
+                referenceId: order.id,
+                createdById: changedById ? BigInt(changedById) : null,
+              },
+            });
+          }
         }
       }
 

@@ -27,9 +27,11 @@ import {
   deletePromotion,
   getProducts
 } from '../../../services/api';
+import { useNotification } from '../../../components/Common/NotificationProvider';
 import './PromotionList.css';
 
 export default function PromotionList() {
+  const { confirm } = useNotification();
   const [promotions, setPromotions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -123,7 +125,13 @@ export default function PromotionList() {
   };
 
   const handleDelete = async (promo) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa khuyến mãi "${promo.name}"?`)) return;
+    const ok = await confirm({
+      title: 'Xóa chương trình khuyến mãi',
+      message: `Bạn có chắc chắn muốn xóa khuyến mãi "${promo.name}"?`,
+      confirmText: 'Xóa',
+      variant: 'danger'
+    });
+    if (!ok) return;
     try {
       await deletePromotion(promo.id);
       setSuccessMessage(`Đã xóa khuyến mãi thành công!`);

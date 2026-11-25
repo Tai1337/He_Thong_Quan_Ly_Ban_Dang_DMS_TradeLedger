@@ -258,7 +258,9 @@ const FrappeSidebar = ({ user }) => {
             const Icon = item.icon;
             const isRouteActive =
               (item.path === '/' && location.pathname === '/') ||
-              (item.path !== '/' && item.path !== '#' && location.pathname.startsWith(item.path));
+              (item.id !== 'home' &&
+                ((item.path !== '/' && item.path !== '#' && location.pathname.startsWith(item.path)) ||
+                  (item.subItems && item.subItems.some((sub) => location.pathname === sub.path.split('?')[0]))));
             const isHovered = hoveredModuleId === item.id;
 
             return (

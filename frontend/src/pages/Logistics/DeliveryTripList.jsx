@@ -14,7 +14,6 @@ import {
   ArrowUpRight,
   ChevronLeft,
   ChevronRight,
-  SlidersHorizontal,
   Send,
   Lock,
   User,
@@ -25,7 +24,6 @@ import {
 import { useDeliveryTrips } from '../../hooks/useDeliveryTrips';
 import { getDriverAvailability } from '../../services/api';
 import CreateTripModal from './CreateTripModal';
-import TripDispatchConsoleModal from './TripDispatchConsoleModal';
 import BatchPrintRPT002Modal from './BatchPrintRPT002Modal';
 import './DeliveryTripList.css';
 
@@ -45,11 +43,11 @@ export default function DeliveryTripList() {
   const { trips, total, loading, error, refetch } = useDeliveryTrips(filters);
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(() => autoCreate && incomingOrderIds.length > 0);
-  const [selectedTripId, setSelectedTripId] = useState(null);
 
-  // Multi-select for Batch Print RPT002
+  // Multi-select or single-row Print RPT002
   const [selectedTripIds, setSelectedTripIds] = useState([]);
   const [isBatchPrintOpen, setIsBatchPrintOpen] = useState(false);
+  const [singlePrintTripId, setSinglePrintTripId] = useState(null);
 
   // Trạng thái đội ngũ tài xế
   const [driverFleet, setDriverFleet] = useState([]);
@@ -435,20 +433,20 @@ export default function DeliveryTripList() {
                       <Link
                         to={`/logistics/delivery-trips/${trip.id}`}
                         className="btn-table-action-detail"
-                        title="Xem chi tiết & in chứng từ RPT002, RPT004, RPT006"
+                        title="Xem chi tiết chuyến xe, điều phối và chứng từ"
                       >
                         <FileText size={13} />
-                        <span>Xem & In</span>
+                        <span>Chi tiết</span>
                       </Link>
 
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         className="btn-table-action-dispatch"
-                        onClick={() => setSelectedTripId(trip.id)}
-                        title="Mở bàn điều phối bốc xếp và gán lô hàng"
+                        onClick={() => setSinglePrintTripId(trip.id)}
+                        title="In nhanh Phiếu Xuất Kho (RPT002) cho chuyến xe này"
                       >
-                        <SlidersHorizontal size={13} />
-                        <span>Điều Phối</span>
+                        <Printer size={13} />
+                        <span>In RPT002</span>
                       </button>
                     </div>
                   </td>
@@ -490,21 +488,14 @@ export default function DeliveryTripList() {
         initialOrderIds={incomingOrderIds}
       />
 
-      {/* Modal Bàn điều phối bốc xếp đơn hàng & Bảng kê số lô */}
-      {selectedTripId && (
-        <TripDispatchConsoleModal 
-          tripId={selectedTripId}
-          isOpen={Boolean(selectedTripId)}
-          onClose={() => setSelectedTripId(null)}
-          onRefreshList={refetch}
-        />
-      )}
-
-      {/* Modal In Tổng Hợp Phiếu Xuất Kho (RPT002) */}
+      {/* Modal In Phiếu Xuất Kho (RPT002) - đơn lẻ hoặc gộp nhiều chuyến */}
       <BatchPrintRPT002Modal
-        isOpen={isBatchPrintOpen}
-        onClose={() => setIsBatchPrintOpen(false)}
-        tripIds={selectedTripIds}
+        isOpen={isBatchPrintOpen || Boolean(singlePrintTripId)}
+        onClose={() => {
+          setIsBatchPrintOpen(false);
+          setSinglePrintTripId(null);
+        }}
+        tripIds={singlePrintTripId ? [singlePrintTripId] : selectedTripIds}
       />
     </div>
   );

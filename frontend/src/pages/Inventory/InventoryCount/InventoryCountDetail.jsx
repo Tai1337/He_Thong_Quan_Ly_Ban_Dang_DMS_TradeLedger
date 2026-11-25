@@ -34,6 +34,7 @@ import {
   cancelInventoryCount,
   exportInventoryCountExcel
 } from '../../../services/api';
+import { useNotification } from '../../../components/Common/NotificationProvider';
 import './InventoryCountDetail.css';
 
 const PRESET_REASONS = [
@@ -85,6 +86,7 @@ const InventoryCountDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+  const { notify, confirm } = useNotification();
 
   const [count, setCount] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -169,8 +171,13 @@ const InventoryCountDetail = () => {
   };
 
   // Tự động điền khớp tồn hệ thống cho các dòng chưa đếm
-  const handleAutoFillMatch = () => {
-    if (!window.confirm('Tự động điền số lượng thực tế bằng số tồn hệ thống cho tất cả các dòng chưa nhập?')) return;
+  const handleAutoFillMatch = async () => {
+    const ok = await confirm({
+      title: 'Tự động điền khớp tồn hệ thống',
+      message: 'Tự động điền số lượng thực tế bằng số tồn hệ thống cho tất cả các dòng chưa nhập?',
+      confirmText: 'Điền tự động'
+    });
+    if (!ok) return;
     setItemsData((prev) =>
       prev.map((item) => {
         if (item.actualQuantity === '' || item.actualQuantity === null) {
@@ -291,7 +298,12 @@ const InventoryCountDetail = () => {
       return;
     }
 
-    if (!window.confirm('Xác nhận gửi phiếu kiểm kê này lên Quản lý duyệt cân kho? Sau khi gửi sẽ không thể sửa số lượng.')) return;
+    const ok = await confirm({
+      title: 'Gửi duyệt phiếu kiểm kê',
+      message: 'Xác nhận gửi phiếu kiểm kê này lên Quản lý duyệt cân kho? Sau khi gửi sẽ không thể sửa số lượng.',
+      confirmText: 'Gửi duyệt'
+    });
+    if (!ok) return;
 
     setSaving(true);
     try {
@@ -306,10 +318,10 @@ const InventoryCountDetail = () => {
       };
       await updateInventoryCountItems(id, payload, 1);
       await submitInventoryCount(id, 1);
-      alert('Đã gửi duyệt phiếu kiểm kê thành công!');
+      notify.success('Đã gửi duyệt phiếu kiểm kê thành công!');
       fetchDetail();
     } catch (err) {
-      alert(err.message || 'Lỗi khi gửi duyệt phiếu kiểm kê');
+      notify.error(err.message || 'Lỗi khi gửi duyệt phiếu kiểm kê');
     } finally {
       setSaving(false);
     }
@@ -317,15 +329,20 @@ const InventoryCountDetail = () => {
 
   // Phê duyệt & Cân kho (Approve)
   const handleApprove = async () => {
-    if (!window.confirm('Xác nhận PHÊ DUYỆT & CÂN KHO? Hệ thống sẽ tự động cập nhật số dư tồn kho về số thực tế và ghi nhận giao dịch kho đối ứng.')) return;
+    const ok = await confirm({
+      title: 'Phê duyệt & Cân kho',
+      message: 'Xác nhận PHÊ DUYỆT & CÂN KHO? Hệ thống sẽ tự động cập nhật số dư tồn kho về số thực tế và ghi nhận giao dịch kho đối ứng.',
+      confirmText: 'Phê duyệt & Cân kho'
+    });
+    if (!ok) return;
 
     setSaving(true);
     try {
       const res = await approveInventoryCount(id, { userId: 1 }, 1);
-      alert(`Phê duyệt & Cân kho thành công! Đã sinh chứng từ điều chỉnh tồn kho ${res.adjustmentCode || ''}`);
+      notify.success(`Phê duyệt & Cân kho thành công! Đã sinh chứng từ điều chỉnh tồn kho ${res.adjustmentCode || ''}`);
       fetchDetail();
     } catch (err) {
-      alert(err.message || 'Lỗi khi phê duyệt phiếu kiểm kê');
+      notify.error(err.message || 'Lỗi khi phê duyệt phiếu kiểm kê');
     } finally {
       setSaving(false);
     }
@@ -334,17 +351,17 @@ const InventoryCountDetail = () => {
   // Từ chối duyệt (Reject)
   const handleRejectSubmit = async () => {
     if (!rejectReason) {
-      alert('Vui lòng nhập lý do từ chối');
+      notify.warning('Vui lòng nhập lý do từ chối');
       return;
     }
     setSaving(true);
     try {
       await rejectInventoryCount(id, rejectReason, 1);
       setShowRejectModal(false);
-      alert('Đã từ chối duyệt phiếu kiểm kê');
+      notify.info('Đã từ chối duyệt phiếu kiểm kê');
       fetchDetail();
     } catch (err) {
-      alert(err.message || 'Lỗi khi từ chối');
+      notify.error(err.message || 'Lỗi khi từ chối');
     } finally {
       setSaving(false);
     }
@@ -352,14 +369,20 @@ const InventoryCountDetail = () => {
 
   // Hủy phiếu
   const handleCancel = async () => {
-    if (!window.confirm('Bạn có chắc chắn muốn HỦY phiếu kiểm kê này không? Hành động này không thể hoàn tác.')) return;
+    const ok = await confirm({
+      title: 'Hủy phiếu kiểm kê',
+      message: 'Bạn có chắc chắn muốn HỦY phiếu kiểm kê này không? Hành động này không thể hoàn tác.',
+      confirmText: 'Hủy phiếu',
+      variant: 'danger'
+    });
+    if (!ok) return;
     setSaving(true);
     try {
       await cancelInventoryCount(id, 1);
-      alert('Đã hủy phiếu kiểm kê');
+      notify.info('Đã hủy phiếu kiểm kê');
       fetchDetail();
     } catch (err) {
-      alert(err.message || 'Lỗi khi hủy phiếu');
+      notify.error(err.message || 'Lỗi khi hủy phiếu');
     } finally {
       setSaving(false);
     }

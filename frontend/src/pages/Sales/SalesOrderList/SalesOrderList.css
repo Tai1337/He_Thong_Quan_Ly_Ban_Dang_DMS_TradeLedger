@@ -107,48 +107,61 @@
 /* Filters Section */
 .filters-section {
   background-color: #ffffff;
-  padding: 18px 20px;
+  padding: 16px 20px;
   border-radius: 8px;
+  border: 1px solid #e2e8f0;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   display: flex;
   flex-direction: column;
-  gap: 14px;
-}
-
-.filter-row {
-  display: flex;
   gap: 12px;
-  flex-wrap: wrap;
+}
+
+.sales-order-list-container .filter-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 12px;
   align-items: center;
+  width: 100%;
 }
 
-.filter-item {
-  flex: 1 1 190px;
-  max-width: 260px;
+.sales-order-list-container .filter-item {
+  min-width: 0;
+  width: 100%;
 }
 
-.date-type-item {
-  max-width: 170px;
-  flex: 0 0 170px;
+.sales-order-list-container .filter-col-2 {
+  grid-column: span 2;
+}
+
+.sales-order-list-container .filter-col-3 {
+  grid-column: span 3;
+}
+
+.sales-order-list-container .filter-col-4 {
+  grid-column: span 4;
 }
 
 .date-range-inputs {
   display: flex;
   align-items: center;
-  gap: 6px;
-  min-width: 250px;
-  max-width: 290px;
-  flex: 0 0 290px;
+  gap: 8px;
+}
+
+.date-range-inputs input[type="date"] {
+  flex: 1;
+  min-width: 0;
 }
 
 .date-sep {
   color: #94a3b8;
-  font-weight: bold;
+  font-weight: 600;
+  flex-shrink: 0;
 }
 
 .filter-item input, .filter-item select {
   width: 100%;
-  padding: 8px 12px;
+  height: 38px;
+  padding: 0 12px;
   border: 1px solid #cbd5e1;
   border-radius: 6px;
   font-size: 13px;
@@ -156,7 +169,13 @@
   outline: none;
   background-color: #ffffff;
   box-sizing: border-box;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.filter-item select:disabled {
+  background-color: #f8fafc;
+  color: #475569;
+  cursor: not-allowed;
 }
 
 .filter-item input:focus, .filter-item select:focus {
@@ -166,7 +185,8 @@
 
 .btn-status-multiselect {
   width: 100%;
-  padding: 8px 12px;
+  height: 38px;
+  padding: 0 12px;
   border: 1px solid #cbd5e1;
   border-radius: 6px;
   font-size: 13px;
@@ -175,8 +195,21 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
   cursor: pointer;
   text-align: left;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.btn-status-multiselect:hover {
+  border-color: #94a3b8;
+}
+
+.status-multiselect-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .status-dropdown-menu {
@@ -294,16 +327,17 @@
 }
 
 /* Search and Reset Buttons */
-.filter-actions {
+.sales-order-list-container .filter-actions {
   display: flex;
   align-items: center;
   gap: 8px;
-  max-width: 240px;
+  width: 100%;
 }
 
-.btn-search {
+.sales-order-list-container .btn-search {
   flex: 1;
-  padding: 8px 16px;
+  height: 38px;
+  padding: 0 14px;
   background-color: #1a73e8;
   color: white;
   border: none;
@@ -315,29 +349,61 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
+  white-space: nowrap;
   transition: background 0.15s;
 }
 
-.btn-search:hover {
+.sales-order-list-container .btn-search:hover {
   background-color: #1557b0;
 }
 
-.btn-reset {
-  padding: 8px 12px;
+.sales-order-list-container .btn-reset {
+  height: 38px;
+  padding: 0 12px;
   background-color: #f8fafc;
-  color: #64748b;
+  color: #475569;
   border: 1px solid #cbd5e1;
   border-radius: 6px;
   font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  gap: 5px;
+  white-space: nowrap;
+  transition: background-color 0.15s, color 0.15s;
 }
 
-.btn-reset:hover {
+.sales-order-list-container .btn-reset:hover {
   background-color: #f1f5f9;
   color: #0f172a;
+}
+
+@media (max-width: 1180px) {
+  .sales-order-list-container .filter-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+  .sales-order-list-container .filter-col-2 {
+    grid-column: span 2;
+  }
+  .sales-order-list-container .filter-col-4 {
+    grid-column: span 4;
+  }
+  .sales-order-list-container .filter-col-3 {
+    grid-column: span 3;
+  }
+}
+
+@media (max-width: 768px) {
+  .sales-order-list-container .filter-grid {
+    grid-template-columns: 1fr;
+  }
+  .sales-order-list-container .filter-col-2,
+  .sales-order-list-container .filter-col-3,
+  .sales-order-list-container .filter-col-4 {
+    grid-column: span 1;
+  }
 }
 
 /* KPI Cards Row - Căn chỉnh cùng hàng, đầu - cuối với bộ lọc */

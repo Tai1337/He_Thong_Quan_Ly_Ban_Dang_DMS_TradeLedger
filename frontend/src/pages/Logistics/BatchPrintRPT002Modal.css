@@ -69,6 +69,23 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
+}
+
+.order-filter-dropdown {
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #0f172a;
+  background-color: #ffffff;
+  outline: none;
+  max-width: 280px;
+}
+
+.order-filter-dropdown:focus {
+  border-color: #2563eb;
 }
 
 .btn-batch-print {
