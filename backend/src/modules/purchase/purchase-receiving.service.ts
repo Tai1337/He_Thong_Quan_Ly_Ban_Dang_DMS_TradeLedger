@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import prisma from '../../prisma/prisma.client';
 import {
@@ -8,29 +8,13 @@ import {
   findInboundTripById,
   findInboundTripForReceiving,
 } from './purchase-receiving.repository';
+import { ReceiveTripGoodsDto } from './dto/receive-purchase.dto';
+import {
+  executeReceiveLinesInTx,
+  normalizeAndValidateReceiveLines,
+} from './purchase-receiving.helper';
 
 const formatNumber = (num: any): number => Number(num || 0);
-
-// Helper sinh mã giao dịch nhập kho
-const generateTxnCode = (): string => {
-  const now = new Date();
-  const datePart = now.toISOString().slice(0, 10).replace(/-/g, '');
-  const randomPart = Math.floor(1000 + Math.random() * 9000);
-  return `TXN-IN-${datePart}-${randomPart}`;
-};
-
-export interface ReceiveTripGoodsDto {
-  tripId: string | number | bigint;
-  distributorId?: string | number | bigint;
-  receivedItems: Array<{
-    poItemId: string | number | bigint;
-    quantityReceivedNow: number;
-    lotNumber?: string;
-    mfgDate?: string | Date;
-    expDate?: string | Date;
-  }>;
-  userId?: string | number | bigint;
-}
 
 @Injectable()
 export class PurchaseReceivingService {
@@ -185,156 +169,60 @@ export class PurchaseReceivingService {
   /**
    * Thực hiện Nhập kho theo Chuyến xe
    */
-  async receiveTripGoods({ tripId, distributorId = 1, receivedItems = [], userId = null }: ReceiveTripGoodsDto) {
+  async receiveTripGoods({
+    tripId,
+    distributorId = 1,
+    receivedItems = [],
+    userId = null,
+    notes = null,
+  }: ReceiveTripGoodsDto) {
     const trip = await this.purchaseReceivingRepo.findInboundTripForReceiving(tripId, distributorId);
 
-    if (!trip) throw new Error('Không tìm thấy chuyến xe hàng về');
-    if (!receivedItems || receivedItems.length === 0) {
-      throw new Error('Vui lòng nhập số lượng nhận cho ít nhất một sản phẩm');
+    if (!trip) {
+      throw new NotFoundException({ error: 'Không tìm thấy chuyến xe hàng về' });
+    }
+    if (trip.status === 'CANCELLED') {
+      throw new BadRequestException({ error: 'Chuyến xe đã bị hủy, không thể nhập kho' });
+    }
+    if (trip.status === 'COMPLETED') {
+      throw new BadRequestException({ error: 'Chuyến xe này đã hoàn tất nhập kho trước đó' });
     }
 
+    const poItemsMap = new Map<string, any>();
+    for (const po of trip.purchaseOrders || []) {
+      if (po.status === 'CANCELLED' || po.status === 'DRAFT') continue;
+      for (const item of po.items || []) {
+        poItemsMap.set(item.id.toString(), {
+          ...item,
+          purchaseOrderId: po.id,
+        });
+      }
+    }
+
+    if (poItemsMap.size === 0) {
+      throw new BadRequestException({ error: 'Chuyến xe chưa có đơn đặt hàng hợp lệ ở trạng thái chờ nhận' });
+    }
+
+    // Bổ sung product info nếu repository chưa include product trong findInboundTripForReceiving
+    const normalizedLines = normalizeAndValidateReceiveLines(receivedItems, poItemsMap);
+
     const warehouseId = trip.warehouseId;
-    const today = new Date();
 
     const result = await this.prisma.$transaction(async (tx: any) => {
-      const processedItems: any[] = [];
-      const affectedPoIds = new Set<bigint>();
-
-      for (const row of receivedItems) {
-        const receiveQty = Number(row.quantityReceivedNow || 0);
-        if (receiveQty <= 0) continue;
-
-        const poItemId = BigInt(row.poItemId);
-        const poItem = await tx.purchaseOrderItem.findUnique({
-          where: { id: poItemId },
-          include: { purchaseOrder: true },
-        });
-
-        if (!poItem) throw new Error(`Không tìm thấy dòng đặt hàng ID ${row.poItemId}`);
-
-        const poId = poItem.purchaseOrderId;
-        affectedPoIds.add(poId);
-
-        const newReceived = formatNumber(poItem.quantityReceived) + receiveQty;
-        await tx.purchaseOrderItem.update({
-          where: { id: poItemId },
-          data: { quantityReceived: newReceived },
-        });
-
-        const lotNumber = (row.lotNumber || `LOT-${today.toISOString().slice(0, 10).replace(/-/g, '')}`).trim();
-        let mfgDate = row.mfgDate ? new Date(row.mfgDate) : new Date(today);
-        let expDate = row.expDate ? new Date(row.expDate) : null;
-        if (!expDate) {
-          expDate = new Date(mfgDate);
-          expDate.setMonth(expDate.getMonth() + 12);
-        }
-
-        let stockLot = await tx.stockLot.findFirst({
-          where: {
-            productId: poItem.productId,
-            warehouseId: warehouseId,
-            lotNumber: lotNumber,
-          },
-        });
-
-        if (!stockLot) {
-          stockLot = await tx.stockLot.create({
-            data: {
-              productId: poItem.productId,
-              warehouseId: warehouseId,
-              lotNumber: lotNumber,
-              manufactureDate: mfgDate,
-              expiryDate: expDate,
-              status: 'GOOD',
-            },
-          });
-        }
-
-        const balance = await tx.stockBalance.findUnique({
-          where: { lotId: stockLot.id },
-        });
-
-        if (balance) {
-          await tx.stockBalance.update({
-            where: { lotId: stockLot.id },
-            data: {
-              quantityOnHand: { increment: receiveQty },
-            },
-          });
-        } else {
-          await tx.stockBalance.create({
-            data: {
-              lotId: stockLot.id,
-              quantityOnHand: receiveQty,
-              quantityReserved: 0,
-            },
-          });
-        }
-
-        const txn = await tx.inventoryTransaction.create({
-          data: {
-            transactionCode: generateTxnCode(),
-            direction: 'IN',
-            lotId: stockLot.id,
-            warehouseId: warehouseId,
-            quantity: receiveQty,
-            unitPrice: poItem.unitPrice,
-            referenceType: 'PURCHASE_ORDER',
-            referenceId: poId,
-            createdById: userId ? BigInt(userId) : null,
-          },
-        });
-
-        processedItems.push({
-          poItemId: poItemId.toString(),
-          productId: poItem.productId.toString(),
-          quantityReceivedNow: receiveQty,
-          lotNumber,
-          transactionCode: txn.transactionCode,
-        });
-      }
-
-      for (const poId of affectedPoIds) {
-        const allItems = await tx.purchaseOrderItem.findMany({
-          where: { purchaseOrderId: poId },
-        });
-
-        const allCompleted = allItems.every((it: any) => formatNumber(it.quantityReceived) >= formatNumber(it.quantity));
-        const hasAnyReceived = allItems.some((it: any) => formatNumber(it.quantityReceived) > 0);
-
-        const newPoStatus = allCompleted ? 'COMPLETED' : hasAnyReceived ? 'PARTIALLY_RECEIVED' : 'WAITING_RECEIVE';
-
-        await tx.purchaseOrder.update({
-          where: { id: poId },
-          data: { status: newPoStatus },
-        });
-
-        await tx.purchaseOrderStatusHistory.create({
-          data: {
-            purchaseOrderId: poId,
-            toStatus: newPoStatus,
-            changedById: userId ? BigInt(userId) : null,
-            notes: `Nhập kho từ chuyến xe ${trip.tripCode}: đã nhận ${processedItems.length} mặt hàng.`,
-          },
-        });
-      }
-
-      const checkPoStatus = await tx.purchaseOrder.findMany({
-        where: { deliveryTripId: trip.id },
-      });
-
-      const isAllPoCompleted = checkPoStatus.every((p: any) => p.status === 'COMPLETED');
-      const newTripStatus = isAllPoCompleted ? 'COMPLETED' : 'SHIPPING';
-
-      const updatedTrip = await tx.deliveryTrip.update({
-        where: { id: trip.id },
-        data: { status: newTripStatus },
+      const txResult = await executeReceiveLinesInTx({
+        tx,
+        warehouseId,
+        userId,
+        lines: normalizedLines,
+        poItemsMap,
+        historyNotePrefix: `Nhập kho từ chuyến xe ${trip.tripCode}`,
+        customNotes: notes,
       });
 
       return {
-        updatedTripStatus: updatedTrip.status,
-        processedItemsCount: processedItems.length,
-        processedItems,
+        updatedTripStatus: txResult.syncedTripStatus || trip.status,
+        processedItemsCount: txResult.processedItems.length,
+        processedItems: txResult.processedItems,
       };
     });
 

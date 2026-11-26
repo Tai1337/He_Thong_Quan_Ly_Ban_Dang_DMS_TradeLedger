@@ -521,11 +521,14 @@ export class ReportDataService {
     if (periodicity === 'Theo Tháng') {
       chartData = Object.keys(monthlyData).map((mStr) => {
         const m = Number(mStr);
+        const income = monthlyData[m].income;
+        const netProfitPeriod = monthlyData[m].netProfit;
         return {
           period: `Tháng ${m + 1}`,
-          income: monthlyData[m].income,
+          income,
           expense: monthlyData[m].expense,
-          netProfit: monthlyData[m].netProfit,
+          netProfit: netProfitPeriod,
+          profitMargin: income > 0 ? Number(((netProfitPeriod / income) * 100).toFixed(1)) : 0,
         };
       });
     } else {
@@ -538,11 +541,13 @@ export class ReportDataService {
       chartData = quarters.map((q) => {
         const qIncome = q.months.reduce((sum, m) => sum + monthlyData[m].income, 0);
         const qExpense = q.months.reduce((sum, m) => sum + monthlyData[m].expense, 0);
+        const qNetProfit = qIncome - qExpense;
         return {
           period: q.label,
           income: qIncome,
           expense: qExpense,
-          netProfit: qIncome - qExpense,
+          netProfit: qNetProfit,
+          profitMargin: qIncome > 0 ? Number(((qNetProfit / qIncome) * 100).toFixed(1)) : 0,
         };
       });
     }
@@ -553,6 +558,7 @@ export class ReportDataService {
       equation: {
         totalIncome: totalSalesRevenue,
         totalExpense: totalDirectCost,
+        totalDiscounts,
         netProfit: netProfit,
         profitMargin: totalSalesRevenue > 0 ? (netProfit / totalSalesRevenue) * 100 : 0,
       },

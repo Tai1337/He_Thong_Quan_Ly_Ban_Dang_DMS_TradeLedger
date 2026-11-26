@@ -248,7 +248,7 @@ export const getPurchaseOrders = async (filters = {}) => {
   const response = await fetch(`${API_URL}/purchase-orders?${queryParams}`);
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || 'Lỗi khi tải danh sách đơn đặt hàng mua');
+    throw new Error(data.error || data.message || 'Lỗi khi tải danh sách đơn đặt hàng mua');
   }
   return data;
 };
@@ -257,7 +257,18 @@ export const getPurchaseOrderById = async (id, distributorId = 1) => {
   const response = await fetch(`${API_URL}/purchase-orders/${id}?distributorId=${distributorId}`);
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || 'Lỗi khi tải chi tiết đơn đặt hàng mua');
+    throw new Error(data.error || data.message || 'Lỗi khi tải chi tiết đơn đặt hàng mua');
+  }
+  return data;
+};
+
+export const getReplenishmentSuggestions = async (warehouseId, distributorId = 1) => {
+  const params = new URLSearchParams({ distributorId });
+  if (warehouseId) params.set('warehouseId', warehouseId);
+  const response = await fetch(`${API_URL}/purchase-orders/replenishment-suggestions?${params.toString()}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || data.message || 'Lỗi khi tải tồn kho gợi ý đặt hàng');
   }
   return data;
 };
@@ -270,7 +281,7 @@ export const createPurchaseOrder = async (payload) => {
   });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || 'Lỗi khi tạo đơn đặt hàng mua mới');
+    throw new Error(data.error || data.message || 'Lỗi khi tạo đơn đặt hàng mua mới');
   }
   return data;
 };
@@ -283,7 +294,7 @@ export const updatePurchaseOrder = async (id, payload) => {
   });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || 'Lỗi khi cập nhật đơn hàng');
+    throw new Error(data.error || data.message || 'Lỗi khi cập nhật đơn hàng');
   }
   return data;
 };
@@ -296,7 +307,7 @@ export const sendPurchaseOrderToSupplier = async (id, payload = {}) => {
   });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || 'Lỗi khi gửi đơn đặt hàng cho NCC');
+    throw new Error(data.error || data.message || 'Lỗi khi gửi đơn đặt hàng cho NCC');
   }
   return data;
 };
@@ -309,7 +320,7 @@ export const cancelPurchaseOrder = async (id, payload) => {
   });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || 'Lỗi khi huỷ đơn hàng');
+    throw new Error(data.error || data.message || 'Lỗi khi huỷ đơn hàng');
   }
   return data;
 };
@@ -322,7 +333,7 @@ export const receiveGoodsPurchaseOrder = async (id, payload) => {
   });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || 'Lỗi khi nhận hàng nhập kho');
+    throw new Error(data.error || data.message || 'Lỗi khi nhận hàng nhập kho');
   }
   return data;
 };
@@ -335,7 +346,7 @@ export const closePartialPurchaseOrder = async (id, payload) => {
   });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || 'Lỗi khi đóng đơn thiếu hàng');
+    throw new Error(data.error || data.message || 'Lỗi khi đóng đơn thiếu hàng');
   }
   return data;
 };
@@ -585,7 +596,7 @@ export const receiveTripGoods = async (tripId, payload) => {
   });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || 'Lỗi khi thực hiện nhập kho');
+    throw new Error(data.error || data.message || 'Lỗi khi thực hiện nhập kho');
   }
   return data;
 };

@@ -4,24 +4,17 @@ import {
   ArrowLeft, 
   Send, 
   PackageCheck, 
-  Ban, 
   CheckSquare, 
-  Clock, 
   Truck, 
-  CheckCircle2, 
   AlertCircle,
   Printer,
   Heart,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  MoreHorizontal,
-  UserPlus,
-  Paperclip,
-  Tag,
+  Copy,
   Share2,
-  Boxes,
-  X
+  Boxes
 } from 'lucide-react';
 import { 
   getPurchaseOrderById, 
@@ -29,7 +22,6 @@ import {
 } from '../../../services/api';
 import ReceiveGoodsModal from '../PurchaseOrderList/ReceiveGoodsModal';
 import CancelCloseModal from '../PurchaseOrderList/CancelCloseModal';
-import CreatePurchaseOrderModal from '../PurchaseOrderList/CreatePurchaseOrderModal';
 import PrintPurchaseOrderModal from '../PurchaseOrderList/PrintPurchaseOrderModal';
 import { useNotification } from '../../../components/Common/NotificationProvider';
 import './PurchaseOrderDetail.css';
@@ -59,18 +51,12 @@ const PurchaseOrderDetail = () => {
   // Comments state
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
-
-  // Right sidebar mock tags & attachments
-  const [tags, setTags] = useState(['#HangChinhHang', '#UuTienD+3']);
-  const [newTagInput, setNewTagInput] = useState('');
-  const [isAddingTag, setIsAddingTag] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
 
   // Modals
   const [isReceiveModalOpen, setIsReceiveModalOpen] = useState(false);
   const [isReasonModalOpen, setIsReasonModalOpen] = useState(false);
   const [reasonActionType, setReasonActionType] = useState('CANCEL');
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
   const fetchOrderDetail = useCallback(async () => {
@@ -131,25 +117,13 @@ const PurchaseOrderDetail = () => {
     setNewComment('');
   };
 
-  const handleAddTag = () => {
-    if (newTagInput.trim() && !tags.includes(newTagInput.trim())) {
-      setTags(prev => [...prev, newTagInput.startsWith('#') ? newTagInput.trim() : `#${newTagInput.trim()}`]);
-      setNewTagInput('');
-      setIsAddingTag(false);
-    }
-  };
-
-  const handleRemoveTag = (tagToRemove) => {
-    setTags(prev => prev.filter(t => t !== tagToRemove));
-  };
-
   const handlePrint = () => {
     setIsPrintModalOpen(true);
   };
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
-    alert('Đã sao chép liên kết chứng từ vào clipboard!');
+    notify.success('Đã sao chép liên kết chứng từ vào clipboard!');
   };
 
   if (loading) {
@@ -203,7 +177,7 @@ const PurchaseOrderDetail = () => {
             )}
             {order.status === 'COMPLETED' && (
               <span className="erp-status-badge badge-completed">
-                <span className="erp-badge-dot"></span> Completed
+                <span className="erp-badge-dot"></span> Hoàn tất
               </span>
             )}
             {order.status === 'CANCELLED' && (
@@ -218,7 +192,7 @@ const PurchaseOrderDetail = () => {
               <button 
                 type="button" 
                 className="erp-ctrl-btn" 
-                title="Chứng từ trước"
+                title="Quay lại danh sách PO"
                 onClick={() => navigate('/purchase/purchase-orders')}
               >
                 <ChevronLeft size={16} />
@@ -226,15 +200,21 @@ const PurchaseOrderDetail = () => {
               <button 
                 type="button" 
                 className="erp-ctrl-btn" 
-                title="Chứng từ kế tiếp"
-                onClick={() => navigate('/purchase/purchase-orders')}
+                title="Đi tới Nhập kho mua hàng"
+                onClick={() => navigate('/purchase/receiving')}
               >
                 <ChevronRight size={16} />
               </button>
             </div>
 
-            <button type="button" className="erp-ctrl-btn" title="Tùy chọn khác">
-              <MoreHorizontal size={16} />
+            <button
+              type="button"
+              className="erp-btn-secondary"
+              title="Nhân bản thành đơn mua mới"
+              onClick={() => navigate(`/purchase/purchase-orders/create?duplicateFrom=${order.id}`)}
+            >
+              <Copy size={15} />
+              <span>Nhân bản</span>
             </button>
 
             {/* Quick Action Buttons */}
@@ -243,7 +223,7 @@ const PurchaseOrderDetail = () => {
                 <button 
                   type="button" 
                   className="erp-btn-secondary"
-                  onClick={() => setIsEditModalOpen(true)}
+                  onClick={() => navigate(`/purchase/purchase-orders/${order.id}/edit`)}
                 >
                   Chỉnh sửa
                 </button>
@@ -608,14 +588,7 @@ const PurchaseOrderDetail = () => {
                 {/* Activity Feed */}
                 <div className="erp-timeline-container">
                   <div className="erp-timeline-header">
-                    <h3 className="erp-section-heading">Activity</h3>
-                    <button 
-                      type="button" 
-                      className="erp-btn-secondary small"
-                      onClick={() => alert('Thêm email / biên bản liên hệ NCC')}
-                    >
-                      + New Email
-                    </button>
+                    <h3 className="erp-section-heading">Lịch sử xử lý chứng từ</h3>
                   </div>
 
                   <div className="erp-vertical-timeline">
@@ -657,37 +630,88 @@ const PurchaseOrderDetail = () => {
             /* Tab: CONNECTIONS */
             <div className="erp-connections-view">
               <div className="erp-conn-card">
-                <h4>Chứng từ liên quan</h4>
+                <h4>Chuyến xe Nhập kho & Chứng từ liên quan</h4>
                 <div className="erp-conn-grid">
                   <div className="erp-conn-box">
                     <Truck size={20} color="#2563eb" />
                     <div>
-                      <div className="erp-conn-title">Chuyến xe giao hàng (D+3)</div>
-                      <div className="erp-conn-desc">1 chuyến nhập kho dự kiến</div>
+                      <div className="erp-conn-title">
+                        {order.deliveryTrip ? `Chuyến xe ${order.deliveryTrip.tripCode}` : 'Chuyến xe giao hàng (D+3)'}
+                      </div>
+                      <div className="erp-conn-desc">
+                        {order.deliveryTrip
+                          ? `Trạng thái: ${order.deliveryTrip.status} • Dự kiến: ${order.deliveryTrip.expectedDeliveryDate || 'Chưa đặt'}`
+                          : 'Chưa phát hành (sẽ tự tạo khi Gửi NCC)'}
+                      </div>
                     </div>
-                    <button className="erp-conn-link" onClick={() => navigate('/purchase/receiving')}>Xem</button>
+                    {order.deliveryTrip && (
+                      <button className="erp-conn-link" onClick={() => navigate('/purchase/receiving')}>
+                        Mở Nhập kho
+                      </button>
+                    )}
                   </div>
 
                   <div className="erp-conn-box">
                     <Boxes size={20} color="#059669" />
                     <div>
-                      <div className="erp-conn-title">Phiếu nhập kho liên kết</div>
-                      <div className="erp-conn-desc">{order.metrics?.totalReceivedQty > 0 ? 'Đã có phiếu nhập kho' : 'Chưa có phiếu nhập'}</div>
+                      <div className="erp-conn-title">Giao dịch nhập kho (IN)</div>
+                      <div className="erp-conn-desc">
+                        {order.inboundTransactions?.length > 0
+                          ? `${order.inboundTransactions.length} lần ghi nhận nhập kho`
+                          : 'Chưa có phiếu nhập kho'}
+                      </div>
                     </div>
-                    <button className="erp-conn-link" onClick={() => navigate('/purchase/receiving')}>Chi tiết</button>
+                    <button className="erp-conn-link" onClick={() => navigate('/inventory/transactions')}>
+                      Nhật ký kho
+                    </button>
                   </div>
                 </div>
+
+                {order.inboundTransactions && order.inboundTransactions.length > 0 && (
+                  <div className="erp-table-responsive" style={{ marginTop: 18 }}>
+                    <table className="erp-data-table">
+                      <thead>
+                        <tr>
+                          <th>Mã giao dịch</th>
+                          <th>Số Lô</th>
+                          <th>NSX / HSD</th>
+                          <th>Vị trí kho</th>
+                          <th style={{ textAlign: 'right' }}>SL nhập</th>
+                          <th>Người nhập</th>
+                          <th>Thời gian</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {order.inboundTransactions.map((txn) => (
+                          <tr key={txn.id}>
+                            <td className="erp-sku-cell">{txn.transactionCode}</td>
+                            <td>{txn.stockLot?.lotNumber || '-'}</td>
+                            <td>
+                              {txn.stockLot?.manufactureDate || '-'} → {txn.stockLot?.expiryDate || '-'}
+                            </td>
+                            <td>{txn.stockLot?.locationCode || 'KHO-A1'}</td>
+                            <td style={{ textAlign: 'right', fontWeight: 600, color: '#059669' }}>
+                              +{txn.quantity}
+                            </td>
+                            <td>{txn.createdBy?.fullName || 'Hệ thống'}</td>
+                            <td>{new Date(txn.createdAt).toLocaleString('vi-VN')}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
           )}
         </div>
 
-        {/* CỘT PHẢI: DOCUMENT SIDEBAR (ERPNext Right Sidebar) */}
+        {/* CỘT PHẢI: DOCUMENT SIDEBAR */}
         <div className="erp-doc-sidebar">
           {/* Header mã chứng từ & hành động */}
           <div className="erp-doc-sidebar-header">
             <div>
-              <div className="erp-sidebar-sub-title">{order.supplier?.name || 'Masan Consumer'}</div>
+              <div className="erp-sidebar-sub-title">{order.supplier?.name || 'Chưa chọn NCC'}</div>
               <div className="erp-sidebar-doc-code">{order.poCode}</div>
             </div>
             <div className="erp-sidebar-header-actions">
@@ -710,105 +734,34 @@ const PurchaseOrderDetail = () => {
             </div>
           </div>
 
-          {/* Quick Action Links with '+' */}
           <div className="erp-sidebar-actions-list">
-            {/* Assign */}
-            <div className="erp-sidebar-action-item">
-              <div className="erp-sidebar-action-left">
-                <UserPlus size={15} />
-                <span>Assign</span>
-              </div>
-              <button 
-                type="button" 
-                className="erp-sidebar-plus-btn"
-                onClick={() => alert('Gán nhân viên phụ trách chứng từ này')}
-              >
-                +
-              </button>
-            </div>
-
-            {/* Attachments */}
-            <div className="erp-sidebar-action-group">
-              <div className="erp-sidebar-action-item">
-                <div className="erp-sidebar-action-left">
-                  <Paperclip size={15} />
-                  <span>Attachments</span>
-                </div>
-                <button 
-                  type="button" 
-                  className="erp-sidebar-plus-btn"
-                  onClick={() => alert('Chọn tệp đính kèm')}
-                >
-                  +
-                </button>
-              </div>
-              <div className="erp-sidebar-attachment-item">
-                <span className="erp-attachment-name" title="photo-camera-subject-phot...">photo-camera-subject-phot...</span>
-                <button type="button" className="erp-remove-chip-btn">
-                  <X size={12} />
-                </button>
-              </div>
-            </div>
-
-            {/* Tags */}
-            <div className="erp-sidebar-action-group">
-              <div className="erp-sidebar-action-item">
-                <div className="erp-sidebar-action-left">
-                  <Tag size={15} />
-                  <span>Tags</span>
-                </div>
-                <button 
-                  type="button" 
-                  className="erp-sidebar-plus-btn"
-                  onClick={() => setIsAddingTag(!isAddingTag)}
-                >
-                  +
-                </button>
-              </div>
-              {isAddingTag && (
-                <div className="erp-tag-input-row">
-                  <input 
-                    type="text" 
-                    placeholder="Tên tag..."
-                    className="erp-tag-input"
-                    value={newTagInput}
-                    onChange={(e) => setNewTagInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
-                  />
-                  <button type="button" className="erp-btn-primary small" onClick={handleAddTag}>Lưu</button>
-                </div>
-              )}
-              <div className="erp-tags-container">
-                {tags.map(t => (
-                  <span key={t} className="erp-tag-chip">
-                    {t}
-                    <button type="button" onClick={() => handleRemoveTag(t)}>
-                      <X size={10} />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Share */}
             <div className="erp-sidebar-action-item" onClick={handleShare} style={{ cursor: 'pointer' }}>
               <div className="erp-sidebar-action-left">
                 <Share2 size={15} />
-                <span>Share</span>
+                <span>Sao chép liên kết</span>
               </div>
-              <button type="button" className="erp-sidebar-plus-btn">+</button>
+              <button type="button" className="erp-sidebar-plus-btn">→</button>
             </div>
           </div>
 
-          {/* Audit Trail Metadata (ERPNext style) */}
+          {/* Audit Trail Metadata */}
           <div className="erp-sidebar-audit-section">
             <div className="erp-audit-block">
-              <div className="erp-audit-label">Last Edited By You</div>
-              <div className="erp-audit-val">yesterday</div>
+              <div className="erp-audit-label">Chuyến xe INBOUND (D+3)</div>
+              <div className="erp-audit-val">
+                {order.deliveryTrip ? `${order.deliveryTrip.tripCode} (${order.deliveryTrip.status})` : 'Chưa phát hành'}
+              </div>
             </div>
 
             <div className="erp-audit-block">
-              <div className="erp-audit-label">Created By You</div>
+              <div className="erp-audit-label">Cập nhật gần nhất</div>
+              <div className="erp-audit-val">
+                {order.updatedAt ? new Date(order.updatedAt).toLocaleString('vi-VN') : '-'}
+              </div>
+            </div>
+
+            <div className="erp-audit-block">
+              <div className="erp-audit-label">Ngày tạo đơn</div>
               <div className="erp-audit-val">
                 {new Date(order.createdAt).toLocaleDateString('vi-VN')}
               </div>
@@ -818,6 +771,13 @@ const PurchaseOrderDetail = () => {
               <div className="erp-audit-label">Kho nhận hàng</div>
               <div className="erp-audit-val">
                 {order.warehouse?.name}
+              </div>
+            </div>
+
+            <div className="erp-audit-block">
+              <div className="erp-audit-label">Tổng trọng lượng ước tính</div>
+              <div className="erp-audit-val">
+                {order.metrics?.totalWeightKg || 0} kg
               </div>
             </div>
           </div>
@@ -840,15 +800,6 @@ const PurchaseOrderDetail = () => {
           order={order}
           actionType={reasonActionType}
           onClose={() => setIsReasonModalOpen(false)}
-          onSuccess={() => fetchOrderDetail()}
-        />
-      )}
-
-      {isEditModalOpen && (
-        <CreatePurchaseOrderModal
-          isOpen={isEditModalOpen}
-          initialOrder={order}
-          onClose={() => setIsEditModalOpen(false)}
           onSuccess={() => fetchOrderDetail()}
         />
       )}

@@ -1,15 +1,15 @@
 /* Streamlined Shop Footer */
 .shop-footer-wrapper {
-  background: #0f172a;
-  color: #94a3b8;
+  background: #0b1b18;
+  color: #a7f3d0;
   margin-top: 40px;
-  border-top: 1px solid #1e293b;
+  border-top: 1px solid #13312b;
 }
 
 /* Commitments Strip */
 .footer-commitments-strip {
-  background: #1e293b;
-  border-bottom: 1px solid #334155;
+  background: #0f2924;
+  border-bottom: 1px solid #163b34;
   padding: 18px 0;
 }
 

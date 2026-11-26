@@ -10,6 +10,7 @@ async function main() {
   // 1. Roles
   const rolesList = [
     { code: 'ADMIN', name: 'Quản trị viên hệ thống' },
+    { code: 'ACCOUNTANT', name: 'Kế toán viên NPP' },
     { code: 'SALES', name: 'Đại diện kinh doanh (VNBH)' },
     { code: 'DRIVER', name: 'Nhân viên giao hàng (NVGH/Tài xế)' },
     { code: 'WAREHOUSE_KEEPER', name: 'Thủ kho' }
@@ -133,6 +134,42 @@ async function main() {
     driverMap[d.username] = u;
   }
   console.log("✓ Đã khởi tạo Drivers (NVGH)");
+
+  // 6.1 Accountants & Warehouse Keepers
+  const backofficeUsers = [
+    {
+      username: 'KETOAN001',
+      fullName: 'Trần Minh Kế Toán',
+      phone: '0909111333',
+      email: 'ketoan@dms.vn',
+      roleCode: 'ACCOUNTANT'
+    },
+    {
+      username: 'THUKHO001',
+      fullName: 'Lê Hoàng Thủ Kho',
+      phone: '0909222444',
+      email: 'thukho@dms.vn',
+      roleCode: 'WAREHOUSE_KEEPER'
+    }
+  ];
+
+  for (const bo of backofficeUsers) {
+    let u = await prisma.user.findUnique({ where: { username: bo.username } });
+    if (!u) {
+      await prisma.user.create({
+        data: {
+          username: bo.username,
+          passwordHash,
+          fullName: bo.fullName,
+          phone: bo.phone,
+          email: bo.email,
+          roleId: roleMap[bo.roleCode].id,
+          distributorId: distributor.id
+        }
+      });
+    }
+  }
+  console.log("✓ Đã khởi tạo Kế toán (KETOAN001) & Thủ kho (THUKHO001)");
 
   // 7. Retailers (Đại lý / Cửa hàng)
   const retailersList = [

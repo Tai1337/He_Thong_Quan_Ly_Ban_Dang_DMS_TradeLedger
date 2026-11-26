@@ -13,6 +13,7 @@ import SalesOrderList from './pages/Sales/SalesOrderList/SalesOrderList';
 import SalesOrderDetail from './pages/Sales/SalesOrderList/SalesOrderDetail';
 import PurchaseOrderList from './pages/Purchase/PurchaseOrderList/PurchaseOrderList';
 import PurchaseOrderDetail from './pages/Purchase/PurchaseOrderDetail/PurchaseOrderDetail';
+import PurchaseOrderFormPage from './pages/Purchase/PurchaseOrderForm/PurchaseOrderFormPage';
 import PurchaseReceivingList from './pages/Purchase/PurchaseReceiving/PurchaseReceivingList';
 import ProfitLossStatement from './pages/Accounting/ProfitLossStatement/ProfitLossStatement';
 import JobCardCalendar from './pages/Operations/JobCardCalendar/JobCardCalendar';
@@ -23,7 +24,6 @@ import DeliveryTripDetail from './pages/Logistics/DeliveryTripDetail';
 import ShopHome from './pages/Shop/ShopHome';
 import ShopProductDetail from './pages/Shop/ShopProductDetail';
 import ProductManagement from './pages/Catalog/ProductManagement/ProductManagement';
-import CatalogPromotionList from './pages/Catalog/Promotions/PromotionList';
 import RolesPermissions from './pages/Admin/RolesPermissions/RolesPermissions';
 import UserManagement from './pages/Admin/UserManagement/UserManagement';
 import PromotionList from './pages/Promotions/PromotionList';
@@ -104,15 +104,7 @@ function App() {
         />
         <Route 
           path="/catalog/promotions" 
-          element={
-            user ? (
-              <Layout user={user} onLogout={handleLogout}>
-                <CatalogPromotionList />
-              </Layout>
-            ) : (
-              <Navigate to="/login" />
-            )
-          } 
+          element={<Navigate to="/promotions" replace />} 
         />
         <Route 
           path="/sales/sales-orders" 
@@ -196,6 +188,30 @@ function App() {
             user ? (
               <Layout user={user} onLogout={handleLogout}>
                 <PurchaseOrderList />
+              </Layout>
+            ) : (
+              <Navigate to="/login" />
+            )
+          } 
+        />
+        <Route 
+          path="/purchase/purchase-orders/create" 
+          element={
+            user ? (
+              <Layout user={user} onLogout={handleLogout}>
+                <PurchaseOrderFormPage mode="create" />
+              </Layout>
+            ) : (
+              <Navigate to="/login" />
+            )
+          } 
+        />
+        <Route 
+          path="/purchase/purchase-orders/:id/edit" 
+          element={
+            user ? (
+              <Layout user={user} onLogout={handleLogout}>
+                <PurchaseOrderFormPage mode="edit" />
               </Layout>
             ) : (
               <Navigate to="/login" />

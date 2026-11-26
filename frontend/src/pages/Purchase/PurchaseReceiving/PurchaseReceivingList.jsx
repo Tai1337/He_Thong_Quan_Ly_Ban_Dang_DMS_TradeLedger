@@ -17,15 +17,17 @@ import {
 } from 'lucide-react';
 import { getInboundTripDetail } from '../../../services/api';
 import { useInboundDeliveryTrips } from '../../../hooks/useInboundDeliveryTrips';
+import { useNotification } from '../../../components/Common/NotificationProvider';
 import ReceiveTripModal from './ReceiveTripModal';
 import './PurchaseReceivingList.css';
 
 const PurchaseReceivingList = () => {
+  const { notify } = useNotification();
   // Filters
   const [filters, setFilters] = useState({
     search: '',
     status: 'ALL',
-    dateFilter: 'TODAY_AND_PAST', // Mặc định hiển thị các chuyến đã đến hạn (D+3)
+    dateFilter: 'ALL', // Hiển thị toàn bộ chuyến xe INBOUND, ưu tiên chuyến đến hạn
     page: 1,
     limit: 15
   });
@@ -44,7 +46,7 @@ const PurchaseReceivingList = () => {
       const detail = await getInboundTripDetail(trip.id, 1);
       setSelectedTripDetail(detail);
     } catch (err) {
-      alert(err.message || 'Lỗi khi tải chi tiết chuyến xe');
+      notify.error(err.message || 'Lỗi khi tải chi tiết chuyến xe');
     } finally {
       setLoadingDetail(false);
     }
@@ -173,7 +175,7 @@ const PurchaseReceivingList = () => {
         <button 
           type="button" 
           className="btn-reset-filter"
-          onClick={() => setFilters({ search: '', status: 'ALL', dateFilter: 'TODAY_AND_PAST', page: 1, limit: 15 })}
+          onClick={() => setFilters({ search: '', status: 'ALL', dateFilter: 'ALL', page: 1, limit: 15 })}
         >
           <RotateCcw size={14} />
           <span>Đặt lại</span>
@@ -225,19 +227,21 @@ const PurchaseReceivingList = () => {
 
                       <td>
                         {trip.purchaseOrders?.map(po => (
-                          <div key={po.id} style={{ fontWeight: 600, color: '#7c3aed' }}>
-                            {po.poCode}
+                          <div key={po.id} style={{ fontWeight: 600 }}>
+                            <Link to={`/purchase/purchase-orders/${po.id}`} style={{ color: '#7c3aed', textDecoration: 'none' }}>
+                              {po.poCode}
+                            </Link>
                           </div>
                         ))}
                       </td>
 
                       <td>
-                        <div style={{ fontWeight: 600, color: '#1e293b' }}>{trip.supplier?.name || 'Tân Hiệp Phát'}</div>
+                        <div style={{ fontWeight: 600, color: '#1e293b' }}>{trip.supplier?.name || 'Chưa chọn NCC'}</div>
                         <div style={{ fontSize: '0.72rem', color: '#64748b' }}>SĐT: {trip.supplier?.phone || 'Chưa có'}</div>
                       </td>
 
                       <td>
-                        <div style={{ color: '#334155' }}>{trip.warehouse?.name || 'Kho Tổng'}</div>
+                        <div style={{ color: '#334155' }}>{trip.warehouse?.name || 'Kho chính'}</div>
                       </td>
 
                       <td>

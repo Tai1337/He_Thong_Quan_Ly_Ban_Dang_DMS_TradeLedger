@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   RotateCw,
   MoreHorizontal,
@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import {
   ResponsiveContainer,
+  ComposedChart,
+  Bar,
   LineChart,
   Line,
   XAxis,
@@ -14,20 +16,53 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
+  ReferenceLine,
 } from 'recharts';
 import { getProfitLossStatement, exportProfitLossExcel } from '../../../services/api';
+import FinanceChartCard from '../../../components/Charts/FinanceChartCard';
+import DonutBreakdownChart from '../../../components/Charts/DonutBreakdownChart';
+import {
+  FINANCE_CHART_PALETTE,
+  formatVnd,
+  formatCompactVnd,
+} from '../../../utils/chartFormatters';
 import './ProfitLossStatement.css';
 
-const formatMoney = (amount) =>
-  new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(Number(amount) || 0) + ' đ';
+const ProfitLossTooltip = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  const row = payload[0].payload;
+  const margin = row.income > 0 ? ((row.netProfit / row.income) * 100).toFixed(1) : '0.0';
 
-const formatCompact = (amount) => {
-  const v = Number(amount) || 0;
-  const abs = Math.abs(v);
-  if (abs >= 1_000_000_000) return `${(v / 1_000_000_000).toFixed(1)} T`;
-  if (abs >= 1_000_000) return `${(v / 1_000_000).toFixed(1)} Tr`;
-  if (abs >= 1_000) return `${(v / 1_000).toFixed(0)} K`;
-  return String(v);
+  return (
+    <div className="chart-tooltip-box">
+      <div className="chart-tooltip-title">{label}</div>
+      <div className="chart-tooltip-row">
+        <span className="chart-tooltip-label">
+          <span className="chart-tooltip-dot" style={{ backgroundColor: '#1a73e8' }} />
+          Doanh thu
+        </span>
+        <span className="chart-tooltip-val">{formatVnd(row.income)}</span>
+      </div>
+      <div className="chart-tooltip-row">
+        <span className="chart-tooltip-label">
+          <span className="chart-tooltip-dot" style={{ backgroundColor: '#94a3b8' }} />
+          Giá vốn (COGS)
+        </span>
+        <span className="chart-tooltip-val">{formatVnd(row.expense)}</span>
+      </div>
+      <div className="chart-tooltip-row">
+        <span className="chart-tooltip-label">
+          <span className="chart-tooltip-dot" style={{ backgroundColor: '#10b981' }} />
+          Lợi nhuận thuần
+        </span>
+        <span className="chart-tooltip-val">{formatVnd(row.netProfit)}</span>
+      </div>
+      <div className="chart-tooltip-row">
+        <span className="chart-tooltip-label">Biên lợi nhuận</span>
+        <span className="chart-tooltip-val">{margin}%</span>
+      </div>
+    </div>
+  );
 };
 
 const ProfitLossStatement = () => {
@@ -35,6 +70,7 @@ const ProfitLossStatement = () => {
     fiscalYear: String(new Date().getFullYear()),
     periodicity: 'Theo Quý',
   });
+  const [chartMode, setChartMode] = useState('combo');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -65,7 +101,30 @@ const ProfitLossStatement = () => {
   }, [filters.fiscalYear, filters.periodicity]);
 
   const chartData = data?.chartData ?? [];
-  const equation = data?.equation ?? { totalIncome: 0, totalExpense: 0, netProfit: 0, profitMargin: 0 };
+  const equation = data?.equation ?? {
+    totalIncome: 0,
+    totalExpense: 0,
+    totalDiscounts: 0,
+    netProfit: 0,
+    profitMargin: 0,
+  };
+
+  const channelItems = useMemo(() => {
+    const entries = Object.entries(data?.channelBreakdown ?? {});
+    return entries
+      .map(([name, value], idx) => ({
+        name,
+        value: Number(value) || 0,
+        color: FINANCE_CHART_PALETTE[idx % FINANCE_CHART_PALETTE.length],
+      }))
+      .filter((item) => item.value > 0)
+      .sort((a, b) => b.value - a.value);
+  }, [data]);
+
+  const hasChartActivity = useMemo(
+    () => chartData.some((d) => d.income > 0 || d.expense > 0 || d.netProfit !== 0),
+    [chartData],
+  );
 
   const toggleNode = (node) =>
     setExpandedNodes((prev) => ({ ...prev, [node]: !prev[node] }));
@@ -138,7 +197,7 @@ const ProfitLossStatement = () => {
       <div className="pnl-kpi-equation-card">
         <div className="pnl-kpi-col">
           <span className="pnl-kpi-label">Tổng Doanh Thu</span>
-          <span className="pnl-kpi-val">{formatMoney(equation.totalIncome)}</span>
+          <span className="pnl-kpi-val">{formatVnd(equation.totalIncome)}</span>
         </div>
 
         <div className="pnl-operator-box">
@@ -147,7 +206,7 @@ const ProfitLossStatement = () => {
 
         <div className="pnl-kpi-col">
           <span className="pnl-kpi-label">Tổng Giá Vốn</span>
-          <span className="pnl-kpi-val">{formatMoney(equation.totalExpense)}</span>
+          <span className="pnl-kpi-val">{formatVnd(equation.totalExpense)}</span>
         </div>
 
         <div className="pnl-operator-box">
@@ -157,7 +216,7 @@ const ProfitLossStatement = () => {
         <div className="pnl-kpi-col">
           <span className="pnl-kpi-label">Lợi Nhuận Thuần</span>
           <span className={`pnl-kpi-val ${equation.netProfit >= 0 ? 'success' : 'danger'}`}>
-            {formatMoney(equation.netProfit)}
+            {formatVnd(equation.netProfit)}
           </span>
         </div>
 
@@ -169,39 +228,105 @@ const ProfitLossStatement = () => {
           <span className="pnl-kpi-label">Tỷ Suất Lợi Nhuận</span>
           <span className="pnl-kpi-val">{Number(equation.profitMargin || 0).toFixed(1)}%</span>
         </div>
+
+        {Number(equation.totalDiscounts || 0) > 0 && (
+          <>
+            <div className="pnl-operator-box">
+              <span>·</span>
+            </div>
+            <div className="pnl-kpi-col">
+              <span className="pnl-kpi-label">Chiết Khấu Hóa Đơn</span>
+              <span className="pnl-kpi-val warn">{formatVnd(equation.totalDiscounts)}</span>
+            </div>
+          </>
+        )}
       </div>
 
-      {/* 4. Trend Chart */}
-      <div className="pnl-chart-card">
-        {chartData.length > 0 ? (
-          <ResponsiveContainer width="100%" height={260}>
-            <LineChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f3f5" />
-              <XAxis
-                dataKey="period"
-                stroke="#9ca3af"
-                fontSize={12}
-                tickLine={false}
-              />
-              <YAxis
-                stroke="#9ca3af"
-                fontSize={11}
-                tickLine={false}
-                tickFormatter={formatCompact}
-              />
-              <Tooltip
-                formatter={(value) => formatMoney(value)}
-                contentStyle={{ borderRadius: 6, border: '1px solid #e5e7eb' }}
-              />
-              <Legend verticalAlign="bottom" height={36} iconType="rect" />
-              <Line type="linear" dataKey="income" name="Doanh thu" stroke="#ec4899" strokeWidth={2} dot={false} activeDot={{ r: 5 }} />
-              <Line type="linear" dataKey="expense" name="Giá vốn" stroke="#2563eb" strokeWidth={2} dot={false} activeDot={{ r: 5 }} />
-              <Line type="linear" dataKey="netProfit" name="Lợi nhuận" stroke="#10b981" strokeWidth={2} dot={false} activeDot={{ r: 5 }} />
-            </LineChart>
+      {/* 4. Financial Analytics Grid */}
+      <div className="pnl-charts-grid">
+        <FinanceChartCard
+          title="Phân tích Doanh thu – Giá vốn – Lợi nhuận"
+          subtitle={`Biến động kết quả kinh doanh ${filters.periodicity.toLowerCase()} năm ${filters.fiscalYear}`}
+          isEmpty={!loading && !hasChartActivity}
+          emptyText="Chưa phát sinh doanh thu trong năm tài chính đã chọn"
+          actions={
+            <div className="chart-mode-toggle">
+              <button
+                type="button"
+                className={`chart-mode-btn ${chartMode === 'combo' ? 'active' : ''}`}
+                onClick={() => setChartMode('combo')}
+              >
+                Cột & Đường
+              </button>
+              <button
+                type="button"
+                className={`chart-mode-btn ${chartMode === 'line' ? 'active' : ''}`}
+                onClick={() => setChartMode('line')}
+              >
+                Xu hướng
+              </button>
+            </div>
+          }
+        >
+          <ResponsiveContainer width="100%" height={290}>
+            {chartMode === 'combo' ? (
+              <ComposedChart data={chartData} margin={{ top: 14, right: 20, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="period" stroke="#64748b" fontSize={12} tickLine={false} />
+                <YAxis
+                  stroke="#64748b"
+                  fontSize={11}
+                  tickLine={false}
+                  tickFormatter={formatCompactVnd}
+                />
+                <Tooltip content={<ProfitLossTooltip />} />
+                <Legend verticalAlign="bottom" height={34} />
+                <ReferenceLine y={0} stroke="#cbd5e1" />
+                <Bar dataKey="income" name="Doanh thu" fill="#1a73e8" radius={[4, 4, 0, 0]} maxBarSize={36} />
+                <Bar dataKey="expense" name="Giá vốn (COGS)" fill="#94a3b8" radius={[4, 4, 0, 0]} maxBarSize={36} />
+                <Line
+                  type="monotone"
+                  dataKey="netProfit"
+                  name="Lợi nhuận thuần"
+                  stroke="#10b981"
+                  strokeWidth={2.5}
+                  dot={{ r: 3.5, fill: '#10b981' }}
+                  activeDot={{ r: 5.5 }}
+                />
+              </ComposedChart>
+            ) : (
+              <LineChart data={chartData} margin={{ top: 14, right: 20, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="period" stroke="#64748b" fontSize={12} tickLine={false} />
+                <YAxis
+                  stroke="#64748b"
+                  fontSize={11}
+                  tickLine={false}
+                  tickFormatter={formatCompactVnd}
+                />
+                <Tooltip content={<ProfitLossTooltip />} />
+                <Legend verticalAlign="bottom" height={34} />
+                <ReferenceLine y={0} stroke="#cbd5e1" />
+                <Line type="monotone" dataKey="income" name="Doanh thu" stroke="#1a73e8" strokeWidth={2.2} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="expense" name="Giá vốn (COGS)" stroke="#64748b" strokeWidth={2} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="netProfit" name="Lợi nhuận thuần" stroke="#10b981" strokeWidth={2.5} dot={{ r: 3.5 }} />
+              </LineChart>
+            )}
           </ResponsiveContainer>
-        ) : (
-          !loading && <div className="pnl-empty">Không có dữ liệu trong kỳ báo cáo</div>
-        )}
+        </FinanceChartCard>
+
+        <FinanceChartCard
+          title="Cơ cấu Doanh thu theo Kênh bán"
+          subtitle="Phân bổ đóng góp doanh thu theo nhóm khách hàng"
+          isEmpty={!loading && channelItems.length === 0}
+          emptyText="Chưa có dữ liệu phân bổ kênh bán hàng"
+        >
+          <DonutBreakdownChart
+            items={channelItems}
+            centerTitle="Tổng doanh thu"
+            centerValue={formatCompactVnd(equation.totalIncome)}
+          />
+        </FinanceChartCard>
       </div>
 
       {/* 5. Hierarchical Tree Table */}
@@ -241,7 +366,7 @@ const ProfitLossStatement = () => {
                   </td>
                   {chartData.map((d) => (
                     <td key={d.period} style={{ textAlign: 'right', fontWeight: 600 }}>
-                      {formatMoney(d.income)}
+                      {formatVnd(d.income)}
                     </td>
                   ))}
                 </tr>
@@ -257,7 +382,7 @@ const ProfitLossStatement = () => {
                   </td>
                   {chartData.map((d) => (
                     <td key={d.period} style={{ textAlign: 'right', fontWeight: 600 }}>
-                      {formatMoney(d.expense)}
+                      {formatVnd(d.expense)}
                     </td>
                   ))}
                 </tr>
@@ -272,7 +397,7 @@ const ProfitLossStatement = () => {
                     </td>
                     {chartData.map((d) => (
                       <td key={d.period} style={{ textAlign: 'right' }}>
-                        {formatMoney(d.expense)}
+                        {formatVnd(d.expense)}
                       </td>
                     ))}
                   </tr>
@@ -292,7 +417,7 @@ const ProfitLossStatement = () => {
                     color: d.netProfit >= 0 ? '#10b981' : '#dc2626',
                   }}
                 >
-                  {formatMoney(d.netProfit)}
+                  {formatVnd(d.netProfit)}
                 </td>
               ))}
             </tr>

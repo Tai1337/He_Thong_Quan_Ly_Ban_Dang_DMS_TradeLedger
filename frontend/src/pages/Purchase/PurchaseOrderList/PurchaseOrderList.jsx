@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   ShoppingCart, 
   Plus, 
@@ -28,7 +28,6 @@ import {
   sendPurchaseOrderToSupplier,
   exportPurchaseOrdersExcel 
 } from '../../../services/api';
-import CreatePurchaseOrderModal from './CreatePurchaseOrderModal';
 import ReceiveGoodsModal from './ReceiveGoodsModal';
 import CancelCloseModal from './CancelCloseModal';
 import DiscrepancyModal from './DiscrepancyModal';
@@ -48,6 +47,15 @@ const STATUS_LIST = [
 
 const PurchaseOrderList = () => {
   const { notify, confirm } = useNotification();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get('create') === 'true') {
+      navigate('/purchase/purchase-orders/create', { replace: true });
+    }
+  }, [searchParams, navigate]);
+
   // Filters State
   const [filters, setFilters] = useState({
     poCode: '',
@@ -65,9 +73,6 @@ const PurchaseOrderList = () => {
   const [suppliers, setSuppliers] = useState([]);
 
   // Modals state
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [editingOrder, setEditingOrder] = useState(null);
-
   const [isReceiveModalOpen, setIsReceiveModalOpen] = useState(false);
   const [receivingOrder, setReceivingOrder] = useState(null);
 
@@ -178,10 +183,9 @@ const PurchaseOrderList = () => {
     setIsReasonModalOpen(true);
   };
 
-  // Mở modal sửa PO
+  // Điều hướng tới trang Sửa PO nháp
   const handleEditDraftOrder = (order) => {
-    setEditingOrder(order);
-    setIsCreateModalOpen(true);
+    navigate(`/purchase/purchase-orders/${order.id}/edit`);
   };
 
   // Xuất file Excel
@@ -225,13 +229,10 @@ const PurchaseOrderList = () => {
           <button 
             type="button" 
             className="btn-primary-action"
-            onClick={() => {
-              setEditingOrder(null);
-              setIsCreateModalOpen(true);
-            }}
+            onClick={() => navigate('/purchase/purchase-orders/create')}
           >
             <Plus size={18} />
-            <span>+ Lập Đơn đặt hàng mua</span>
+            <span>Lập Đơn đặt hàng mua</span>
           </button>
         </div>
       </div>
@@ -456,6 +457,12 @@ const PurchaseOrderList = () => {
                         <Link to={`/purchase/purchase-orders/${po.id}`} className="po-code-link">
                           <span>{po.poCode}</span>
                         </Link>
+                        {po.deliveryTrip?.tripCode && (
+                          <div style={{ fontSize: '0.72rem', color: '#2563eb', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <Truck size={11} />
+                            <span>{po.deliveryTrip.tripCode}</span>
+                          </div>
+                        )}
                       </td>
 
                       {/* Ngày tạo */}
@@ -465,7 +472,19 @@ const PurchaseOrderList = () => {
 
                       {/* Ngày dự kiến */}
                       <td style={{ color: '#475569' }}>
-                        {po.expectedDate ? new Date(po.expectedDate).toLocaleDateString('vi-VN') : '-'}
+                        {po.expectedDate ? (
+                          <div>
+                            <span>{new Date(po.expectedDate).toLocaleDateString('vi-VN')}</span>
+                            {(po.status === 'WAITING_RECEIVE' || po.status === 'PARTIALLY_RECEIVED') &&
+                              new Date(po.expectedDate) < new Date(new Date().toDateString()) && (
+                                <div style={{ fontSize: '0.7rem', color: '#dc2626', fontWeight: 600 }}>
+                                  Trễ hẹn giao
+                                </div>
+                              )}
+                          </div>
+                        ) : (
+                          '-'
+                        )}
                       </td>
 
                       {/* NCC */}
@@ -674,20 +693,6 @@ const PurchaseOrderList = () => {
       </div>
 
       {/* 6. Modals */}
-      {isCreateModalOpen && (
-        <CreatePurchaseOrderModal 
-          isOpen={isCreateModalOpen}
-          onClose={() => {
-            setIsCreateModalOpen(false);
-            setEditingOrder(null);
-          }}
-          onSuccess={() => {
-            refetch();
-          }}
-          initialOrder={editingOrder}
-        />
-      )}
-
       {isReceiveModalOpen && receivingOrder && (
         <ReceiveGoodsModal
           isOpen={isReceiveModalOpen}

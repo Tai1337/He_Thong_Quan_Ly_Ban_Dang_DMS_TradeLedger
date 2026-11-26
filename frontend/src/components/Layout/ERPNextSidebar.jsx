@@ -41,7 +41,7 @@ const moduleSubmenus = {
     items: [
       { id: 'po-list', label: 'Đơn đặt hàng mua (PO)', icon: FileText, path: '/purchase/purchase-orders' },
       { id: 'po-receiving', label: 'Nhập kho mua hàng', icon: Truck, path: '/purchase/receiving' },
-      { id: 'po-create', label: 'Lập đơn đặt mua mới', icon: PlusCircle, path: '/purchase/purchase-orders?create=true' },
+      { id: 'po-create', label: 'Lập đơn đặt mua mới', icon: PlusCircle, path: '/purchase/purchase-orders/create' },
       { id: 'po-report', label: 'Báo cáo tồn kho đặt hàng', icon: BarChart3, path: '/inventory/rpt083' },
     ]
   },

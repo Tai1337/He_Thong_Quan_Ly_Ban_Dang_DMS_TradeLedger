@@ -4,15 +4,16 @@ import {
   PackageCheck, 
   AlertTriangle, 
   CheckCircle2, 
-  AlertCircle, 
-  Layers,
-  Calendar,
-  MapPin
+  AlertCircle,
+  Plus,
+  Trash2
 } from 'lucide-react';
 import { receiveGoodsPurchaseOrder } from '../../../services/api';
+import { useNotification } from '../../../components/Common/NotificationProvider';
 import './ReceiveGoodsModal.css';
 
 const ReceiveGoodsModal = ({ isOpen, onClose, onSuccess, order }) => {
+  const { notify } = useNotification();
   const [itemsData, setItemsData] = useState([]);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
@@ -24,7 +25,6 @@ const ReceiveGoodsModal = ({ isOpen, onClose, onSuccess, order }) => {
     setError('');
     setNotes('');
 
-    // Khởi tạo danh sách nhận hàng từ line items của order
     const todayStr = new Date().toISOString().slice(0, 10);
     const nextYear = new Date();
     nextYear.setFullYear(nextYear.getFullYear() + 1);
@@ -33,6 +33,8 @@ const ReceiveGoodsModal = ({ isOpen, onClose, onSuccess, order }) => {
     const init = (order.items || []).map((item, idx) => {
       const remaining = Math.max(0, item.quantity - (item.quantityReceived || 0));
       return {
+        rowKey: `${item.id}-0-${idx}`,
+        isSplitRow: false,
         itemId: item.id,
         sku: item.product?.sku || '',
         name: item.product?.name || '',
@@ -40,7 +42,6 @@ const ReceiveGoodsModal = ({ isOpen, onClose, onSuccess, order }) => {
         quantityOrdered: item.quantity,
         quantityReceivedOld: item.quantityReceived || 0,
         quantityRemaining: remaining,
-        // Default số lượng nhận lần này = số còn lại
         quantityReceiveNow: remaining,
         lotNumber: `LOT-${item.product?.sku || 'SKU'}-${todayStr.replace(/-/g, '')}`,
         manufactureDate: todayStr,
@@ -62,26 +63,62 @@ const ReceiveGoodsModal = ({ isOpen, onClose, onSuccess, order }) => {
     });
   };
 
+  const handleSplitLot = (index) => {
+    const src = itemsData[index];
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const nextYear = new Date();
+    nextYear.setFullYear(nextYear.getFullYear() + 1);
+
+    const splitRow = {
+      ...src,
+      rowKey: `${src.itemId}-split-${Date.now()}-${Math.random()}`,
+      isSplitRow: true,
+      quantityReceiveNow: 0,
+      lotNumber: `${src.lotNumber}-B`,
+      manufactureDate: todayStr,
+      expiryDate: nextYear.toISOString().slice(0, 10),
+    };
+
+    setItemsData(prev => {
+      const next = [...prev];
+      next.splice(index + 1, 0, splitRow);
+      return next;
+    });
+  };
+
+  const handleRemoveSplit = (index) => {
+    setItemsData(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Tổng hợp SL nhận đợt này theo itemId (bao gồm cả dòng tách lô)
+  const receivedNowByItemId = itemsData.reduce((acc, row) => {
+    acc[row.itemId] = (acc[row.itemId] || 0) + (Number(row.quantityReceiveNow) || 0);
+    return acc;
+  }, {});
+
   // Kiểm tra xem có cảnh báo thừa/thiếu nào không
   const hasDiscrepancy = itemsData.some(i => {
-    const totalWillReceive = Number(i.quantityReceivedOld) + Number(i.quantityReceiveNow || 0);
+    if (i.isSplitRow) return false;
+    const totalWillReceive = Number(i.quantityReceivedOld) + (receivedNowByItemId[i.itemId] || 0);
     return totalWillReceive !== Number(i.quantityOrdered);
   });
 
   const handleSubmit = async () => {
     setError('');
 
-    // Kiểm tra có ít nhất 1 sp có receive > 0
     const validItems = itemsData.filter(i => Number(i.quantityReceiveNow) > 0);
     if (validItems.length === 0) {
       setError('Vui lòng nhập số lượng nhận > 0 cho ít nhất 1 mặt hàng');
       return;
     }
 
-    // Kiểm tra số lô
     for (const itm of validItems) {
       if (!itm.lotNumber || !itm.lotNumber.trim()) {
         setError(`Mặt hàng [${itm.sku}] thiếu thông tin số lô`);
+        return;
+      }
+      if (itm.manufactureDate && itm.expiryDate && new Date(itm.expiryDate) <= new Date(itm.manufactureDate)) {
+        setError(`Mặt hàng [${itm.sku}] (Lô ${itm.lotNumber}): Hạn sử dụng phải lớn hơn Ngày sản xuất`);
         return;
       }
     }
@@ -102,6 +139,7 @@ const ReceiveGoodsModal = ({ isOpen, onClose, onSuccess, order }) => {
       };
 
       const updated = await receiveGoodsPurchaseOrder(order.id, payload);
+      notify.success(`Đã nhập kho cho đơn ${order.poCode} thành công!`);
       onSuccess(updated);
       onClose();
     } catch (err) {
@@ -188,26 +226,28 @@ const ReceiveGoodsModal = ({ isOpen, onClose, onSuccess, order }) => {
                   <th style={{ width: '120px' }}>Hạn SD</th>
                   <th style={{ width: '80px' }}>Vị trí kho</th>
                   <th style={{ width: '110px' }}>Đối chiếu</th>
+                  <th style={{ width: '60px', textAlign: 'center' }}>Lô</th>
                 </tr>
               </thead>
               <tbody>
                 {itemsData.map((item, idx) => {
-                  const receiveQty = Number(item.quantityReceiveNow) || 0;
-                  const totalAfter = Number(item.quantityReceivedOld) + receiveQty;
+                  const totalAfter = Number(item.quantityReceivedOld) + (receivedNowByItemId[item.itemId] || 0);
                   const diff = totalAfter - Number(item.quantityOrdered);
 
                   return (
-                    <tr key={idx}>
+                    <tr key={item.rowKey}>
                       <td style={{ color: '#64748b', textAlign: 'center' }}>{idx + 1}</td>
                       <td>
-                        <div style={{ fontWeight: 600, color: '#1e293b' }}>{item.sku}</div>
+                        <div style={{ fontWeight: 600, color: '#1e293b' }}>
+                          {item.sku} {item.isSplitRow && <span style={{ fontSize: '0.7rem', color: '#2563eb' }}>(Lô tách)</span>}
+                        </div>
                         <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{item.name}</div>
                       </td>
                       <td style={{ color: '#475569' }}>{item.unit}</td>
-                      <td style={{ textAlign: 'right', fontWeight: 600 }}>{item.quantityOrdered}</td>
-                      <td style={{ textAlign: 'right', color: '#059669' }}>{item.quantityReceivedOld}</td>
+                      <td style={{ textAlign: 'right', fontWeight: 600 }}>{item.isSplitRow ? '-' : item.quantityOrdered}</td>
+                      <td style={{ textAlign: 'right', color: '#059669' }}>{item.isSplitRow ? '-' : item.quantityReceivedOld}</td>
                       <td style={{ textAlign: 'right', color: item.quantityRemaining > 0 ? '#d97706' : '#64748b', fontWeight: 600 }}>
-                        {item.quantityRemaining}
+                        {item.isSplitRow ? '-' : item.quantityRemaining}
                       </td>
                       <td>
                         <input 
@@ -253,7 +293,9 @@ const ReceiveGoodsModal = ({ isOpen, onClose, onSuccess, order }) => {
                         />
                       </td>
                       <td>
-                        {diff === 0 ? (
+                        {item.isSplitRow ? (
+                          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Gộp dòng trên</span>
+                        ) : diff === 0 ? (
                           <span className="badge-diff-exact">
                             <CheckCircle2 size={12} /> Đủ ({totalAfter})
                           </span>
@@ -265,6 +307,27 @@ const ReceiveGoodsModal = ({ isOpen, onClose, onSuccess, order }) => {
                           <span className="badge-diff-shortage">
                             Thiếu {Math.abs(diff)}
                           </span>
+                        )}
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        {item.isSplitRow ? (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSplit(idx)}
+                            title="Xóa dòng lô tách"
+                            style={{ border: 'none', background: '#fef2f2', color: '#dc2626', borderRadius: 6, padding: '4px 6px', cursor: 'pointer' }}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleSplitLot(idx)}
+                            title="Tách thêm số lô khác"
+                            style={{ border: '1px solid #cbd5e1', background: '#f8fafc', color: '#2563eb', borderRadius: 6, padding: '4px 6px', cursor: 'pointer' }}
+                          >
+                            <Plus size={14} />
+                          </button>
                         )}
                       </td>
                     </tr>

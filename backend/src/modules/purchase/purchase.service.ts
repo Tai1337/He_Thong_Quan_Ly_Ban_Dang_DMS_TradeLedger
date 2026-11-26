@@ -50,6 +50,10 @@ export class PurchaseService {
     return this.purchaseOrderService.getPurchaseOrderDiscrepancies(distributorId, filters);
   }
 
+  async getReplenishmentSuggestions(distributorId: any, warehouseId?: any) {
+    return this.purchaseOrderService.getReplenishmentSuggestions(distributorId, warehouseId);
+  }
+
   async exportExcel(distributorId: any, filters: any) {
     return this.purchaseOrderService.exportPurchaseOrdersExcel(distributorId, filters);
   }

@@ -94,7 +94,7 @@ const Header = ({ user, onLogout }) => {
                 <Truck size={15} className="dropdown-icon text-green" />
                 <span><strong>Nhập kho mua hàng</strong></span>
               </Link>
-              <Link to="/purchase/purchase-orders?create=true" className="dropdown-item">
+              <Link to="/purchase/purchase-orders/create" className="dropdown-item">
                 <PlusCircle size={15} className="dropdown-icon" />
                 <span>Lập Đơn đặt hàng mua (PO)</span>
               </Link>

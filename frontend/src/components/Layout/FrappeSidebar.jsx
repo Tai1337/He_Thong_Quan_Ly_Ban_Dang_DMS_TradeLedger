@@ -58,7 +58,7 @@ const modulesData = {
     requiredPermission: 'purchase_orders:view',
     subItems: [
       { label: 'Đơn đặt hàng mua (PO)', path: '/purchase/purchase-orders', icon: FileText, requiredPermission: 'purchase_orders:view' },
-      { label: 'Lập đơn đặt mua mới', path: '/purchase/purchase-orders?create=true', icon: PlusCircle, requiredPermission: 'purchase_orders:create' },
+      { label: 'Lập đơn đặt mua mới', path: '/purchase/purchase-orders/create', icon: PlusCircle, requiredPermission: 'purchase_orders:create' },
       { label: 'Nhập kho mua hàng', path: '/purchase/receiving', icon: Truck, requiredPermission: 'purchase_orders:receive' },
       { label: 'Báo cáo tồn kho đặt hàng', path: '/inventory/rpt083', icon: BarChart3, requiredPermission: 'inventory:view' },
     ]
@@ -88,7 +88,6 @@ const modulesData = {
     requiredPermission: ['inventory:view', 'master_data:view', 'inventory_counts:view'],
     subItems: [
       { label: 'Quản lý sản phẩm & SKU', path: '/catalog/products', icon: Box, requiredPermission: 'master_data:view' },
-      { label: 'Chương trình khuyến mãi', path: '/catalog/promotions', icon: Tag, requiredPermission: 'master_data:view' },
       { label: 'Nhật ký giao dịch kho', path: '/inventory/transactions', icon: FileText, requiredPermission: 'inventory:view' },
       { label: 'Kiểm kê kho hàng', path: '/inventory/counts', icon: ClipboardCheck, requiredPermission: 'inventory_counts:view' },
       { label: 'RPT083 - Báo cáo tồn kho NPP', path: '/inventory/rpt083', icon: BarChart3, requiredPermission: 'inventory:view' },

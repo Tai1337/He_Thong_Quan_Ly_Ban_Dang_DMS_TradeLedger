@@ -33,6 +33,12 @@ export class PurchaseController {
     return this.purchaseService.getDiscrepancies(distributorId, filters);
   }
 
+  @Get(['purchase-orders/replenishment-suggestions', 'purchase/orders/replenishment-suggestions'])
+  async getReplenishmentSuggestions(@Query() query: any) {
+    const { distributorId = 1, warehouseId } = query;
+    return this.purchaseService.getReplenishmentSuggestions(distributorId, warehouseId);
+  }
+
   @Get(['purchase-orders/export', 'purchase/orders/export'])
   async exportExcel(@Query() query: any, @Res() res: Response) {
     const { distributorId = 1, ...filters } = query;
@@ -108,12 +114,13 @@ export class PurchaseController {
 
   @Post('purchase/receiving/trips/:tripId/receive')
   async receiveTripGoods(@Param('tripId') tripId: string, @Body() body: any) {
-    const { distributorId = 1, receivedItems, userId } = body;
+    const { distributorId = 1, receivedItems, userId, notes } = body;
     return this.purchaseService.receiveTripGoods({
       tripId,
       distributorId,
       receivedItems,
       userId,
+      notes,
     });
   }
 }

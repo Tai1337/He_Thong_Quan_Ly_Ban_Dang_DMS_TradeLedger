@@ -6,6 +6,7 @@ export interface InboundTripsFilters {
   status?: string;
   dateFilter?: 'TODAY_AND_PAST' | 'TODAY' | 'FUTURE' | string;
   search?: string;
+  warehouseId?: string | number | bigint;
   page?: number | string;
   limit?: number | string;
 }
@@ -22,32 +23,37 @@ export class PurchaseReceivingRepository {
    */
   async findInboundDeliveryTrips(distributorId: string | number | bigint, filters: InboundTripsFilters = {}) {
     const distId = BigInt(distributorId);
-    const { status, dateFilter, search, page = 1, limit = 20 } = filters;
+    const { status, dateFilter, search, warehouseId, page = 1, limit = 20 } = filters;
 
     const where: any = {
       distributorId: distId,
       tripType: 'INBOUND',
     };
 
+    if (warehouseId) {
+      where.warehouseId = BigInt(warehouseId);
+    }
+
     if (status && status !== 'ALL') {
       where.status = status;
+    } else {
+      where.status = { not: 'CANCELLED' };
     }
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const endOfToday = new Date(today);
+    endOfToday.setHours(23, 59, 59, 999);
 
     if (dateFilter === 'TODAY_AND_PAST') {
-      where.expectedDeliveryDate = { lte: new Date() };
+      where.expectedDeliveryDate = { lte: endOfToday };
     } else if (dateFilter === 'TODAY') {
-      const startOfToday = new Date(today);
-      const endOfToday = new Date(today);
-      endOfToday.setHours(23, 59, 59, 999);
       where.expectedDeliveryDate = {
-        gte: startOfToday,
+        gte: today,
         lte: endOfToday,
       };
     } else if (dateFilter === 'FUTURE') {
-      where.expectedDeliveryDate = { gt: new Date() };
+      where.expectedDeliveryDate = { gt: endOfToday };
     }
 
     if (search) {
@@ -130,7 +136,11 @@ export class PurchaseReceivingRepository {
       include: {
         purchaseOrders: {
           include: {
-            items: true,
+            items: {
+              include: {
+                product: true,
+              },
+            },
           },
         },
         warehouse: true,

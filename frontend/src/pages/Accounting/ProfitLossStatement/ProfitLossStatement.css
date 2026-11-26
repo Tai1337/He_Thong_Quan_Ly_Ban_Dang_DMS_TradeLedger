@@ -165,13 +165,22 @@
   color: #2563eb;
 }
 
-/* 4. Chart Card */
-.pnl-chart-card {
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 16px 20px 10px 10px;
-  margin-bottom: 30px;
-  background-color: #ffffff;
+/* 4. Financial Analytics Grid */
+.pnl-charts-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(300px, 1fr);
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+@media (max-width: 1024px) {
+  .pnl-charts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pnl-kpi-val.warn {
+  color: #d97706;
 }
 
 /* 5. Tree Table */

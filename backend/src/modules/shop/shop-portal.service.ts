@@ -532,30 +532,43 @@ export class ShopPortalService {
       (sum, it) => sum + Number(it.quantity || 1) * Number(it.unitPrice || 0),
       0,
     );
-    const totalDiscount = Number(promoResult.invoiceDiscount?.discountAmount) || 0;
+    const itemDiscountMap = new Map<string, any>(
+      (promoResult.itemDiscounts || []).map((d: any) => [String(d.productId), d]),
+    );
+    const totalItemDiscounts = Number(promoResult.totalItemDiscountAmount) || 0;
+    const subtotalAfterItemDiscounts = Math.max(0, subtotal - totalItemDiscounts);
+    const totalInvoiceDiscount = Number(promoResult.invoiceDiscount?.discountAmount) || 0;
     const invoicePromoId = promoResult.invoiceDiscount?.promotionId || null;
 
-    let distributedDiscountSum = 0;
+    let distributedInvoiceSum = 0;
     const userItemsWithDiscount = items.map((it, idx) => {
       const qty = Number(it.quantity || 1);
       const price = Number(it.unitPrice || 0);
       const lineTotal = qty * price;
-      let itemDiscount = 0;
-      if (totalDiscount > 0 && subtotal > 0) {
+      const itemPromo = itemDiscountMap.get(String(it.productId));
+      const specificItemDiscount = itemPromo ? Math.min(lineTotal, Number(itemPromo.discountAmount || 0)) : 0;
+      const remainingLineTotal = Math.max(0, lineTotal - specificItemDiscount);
+
+      let invoiceShare = 0;
+      if (totalInvoiceDiscount > 0 && subtotalAfterItemDiscounts > 0 && remainingLineTotal > 0) {
         if (idx === items.length - 1) {
-          itemDiscount = Math.max(0, totalDiscount - distributedDiscountSum);
+          invoiceShare = Math.min(remainingLineTotal, Math.max(0, totalInvoiceDiscount - distributedInvoiceSum));
         } else {
-          itemDiscount = Math.round((lineTotal / subtotal) * totalDiscount);
-          distributedDiscountSum += itemDiscount;
+          invoiceShare = Math.round((remainingLineTotal / subtotalAfterItemDiscounts) * totalInvoiceDiscount);
+          distributedInvoiceSum += invoiceShare;
         }
       }
+
+      const itemDiscount = specificItemDiscount + invoiceShare;
+      const appliedPromoIdToLink = itemPromo?.promotionId || (invoiceShare > 0 ? invoicePromoId : null);
+
       return {
         product: { connect: { id: BigInt(it.productId) } },
         quantity: isNaN(qty) || qty <= 0 ? 1 : qty,
         unitPrice: isNaN(price) || price < 0 ? 0 : price,
         isPromotion: false,
-        ...(itemDiscount > 0 && invoicePromoId
-          ? { appliedPromotion: { connect: { id: BigInt(invoicePromoId) } } }
+        ...(itemDiscount > 0 && appliedPromoIdToLink
+          ? { appliedPromotion: { connect: { id: BigInt(appliedPromoIdToLink) } } }
           : {}),
         discountAmount: itemDiscount,
       };

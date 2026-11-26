@@ -174,3 +174,23 @@
   color: #1e293b;
   padding: 0 4px;
 }
+
+.rpt061-charts-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr);
+  gap: 18px;
+}
+
+@media (max-width: 1024px) {
+  .rpt061-charts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rpt061-promo-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}

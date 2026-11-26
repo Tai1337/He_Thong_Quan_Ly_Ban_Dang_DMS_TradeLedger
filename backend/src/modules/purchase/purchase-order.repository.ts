@@ -90,6 +90,11 @@ export class PurchaseOrderRepository {
         include: {
           supplier: true,
           warehouse: true,
+          deliveryTrip: {
+            include: {
+              driver: { select: { id: true, fullName: true } },
+            },
+          },
           createdBy: {
             select: { id: true, fullName: true, username: true },
           },
@@ -139,11 +144,16 @@ export class PurchaseOrderRepository {
       where.distributorId = BigInt(distributorId);
     }
 
-    return this.prisma.purchaseOrder.findFirst({
+    const order = await this.prisma.purchaseOrder.findFirst({
       where,
       include: {
         supplier: true,
         warehouse: true,
+        deliveryTrip: {
+          include: {
+            driver: { select: { id: true, fullName: true } },
+          },
+        },
         createdBy: {
           select: { id: true, fullName: true, username: true, email: true },
         },
@@ -163,6 +173,112 @@ export class PurchaseOrderRepository {
         },
       },
     });
+
+    if (!order) return null;
+
+    const inboundTransactions = await this.prisma.inventoryTransaction.findMany({
+      where: {
+        referenceType: 'PURCHASE_ORDER',
+        referenceId: order.id,
+        direction: 'IN',
+      },
+      include: {
+        stockLot: true,
+        warehouse: {
+          select: { id: true, code: true, name: true },
+        },
+        createdBy: {
+          select: { id: true, fullName: true, username: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return {
+      ...order,
+      inboundTransactions,
+    };
+  }
+
+  /**
+   * Lấy tồn kho khả dụng theo kho để gợi ý đặt hàng bổ sung trên trang Lập PO
+   */
+  async findReplenishmentStockByWarehouse(
+    distributorId: string | number | bigint,
+    warehouseId?: string | number | bigint,
+  ) {
+    const distId = BigInt(distributorId || 1);
+
+    let targetWarehouse = null;
+    if (warehouseId) {
+      targetWarehouse = await this.prisma.warehouse.findFirst({
+        where: { id: BigInt(warehouseId), distributorId: distId },
+      });
+    } else {
+      targetWarehouse = await this.prisma.warehouse.findFirst({
+        where: { distributorId: distId, status: true },
+        orderBy: { id: 'asc' },
+      });
+    }
+
+    const products = await this.prisma.product.findMany({
+      where: { status: true },
+      include: {
+        category: { select: { id: true, name: true } },
+      },
+      orderBy: { sku: 'asc' },
+    });
+
+    const lots = targetWarehouse
+      ? await this.prisma.stockLot.findMany({
+          where: {
+            warehouseId: targetWarehouse.id,
+            status: 'GOOD',
+          },
+          include: {
+            stockBalance: true,
+          },
+        })
+      : [];
+
+    const stockMap = new Map<string, { onHand: number; reserved: number }>();
+    for (const lot of lots) {
+      const key = lot.productId.toString();
+      const prev = stockMap.get(key) || { onHand: 0, reserved: 0 };
+      prev.onHand += Number(lot.stockBalance?.quantityOnHand || 0);
+      prev.reserved += Number(lot.stockBalance?.quantityReserved || 0);
+      stockMap.set(key, prev);
+    }
+
+    return {
+      warehouse: targetWarehouse
+        ? {
+            id: targetWarehouse.id.toString(),
+            code: targetWarehouse.code,
+            name: targetWarehouse.name,
+            type: targetWarehouse.type,
+          }
+        : null,
+      products: products.map((p: any) => {
+        const stock = stockMap.get(p.id.toString()) || { onHand: 0, reserved: 0 };
+        const available = Math.max(0, stock.onHand - stock.reserved);
+        return {
+          id: p.id.toString(),
+          sku: p.sku,
+          name: p.name,
+          unit: p.unit,
+          retailUnit: p.retailUnit,
+          conversionRate: p.conversionRate || 1,
+          basePrice: Number(p.basePrice || 0),
+          weightKg: Number(p.weightKg || 0),
+          imageUrl: p.imageUrl || null,
+          categoryName: p.category?.name || null,
+          onHand: stock.onHand,
+          reserved: stock.reserved,
+          available,
+        };
+      }),
+    };
   }
 
   /**

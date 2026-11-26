@@ -1,16 +1,16 @@
-/* Sleek Category Pills Bar */
 .shop-category-bar-section {
   padding: 12px 0;
   background: #ffffff;
-  border-bottom: 1px solid #e2e8f0;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .category-pills-scroll {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   overflow-x: auto;
-  padding: 4px 0;
+  padding: 2px 0;
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
 }
@@ -29,10 +29,10 @@
   align-items: center;
   gap: 7px;
   padding: 8px 14px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 20px;
-  color: #475569;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  color: #374151;
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
@@ -42,14 +42,14 @@
 }
 
 .category-pill-btn:hover {
-  background: #f1f5f9;
+  background: #f3f4f6;
   border-color: #cbd5e1;
-  color: #0f172a;
+  color: #0b2b26;
 }
 
 .category-pill-btn.active {
-  background: #059669;
-  border-color: #059669;
+  background: #0b2b26;
+  border-color: #0b2b26;
   color: #ffffff;
-  box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25);
+  box-shadow: 0 2px 8px rgba(11, 43, 38, 0.2);
 }

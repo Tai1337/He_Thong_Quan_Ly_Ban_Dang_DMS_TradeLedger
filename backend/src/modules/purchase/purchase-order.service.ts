@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import prisma from '../../prisma/prisma.client';
 import ExcelJS from 'exceljs';
@@ -10,9 +10,24 @@ import {
   findPurchaseOrderById,
   findPurchaseOrderDiscrepancies,
 } from './purchase-order.repository';
+import {
+  CreatePurchaseOrderDto,
+  PurchaseOrderItemInputDto,
+  UpdatePurchaseOrderDto,
+} from './dto/create-purchase-order.dto';
+import {
+  executeReceiveLinesInTx,
+  normalizeAndValidateReceiveLines,
+} from './purchase-receiving.helper';
 
 // Helper format số tiền VNĐ
 const formatNumber = (num: any): number => Number(num || 0);
+
+const getDefaultDPlus3Date = (): Date => {
+  const d = new Date();
+  d.setDate(d.getDate() + 3);
+  return d;
+};
 
 /**
  * Format PO entity sang JSON an toàn (BigInt -> String, Decimal -> Number)
@@ -30,6 +45,10 @@ export const sanitizePurchaseOrder = (order: any) => {
     order.items?.reduce((sum: number, item: any) => {
       return sum + formatNumber(item.quantityReceived) * formatNumber(item.unitPrice);
     }, 0) || 0;
+  const totalWeightKg =
+    order.items?.reduce((sum: number, item: any) => {
+      return sum + formatNumber(item.quantity) * formatNumber(item.product?.weightKg || 10);
+    }, 0) || 0;
 
   const receivedPercentage =
     totalOrderedQty > 0 ? Math.min(100, Math.round((totalReceivedQty / totalOrderedQty) * 100)) : 0;
@@ -40,6 +59,7 @@ export const sanitizePurchaseOrder = (order: any) => {
     distributorId: order.distributorId.toString(),
     warehouseId: order.warehouseId.toString(),
     supplierId: order.supplierId ? order.supplierId.toString() : null,
+    deliveryTripId: order.deliveryTripId ? order.deliveryTripId.toString() : null,
     status: order.status,
     expectedDate: order.expectedDate ? order.expectedDate.toISOString().slice(0, 10) : null,
     notes: order.notes,
@@ -63,6 +83,23 @@ export const sanitizePurchaseOrder = (order: any) => {
           code: order.warehouse.code,
           name: order.warehouse.name,
           type: order.warehouse.type,
+        }
+      : null,
+    deliveryTrip: order.deliveryTrip
+      ? {
+          id: order.deliveryTrip.id.toString(),
+          tripCode: order.deliveryTrip.tripCode,
+          tripType: order.deliveryTrip.tripType,
+          status: order.deliveryTrip.status,
+          expectedDeliveryDate: order.deliveryTrip.expectedDeliveryDate
+            ? order.deliveryTrip.expectedDeliveryDate.toISOString().slice(0, 10)
+            : null,
+          driver: order.deliveryTrip.driver
+            ? {
+                id: order.deliveryTrip.driver.id.toString(),
+                fullName: order.deliveryTrip.driver.fullName,
+              }
+            : null,
         }
       : null,
     createdBy: order.createdBy
@@ -95,6 +132,9 @@ export const sanitizePurchaseOrder = (order: any) => {
               sku: item.product.sku,
               name: item.product.name,
               unit: item.product.unit,
+              retailUnit: item.product.retailUnit,
+              conversionRate: formatNumber(item.product.conversionRate || 1),
+              weightKg: formatNumber(item.product.weightKg || 10),
               basePrice: formatNumber(item.product.basePrice),
             }
           : null,
@@ -116,36 +156,52 @@ export const sanitizePurchaseOrder = (order: any) => {
           }
         : null,
     })),
+    inboundTransactions: (order.inboundTransactions || []).map((txn: any) => ({
+      id: txn.id.toString(),
+      transactionCode: txn.transactionCode,
+      direction: txn.direction,
+      quantity: formatNumber(txn.quantity),
+      unitPrice: formatNumber(txn.unitPrice),
+      createdAt: txn.createdAt,
+      warehouse: txn.warehouse
+        ? {
+            id: txn.warehouse.id.toString(),
+            code: txn.warehouse.code,
+            name: txn.warehouse.name,
+          }
+        : null,
+      stockLot: txn.stockLot
+        ? {
+            id: txn.stockLot.id.toString(),
+            productId: txn.stockLot.productId.toString(),
+            lotNumber: txn.stockLot.lotNumber,
+            manufactureDate: txn.stockLot.manufactureDate
+              ? txn.stockLot.manufactureDate.toISOString().slice(0, 10)
+              : null,
+            expiryDate: txn.stockLot.expiryDate ? txn.stockLot.expiryDate.toISOString().slice(0, 10) : null,
+            locationCode: txn.stockLot.locationCode || 'KHO-A1',
+            status: txn.stockLot.status,
+          }
+        : null,
+      createdBy: txn.createdBy
+        ? {
+            id: txn.createdBy.id.toString(),
+            fullName: txn.createdBy.fullName,
+            username: txn.createdBy.username,
+          }
+        : null,
+    })),
     metrics: {
       totalOrderedQty,
       totalReceivedQty,
       totalRemainingQty: Math.max(0, totalOrderedQty - totalReceivedQty),
       totalAmount,
       totalReceivedAmount,
+      totalWeightKg: Math.round(totalWeightKg * 100) / 100,
       receivedPercentage,
     },
   };
 };
-
-export interface CreatePurchaseOrderDto {
-  distributorId: string | number | bigint;
-  warehouseId: string | number | bigint;
-  supplierId?: string | number | bigint;
-  expectedDate?: string | Date;
-  notes?: string;
-  items: Array<{ productId: string | number | bigint; quantity: number; unitPrice?: number }>;
-  createdById?: string | number | bigint;
-}
-
-export interface UpdatePurchaseOrderDto {
-  distributorId?: string | number | bigint;
-  warehouseId?: string | number | bigint;
-  supplierId?: string | number | bigint;
-  expectedDate?: string | Date;
-  notes?: string;
-  items?: Array<{ productId: string | number | bigint; quantity: number; unitPrice?: number }>;
-  userId?: string | number | bigint;
-}
 
 @Injectable()
 export class PurchaseOrderService {
@@ -207,7 +263,98 @@ export class PurchaseOrderService {
   }
 
   /**
-   * Service tạo đơn mua PO mới (trạng thái DRAFT)
+   * Hợp nhất các dòng trùng productId (tránh lỗi P2002) và kiểm tra số lượng/đơn giá
+   */
+  private mergeAndValidateItems(items: PurchaseOrderItemInputDto[]) {
+    if (!Array.isArray(items) || items.length === 0) {
+      throw new BadRequestException({ error: 'Đơn đặt hàng phải có ít nhất 1 sản phẩm' });
+    }
+
+    const merged = new Map<string, { productId: bigint; quantity: number; unitPrice: number }>();
+
+    for (const raw of items) {
+      if (!raw.productId) {
+        throw new BadRequestException({ error: 'Có dòng sản phẩm chưa chọn mã SKU' });
+      }
+      const qty = Number(raw.quantity || 0);
+      const price = Number(raw.unitPrice || 0);
+
+      if (qty <= 0) {
+        throw new BadRequestException({ error: 'Số lượng đặt mua phải lớn hơn 0' });
+      }
+      if (price < 0) {
+        throw new BadRequestException({ error: 'Đơn giá nhập không được âm' });
+      }
+
+      const key = String(raw.productId);
+      const existing = merged.get(key);
+      if (existing) {
+        existing.quantity += qty;
+        if (price > 0) existing.unitPrice = price;
+      } else {
+        merged.set(key, {
+          productId: BigInt(raw.productId),
+          quantity: qty,
+          unitPrice: price,
+        });
+      }
+    }
+
+    return Array.from(merged.values());
+  }
+
+  /**
+   * Đảm bảo PO ở trạng thái WAITING_RECEIVE luôn có Chuyến xe INBOUND (D+3) đi kèm
+   */
+  private async ensureInboundDeliveryTripTx(tx: any, order: any) {
+    if (order.deliveryTripId) {
+      const existingTrip = await tx.deliveryTrip.findUnique({ where: { id: order.deliveryTripId } });
+      if (existingTrip) return existingTrip;
+    }
+
+    const expectedDate = order.expectedDate ? new Date(order.expectedDate) : getDefaultDPlus3Date();
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const randSuffix = Math.floor(1000 + Math.random() * 9000);
+    const tripCode = `TRIP-IN-${dateStr}-${randSuffix}`;
+
+    const totalWeightKg = (order.items || []).reduce((sum: number, item: any) => {
+      return sum + formatNumber(item.quantity) * formatNumber(item.product?.weightKg || 10);
+    }, 0);
+
+    const trip = await tx.deliveryTrip.create({
+      data: {
+        tripCode,
+        tripType: 'INBOUND',
+        distributorId: order.distributorId,
+        warehouseId: order.warehouseId,
+        supplierId: order.supplierId || null,
+        expectedDeliveryDate: expectedDate,
+        currentWeightKg: Math.round(totalWeightKg * 100) / 100,
+        status: 'SHIPPING',
+        notes: `Chuyến nhập hàng NCC cho đơn ${order.poCode}`,
+      },
+    });
+
+    await tx.purchaseOrder.update({
+      where: { id: order.id },
+      data: {
+        deliveryTripId: trip.id,
+        expectedDate: order.expectedDate || expectedDate,
+      },
+    });
+
+    return trip;
+  }
+
+  /**
+   * Lấy gợi ý nhập hàng theo tồn kho hiện tại của kho nhận hàng
+   */
+  async getReplenishmentSuggestions(distributorId: string | number | bigint = 1, warehouseId?: string | number | bigint) {
+    return this.purchaseOrderRepo.findReplenishmentStockByWarehouse(distributorId, warehouseId);
+  }
+
+  /**
+   * Service tạo đơn mua PO mới (hỗ trợ Lưu nháp DRAFT hoặc Gửi NCC ngay trong 1 transaction)
    */
   async createPurchaseOrder({
     distributorId,
@@ -217,37 +364,48 @@ export class PurchaseOrderService {
     notes,
     items,
     createdById,
+    submitImmediately = false,
   }: CreatePurchaseOrderDto) {
-    if (!distributorId) throw new Error('Thiếu thông tin Nhà phân phối (distributorId)');
-    if (!warehouseId) throw new Error('Vui lòng chọn Kho nhận hàng');
-    if (!items || items.length === 0) throw new Error('Đơn đặt hàng phải có ít nhất 1 sản phẩm');
+    if (!distributorId) throw new BadRequestException({ error: 'Thiếu thông tin Nhà phân phối (distributorId)' });
+    if (!warehouseId) throw new BadRequestException({ error: 'Vui lòng chọn Kho nhận hàng' });
 
-    const warehouse = await this.prisma.warehouse.findUnique({
-      where: { id: BigInt(warehouseId) },
+    if (submitImmediately && !supplierId) {
+      throw new BadRequestException({ error: 'Vui lòng chọn Nhà cung cấp trước khi gửi đơn đặt hàng' });
+    }
+
+    const mergedItems = this.mergeAndValidateItems(items);
+
+    const warehouse = await this.prisma.warehouse.findFirst({
+      where: {
+        id: BigInt(warehouseId),
+        distributorId: BigInt(distributorId),
+      },
     });
-    if (!warehouse) throw new Error('Kho nhận hàng không tồn tại');
+    if (!warehouse) throw new NotFoundException({ error: 'Kho nhận hàng không tồn tại hoặc không thuộc NPP này' });
 
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const randomSuffix = Math.floor(10000 + Math.random() * 90000);
     const poCode = `PO-${dateStr}-${randomSuffix}`;
+    const resolvedExpectedDate = expectedDate ? new Date(expectedDate) : getDefaultDPlus3Date();
+    const initialStatus = submitImmediately ? 'WAITING_RECEIVE' : 'DRAFT';
 
     return this.prisma.$transaction(async (tx: any) => {
-      const order = await tx.purchaseOrder.create({
+      let order = await tx.purchaseOrder.create({
         data: {
           poCode,
           distributorId: BigInt(distributorId),
           warehouseId: BigInt(warehouseId),
           supplierId: supplierId ? BigInt(supplierId) : null,
-          status: 'DRAFT',
-          expectedDate: expectedDate ? new Date(expectedDate) : null,
+          status: initialStatus,
+          expectedDate: resolvedExpectedDate,
           notes: notes || null,
           createdById: createdById ? BigInt(createdById) : null,
           items: {
-            create: items.map((item) => ({
-              productId: BigInt(item.productId),
-              quantity: Number(item.quantity),
+            create: mergedItems.map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
               quantityReceived: 0,
-              unitPrice: Number(item.unitPrice || 0),
+              unitPrice: item.unitPrice,
             })),
           },
         },
@@ -258,56 +416,97 @@ export class PurchaseOrderService {
         },
       });
 
-      await tx.purchaseOrderStatusHistory.create({
-        data: {
-          purchaseOrderId: order.id,
-          fromStatus: null,
-          toStatus: 'DRAFT',
-          changedById: createdById ? BigInt(createdById) : null,
-          notes: 'Khởi tạo đơn đặt hàng mua (Nháp)',
-        },
-      });
+      if (submitImmediately) {
+        const trip = await this.ensureInboundDeliveryTripTx(tx, order);
+        order = await tx.purchaseOrder.findUnique({
+          where: { id: order.id },
+          include: {
+            supplier: true,
+            warehouse: true,
+            deliveryTrip: {
+              include: { driver: { select: { id: true, fullName: true } } },
+            },
+            items: { include: { product: true }, orderBy: { id: 'asc' } },
+          },
+        });
+
+        await tx.purchaseOrderStatusHistory.create({
+          data: {
+            purchaseOrderId: order.id,
+            fromStatus: null,
+            toStatus: 'WAITING_RECEIVE',
+            changedById: createdById ? BigInt(createdById) : null,
+            notes: `Tạo và gửi đơn đặt hàng cho NCC (Chuyến nhập kho ${trip.tripCode})`,
+          },
+        });
+      } else {
+        await tx.purchaseOrderStatusHistory.create({
+          data: {
+            purchaseOrderId: order.id,
+            fromStatus: null,
+            toStatus: 'DRAFT',
+            changedById: createdById ? BigInt(createdById) : null,
+            notes: 'Khởi tạo đơn đặt hàng mua (Nháp)',
+          },
+        });
+      }
 
       return sanitizePurchaseOrder(order);
     });
   }
 
   /**
-   * Service cập nhật PO khi còn ở trạng thái DRAFT
+   * Service cập nhật PO khi còn ở trạng thái DRAFT (có thể kèm submitImmediately)
    */
   async updatePurchaseOrder(
     id: string | number | bigint,
-    { distributorId, warehouseId, supplierId, expectedDate, notes, items, userId }: UpdatePurchaseOrderDto,
+    {
+      distributorId,
+      warehouseId,
+      supplierId,
+      expectedDate,
+      notes,
+      items,
+      userId,
+      submitImmediately = false,
+    }: UpdatePurchaseOrderDto,
   ) {
     const order = await this.prisma.purchaseOrder.findUnique({
       where: { id: BigInt(id) },
       include: { items: true },
     });
 
-    if (!order) throw new Error('Không tìm thấy đơn đặt hàng mua');
+    if (!order) throw new NotFoundException({ error: 'Không tìm thấy đơn đặt hàng mua' });
     if (distributorId && order.distributorId.toString() !== distributorId.toString()) {
-      throw new Error('Bạn không có quyền chỉnh sửa đơn hàng này');
+      throw new ForbiddenException({ error: 'Bạn không có quyền chỉnh sửa đơn hàng này' });
     }
 
     if (order.status !== 'DRAFT') {
-      throw new Error(
-        `Không thể chỉnh sửa đơn hàng ở trạng thái "${order.status}". Chỉ cho phép sửa khi đơn ở trạng thái Nháp (DRAFT).`,
-      );
+      throw new BadRequestException({
+        error: `Không thể chỉnh sửa đơn hàng ở trạng thái "${order.status}". Chỉ cho phép sửa khi đơn ở trạng thái Nháp (DRAFT).`,
+      });
     }
 
+    const effectiveSupplierId = supplierId !== undefined ? supplierId : order.supplierId;
+    if (submitImmediately && !effectiveSupplierId) {
+      throw new BadRequestException({ error: 'Vui lòng chọn Nhà cung cấp trước khi gửi đơn đặt hàng' });
+    }
+
+    const mergedItems = items ? this.mergeAndValidateItems(items) : null;
+
     return this.prisma.$transaction(async (tx: any) => {
-      if (items && items.length > 0) {
+      if (mergedItems) {
         await tx.purchaseOrderItem.deleteMany({
           where: { purchaseOrderId: order.id },
         });
 
         await tx.purchaseOrderItem.createMany({
-          data: items.map((item) => ({
+          data: mergedItems.map((item) => ({
             purchaseOrderId: order.id,
-            productId: BigInt(item.productId),
-            quantity: Number(item.quantity),
+            productId: item.productId,
+            quantity: item.quantity,
             quantityReceived: 0,
-            unitPrice: Number(item.unitPrice || 0),
+            unitPrice: item.unitPrice,
           })),
         });
       }
@@ -317,34 +516,61 @@ export class PurchaseOrderService {
       if (supplierId !== undefined) updateData.supplierId = supplierId ? BigInt(supplierId) : null;
       if (expectedDate !== undefined) updateData.expectedDate = expectedDate ? new Date(expectedDate) : null;
       if (notes !== undefined) updateData.notes = notes;
+      if (submitImmediately) updateData.status = 'WAITING_RECEIVE';
 
-      const updated = await tx.purchaseOrder.update({
+      let updated = await tx.purchaseOrder.update({
         where: { id: order.id },
         data: updateData,
         include: {
           supplier: true,
           warehouse: true,
-          items: { include: { product: true } },
+          items: { include: { product: true }, orderBy: { id: 'asc' } },
           statusHistory: true,
         },
       });
 
-      await tx.purchaseOrderStatusHistory.create({
-        data: {
-          purchaseOrderId: order.id,
-          fromStatus: 'DRAFT',
-          toStatus: 'DRAFT',
-          changedById: userId ? BigInt(userId) : null,
-          notes: 'Chỉnh sửa nội dung đơn đặt hàng mua (Nháp)',
-        },
-      });
+      if (submitImmediately) {
+        const trip = await this.ensureInboundDeliveryTripTx(tx, updated);
+        updated = await tx.purchaseOrder.findUnique({
+          where: { id: order.id },
+          include: {
+            supplier: true,
+            warehouse: true,
+            deliveryTrip: {
+              include: { driver: { select: { id: true, fullName: true } } },
+            },
+            items: { include: { product: true }, orderBy: { id: 'asc' } },
+            statusHistory: true,
+          },
+        });
+
+        await tx.purchaseOrderStatusHistory.create({
+          data: {
+            purchaseOrderId: order.id,
+            fromStatus: 'DRAFT',
+            toStatus: 'WAITING_RECEIVE',
+            changedById: userId ? BigInt(userId) : null,
+            notes: `Cập nhật và gửi đơn cho NCC (Chuyến nhập kho ${trip.tripCode})`,
+          },
+        });
+      } else {
+        await tx.purchaseOrderStatusHistory.create({
+          data: {
+            purchaseOrderId: order.id,
+            fromStatus: 'DRAFT',
+            toStatus: 'DRAFT',
+            changedById: userId ? BigInt(userId) : null,
+            notes: 'Chỉnh sửa nội dung đơn đặt hàng mua (Nháp)',
+          },
+        });
+      }
 
       return sanitizePurchaseOrder(updated);
     });
   }
 
   /**
-   * Service gửi PO cho NCC (DRAFT -> WAITING_RECEIVE)
+   * Service gửi PO cho NCC (DRAFT -> WAITING_RECEIVE) và tự động tạo Chuyến xe INBOUND (D+3)
    */
   async sendPurchaseOrderToSupplier(
     id: string | number | bigint,
@@ -356,30 +582,45 @@ export class PurchaseOrderService {
   ) {
     const order = await this.prisma.purchaseOrder.findUnique({
       where: { id: BigInt(id) },
-      include: { items: true },
+      include: { items: { include: { product: true } } },
     });
 
-    if (!order) throw new Error('Không tìm thấy đơn đặt hàng mua');
+    if (!order) throw new NotFoundException({ error: 'Không tìm thấy đơn đặt hàng mua' });
     if (distributorId && order.distributorId.toString() !== distributorId.toString()) {
-      throw new Error('Bạn không có quyền thao tác trên đơn hàng này');
+      throw new ForbiddenException({ error: 'Bạn không có quyền thao tác trên đơn hàng này' });
     }
 
     if (order.status !== 'DRAFT') {
-      throw new Error(`Đơn hàng đang ở trạng thái "${order.status}", không thể gửi cho Nhà cung cấp.`);
+      throw new BadRequestException({
+        error: `Đơn hàng đang ở trạng thái "${order.status}", không thể gửi cho Nhà cung cấp.`,
+      });
+    }
+
+    if (!order.supplierId) {
+      throw new BadRequestException({ error: 'Đơn hàng chưa chọn Nhà cung cấp, không thể gửi NCC' });
     }
 
     if (!order.items || order.items.length === 0) {
-      throw new Error('Đơn hàng chưa có sản phẩm nào, không thể gửi NCC');
+      throw new BadRequestException({ error: 'Đơn hàng chưa có sản phẩm nào, không thể gửi NCC' });
     }
 
     return this.prisma.$transaction(async (tx: any) => {
-      const updated = await tx.purchaseOrder.update({
+      await tx.purchaseOrder.update({
         where: { id: order.id },
         data: { status: 'WAITING_RECEIVE' },
+      });
+
+      const trip = await this.ensureInboundDeliveryTripTx(tx, order);
+
+      const updated = await tx.purchaseOrder.findUnique({
+        where: { id: order.id },
         include: {
           supplier: true,
           warehouse: true,
-          items: { include: { product: true } },
+          deliveryTrip: {
+            include: { driver: { select: { id: true, fullName: true } } },
+          },
+          items: { include: { product: true }, orderBy: { id: 'asc' } },
         },
       });
 
@@ -389,7 +630,9 @@ export class PurchaseOrderService {
           fromStatus: 'DRAFT',
           toStatus: 'WAITING_RECEIVE',
           changedById: userId ? BigInt(userId) : null,
-          notes: notes || 'Đã gửi đơn đặt hàng cho Nhà cung cấp, khoá số lượng đặt',
+          notes:
+            notes ||
+            `Đã gửi đơn đặt hàng cho Nhà cung cấp, tự động lập chuyến nhập kho ${trip.tripCode}`,
         },
       });
 
@@ -398,7 +641,7 @@ export class PurchaseOrderService {
   }
 
   /**
-   * Service huỷ PO (DRAFT hoặc WAITING_RECEIVE)
+   * Service huỷ PO (DRAFT hoặc WAITING_RECEIVE) và đồng bộ hủy chuyến xe INBOUND nếu rỗng
    */
   async cancelPurchaseOrder(
     id: string | number | bigint,
@@ -409,7 +652,7 @@ export class PurchaseOrderService {
     }: { distributorId?: string | number | bigint; userId?: string | number | bigint; reason: string },
   ) {
     if (!reason || !reason.trim()) {
-      throw new Error('Vui lòng nhập lý do huỷ đơn đặt hàng');
+      throw new BadRequestException({ error: 'Vui lòng nhập lý do huỷ đơn đặt hàng' });
     }
 
     const order = await this.prisma.purchaseOrder.findUnique({
@@ -417,18 +660,22 @@ export class PurchaseOrderService {
       include: { items: true },
     });
 
-    if (!order) throw new Error('Không tìm thấy đơn đặt hàng mua');
+    if (!order) throw new NotFoundException({ error: 'Không tìm thấy đơn đặt hàng mua' });
     if (distributorId && order.distributorId.toString() !== distributorId.toString()) {
-      throw new Error('Bạn không có quyền thao tác trên đơn hàng này');
+      throw new ForbiddenException({ error: 'Bạn không có quyền thao tác trên đơn hàng này' });
     }
 
     if (order.status !== 'DRAFT' && order.status !== 'WAITING_RECEIVE') {
-      throw new Error(`Không thể huỷ đơn hàng ở trạng thái "${order.status}". Đơn đã nhận hàng không được phép huỷ.`);
+      throw new BadRequestException({
+        error: `Không thể huỷ đơn hàng ở trạng thái "${order.status}". Đơn đã nhận hàng không được phép huỷ.`,
+      });
     }
 
     const hasReceived = order.items.some((i: any) => Number(i.quantityReceived) > 0);
     if (hasReceived) {
-      throw new Error('Đơn hàng đã nhận một số sản phẩm nhập kho, không thể huỷ đơn.');
+      throw new BadRequestException({
+        error: 'Đơn hàng đã nhận một số sản phẩm nhập kho, không thể huỷ đơn.',
+      });
     }
 
     return this.prisma.$transaction(async (tx: any) => {
@@ -441,9 +688,31 @@ export class PurchaseOrderService {
         include: {
           supplier: true,
           warehouse: true,
-          items: { include: { product: true } },
+          deliveryTrip: {
+            include: { driver: { select: { id: true, fullName: true } } },
+          },
+          items: { include: { product: true }, orderBy: { id: 'asc' } },
         },
       });
+
+      if (order.deliveryTripId) {
+        const otherActivePos = await tx.purchaseOrder.count({
+          where: {
+            deliveryTripId: order.deliveryTripId,
+            id: { not: order.id },
+            status: { not: 'CANCELLED' },
+          },
+        });
+        if (otherActivePos === 0) {
+          await tx.deliveryTrip.update({
+            where: { id: order.deliveryTripId },
+            data: {
+              status: 'CANCELLED',
+              closeNotes: `Tự động hủy do hủy đơn ${order.poCode}: ${reason.trim()}`,
+            },
+          });
+        }
+      }
 
       await tx.purchaseOrderStatusHistory.create({
         data: {
@@ -473,8 +742,10 @@ export class PurchaseOrderService {
       distributorId?: string | number | bigint;
       userId?: string | number | bigint;
       items: Array<{
-        itemId: string | number | bigint;
-        quantityReceived: number;
+        itemId?: string | number | bigint;
+        poItemId?: string | number | bigint;
+        quantityReceived?: number;
+        quantityReceivedNow?: number;
         lotNumber?: string;
         manufactureDate?: string | Date;
         expiryDate?: string | Date;
@@ -483,174 +754,50 @@ export class PurchaseOrderService {
       notes?: string;
     },
   ) {
-    if (!items || items.length === 0) {
-      throw new Error('Vui lòng chọn ít nhất 1 sản phẩm để nhận hàng');
-    }
-
     const order = await this.prisma.purchaseOrder.findUnique({
       where: { id: BigInt(id) },
       include: { items: { include: { product: true } } },
     });
 
-    if (!order) throw new Error('Không tìm thấy đơn đặt hàng mua');
+    if (!order) throw new NotFoundException({ error: 'Không tìm thấy đơn đặt hàng mua' });
     if (distributorId && order.distributorId.toString() !== distributorId.toString()) {
-      throw new Error('Bạn không có quyền thao tác trên đơn hàng này');
+      throw new ForbiddenException({ error: 'Bạn không có quyền thao tác trên đơn hàng này' });
     }
 
     if (order.status !== 'WAITING_RECEIVE' && order.status !== 'PARTIALLY_RECEIVED') {
-      throw new Error(`Đơn hàng ở trạng thái "${order.status}" không thể nhận hàng nhập kho.`);
+      throw new BadRequestException({
+        error: `Đơn hàng ở trạng thái "${order.status}" không thể nhận hàng nhập kho.`,
+      });
     }
 
+    const poItemsMap = new Map<string, any>();
+    for (const item of order.items) {
+      poItemsMap.set(item.id.toString(), {
+        ...item,
+        purchaseOrderId: order.id,
+      });
+    }
+
+    const normalizedLines = normalizeAndValidateReceiveLines(items, poItemsMap);
+
     return this.prisma.$transaction(async (tx: any) => {
-      const receiveLogs: string[] = [];
-
-      for (const recItem of items) {
-        const receiveQty = Number(recItem.quantityReceived);
-        if (!receiveQty || receiveQty <= 0) continue;
-
-        const lineItem = order.items.find((i: any) => i.id.toString() === recItem.itemId.toString());
-        if (!lineItem) {
-          throw new Error(`Mặt hàng (ID ${recItem.itemId}) không thuộc đơn PO này`);
-        }
-
-        const lotNumber = (recItem.lotNumber || '').trim();
-        if (!lotNumber) {
-          throw new Error(`Vui lòng nhập số lô cho sản phẩm "${lineItem.product?.name || lineItem.productId}"`);
-        }
-
-        const mfgDate = recItem.manufactureDate ? new Date(recItem.manufactureDate) : null;
-        const expDate = recItem.expiryDate ? new Date(recItem.expiryDate) : null;
-        const locationCode = recItem.locationCode || 'A-01';
-
-        let lot = await tx.stockLot.findUnique({
-          where: {
-            productId_warehouseId_lotNumber: {
-              productId: lineItem.productId,
-              warehouseId: order.warehouseId,
-              lotNumber: lotNumber,
-            },
-          },
-        });
-
-        if (!lot) {
-          lot = await tx.stockLot.create({
-            data: {
-              productId: lineItem.productId,
-              warehouseId: order.warehouseId,
-              lotNumber: lotNumber,
-              manufactureDate: mfgDate,
-              expiryDate: expDate,
-              locationCode: locationCode,
-              status: 'GOOD',
-            },
-          });
-        } else {
-          if (!lot.manufactureDate && mfgDate) {
-            await tx.stockLot.update({
-              where: { id: lot.id },
-              data: { manufactureDate: mfgDate },
-            });
-          }
-          if (!lot.expiryDate && expDate) {
-            await tx.stockLot.update({
-              where: { id: lot.id },
-              data: { expiryDate: expDate },
-            });
-          }
-        }
-
-        const balance = await tx.stockBalance.findUnique({
-          where: { lotId: lot.id },
-        });
-
-        if (!balance) {
-          await tx.stockBalance.create({
-            data: {
-              lotId: lot.id,
-              quantityOnHand: receiveQty,
-              quantityReserved: 0,
-            },
-          });
-        } else {
-          await tx.stockBalance.update({
-            where: { lotId: lot.id },
-            data: {
-              quantityOnHand: { increment: receiveQty },
-            },
-          });
-        }
-
-        const txnCode = `TXN-IN-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`;
-        await tx.inventoryTransaction.create({
-          data: {
-            transactionCode: txnCode,
-            direction: 'IN',
-            lotId: lot.id,
-            warehouseId: order.warehouseId,
-            quantity: receiveQty,
-            unitPrice: lineItem.unitPrice,
-            referenceType: 'PURCHASE_ORDER',
-            referenceId: order.id,
-            createdById: userId ? BigInt(userId) : null,
-          },
-        });
-
-        await tx.purchaseOrderItem.update({
-          where: { id: lineItem.id },
-          data: {
-            quantityReceived: { increment: receiveQty },
-          },
-        });
-
-        receiveLogs.push(`${lineItem.product?.sku}: nhận ${receiveQty} (Lô: ${lotNumber})`);
-      }
-
-      if (receiveLogs.length === 0) {
-        throw new Error('Không có sản phẩm nào được nhập số lượng nhận > 0');
-      }
-
-      const updatedItems = await tx.purchaseOrderItem.findMany({
-        where: { purchaseOrderId: order.id },
+      const txResult = await executeReceiveLinesInTx({
+        tx,
+        warehouseId: order.warehouseId,
+        userId,
+        lines: normalizedLines,
+        poItemsMap,
+        historyNotePrefix: 'Nhận hàng nhập kho',
+        customNotes: notes,
       });
 
-      const isAllCompleted = updatedItems.every((i: any) => {
-        const ordered = Number(i.quantity);
-        const rec = Number(i.quantityReceived);
-        return rec >= ordered;
-      });
-
-      const newStatus = isAllCompleted ? 'COMPLETED' : 'PARTIALLY_RECEIVED';
-
-      const updatedOrder = await tx.purchaseOrder.update({
-        where: { id: order.id },
-        data: { status: newStatus },
-        include: {
-          supplier: true,
-          warehouse: true,
-          items: { include: { product: true } },
-        },
-      });
-
-      const logText = notes
-        ? `${notes} | Chi tiết: ${receiveLogs.join(', ')}`
-        : `Nhận hàng nhập kho: ${receiveLogs.join(', ')}`;
-
-      await tx.purchaseOrderStatusHistory.create({
-        data: {
-          purchaseOrderId: order.id,
-          fromStatus: order.status,
-          toStatus: newStatus,
-          changedById: userId ? BigInt(userId) : null,
-          notes: logText,
-        },
-      });
-
+      const updatedOrder = txResult.updatedOrders[0];
       return sanitizePurchaseOrder(updatedOrder);
     });
   }
 
   /**
-   * Service đóng PO dù thiếu hàng (PARTIALLY_RECEIVED -> COMPLETED)
+   * Service đóng PO dù thiếu hàng (PARTIALLY_RECEIVED -> COMPLETED) và đồng bộ Chuyến xe
    */
   async closePartialPurchaseOrder(
     id: string | number | bigint,
@@ -661,20 +808,22 @@ export class PurchaseOrderService {
     }: { distributorId?: string | number | bigint; userId?: string | number | bigint; reason: string },
   ) {
     if (!reason || !reason.trim()) {
-      throw new Error('Vui lòng nhập lý do đóng đơn hàng');
+      throw new BadRequestException({ error: 'Vui lòng nhập lý do đóng đơn hàng' });
     }
 
     const order = await this.prisma.purchaseOrder.findUnique({
       where: { id: BigInt(id) },
     });
 
-    if (!order) throw new Error('Không tìm thấy đơn đặt hàng mua');
+    if (!order) throw new NotFoundException({ error: 'Không tìm thấy đơn đặt hàng mua' });
     if (distributorId && order.distributorId.toString() !== distributorId.toString()) {
-      throw new Error('Bạn không có quyền thao tác trên đơn hàng này');
+      throw new ForbiddenException({ error: 'Bạn không có quyền thao tác trên đơn hàng này' });
     }
 
     if (order.status !== 'PARTIALLY_RECEIVED') {
-      throw new Error(`Không thể đóng đơn ở trạng thái "${order.status}". Chỉ áp dụng cho đơn "Đã nhận một phần".`);
+      throw new BadRequestException({
+        error: `Không thể đóng đơn ở trạng thái "${order.status}". Chỉ áp dụng cho đơn "Đã nhận một phần".`,
+      });
     }
 
     return this.prisma.$transaction(async (tx: any) => {
@@ -687,9 +836,28 @@ export class PurchaseOrderService {
         include: {
           supplier: true,
           warehouse: true,
-          items: { include: { product: true } },
+          deliveryTrip: {
+            include: { driver: { select: { id: true, fullName: true } } },
+          },
+          items: { include: { product: true }, orderBy: { id: 'asc' } },
         },
       });
+
+      if (order.deliveryTripId) {
+        const tripOrders = await tx.purchaseOrder.findMany({
+          where: {
+            deliveryTripId: order.deliveryTripId,
+            status: { not: 'CANCELLED' },
+          },
+        });
+        const allCompleted = tripOrders.length > 0 && tripOrders.every((p: any) => p.status === 'COMPLETED');
+        if (allCompleted) {
+          await tx.deliveryTrip.update({
+            where: { id: order.deliveryTripId },
+            data: { status: 'COMPLETED', completedTime: new Date() },
+          });
+        }
+      }
 
       await tx.purchaseOrderStatusHistory.create({
         data: {

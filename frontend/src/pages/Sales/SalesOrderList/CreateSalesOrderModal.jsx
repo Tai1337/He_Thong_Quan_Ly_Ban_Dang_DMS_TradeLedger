@@ -100,7 +100,6 @@ const CreateSalesOrderModal = ({ isOpen, onClose, onOrderCreated }) => {
     const timer = setTimeout(() => {
       evaluateOrderPromotions({ items: validPaidItems })
         .then((res) => {
-          console.log('[Khuyến mãi] Kết quả evaluate:', res);
           setPromoData(res);
         })
         .catch((err) => {
@@ -122,7 +121,7 @@ const CreateSalesOrderModal = ({ isOpen, onClose, onOrderCreated }) => {
   // Xoá dòng sản phẩm
   const handleRemoveItem = (index) => {
     if (items.length <= 1) {
-      alert('Đơn hàng phải có ít nhất 1 sản phẩm');
+      setError('Đơn hàng phải có ít nhất 1 sản phẩm');
       return;
     }
     setItems(prev => prev.filter((_, i) => i !== index));
@@ -193,27 +192,39 @@ const CreateSalesOrderModal = ({ isOpen, onClose, onOrderCreated }) => {
       return;
     }
 
-    // Phân bổ chiết khấu bậc thang (Invoice Tier Discount) vào các dòng hàng bán
-    const totalDiscount = Number(promoData.invoiceDiscount?.discountAmount) || 0;
+    // Phân bổ giảm giá cấp SKU (PERCENTAGE/COMBO) + chiết khấu bậc thang (INVOICE_DISCOUNT)
+    const itemDiscountMap = new Map(
+      (promoData.itemDiscounts || []).map((d) => [String(d.productId), d]),
+    );
+    const totalItemDiscounts = Number(promoData.totalItemDiscountAmount) || 0;
+    const subtotalAfterItemDiscounts = Math.max(0, currentSubtotal - totalItemDiscounts);
+    const totalInvoiceDiscount = Number(promoData.invoiceDiscount?.discountAmount) || 0;
     const invoicePromoId = promoData.invoiceDiscount?.promotionId || null;
 
-    let distributedDiscountSum = 0;
+    let distributedInvoiceSum = 0;
     const validUserItemsWithDiscount = validUserItems.map((it, idx) => {
       const lineTotal = Number(it.quantity) * Number(it.unitPrice);
-      let itemDiscount = 0;
-      if (totalDiscount > 0 && currentSubtotal > 0) {
+      const itemPromo = itemDiscountMap.get(String(it.productId));
+      const specificItemDiscount = itemPromo ? Math.min(lineTotal, Number(itemPromo.discountAmount || 0)) : 0;
+      const remainingLineTotal = Math.max(0, lineTotal - specificItemDiscount);
+
+      let invoiceShare = 0;
+      if (totalInvoiceDiscount > 0 && subtotalAfterItemDiscounts > 0 && remainingLineTotal > 0) {
         if (idx === validUserItems.length - 1) {
-          // Dòng cuối nhận phần dư để tròn số tiền
-          itemDiscount = Math.max(0, totalDiscount - distributedDiscountSum);
+          invoiceShare = Math.min(remainingLineTotal, Math.max(0, totalInvoiceDiscount - distributedInvoiceSum));
         } else {
-          itemDiscount = Math.round((lineTotal / currentSubtotal) * totalDiscount);
-          distributedDiscountSum += itemDiscount;
+          invoiceShare = Math.round((remainingLineTotal / subtotalAfterItemDiscounts) * totalInvoiceDiscount);
+          distributedInvoiceSum += invoiceShare;
         }
       }
+
+      const itemDiscount = specificItemDiscount + invoiceShare;
+      const appliedPromoIdToLink = itemPromo?.promotionId || (invoiceShare > 0 ? invoicePromoId : null);
+
       return {
         ...it,
         discountAmount: itemDiscount,
-        appliedPromotionId: itemDiscount > 0 ? invoicePromoId : null,
+        appliedPromotionId: itemDiscount > 0 ? appliedPromoIdToLink : null,
       };
     });
 
@@ -540,10 +551,16 @@ const CreateSalesOrderModal = ({ isOpen, onClose, onOrderCreated }) => {
                   </span>
                 </div>
               )}
+              {Number(promoData.totalItemDiscountAmount) > 0 && (
+                <div className="summary-row summary-discount">
+                  <span>Giảm giá sản phẩm / Combo:</span>
+                  <span style={{ fontWeight: 700 }}>- {formatCurrency(promoData.totalItemDiscountAmount)} đ</span>
+                </div>
+              )}
               {promoData.invoiceDiscount && (
                 <div className="summary-row summary-discount">
                   <span>
-                    Chiết khấu {promoData.invoiceDiscount.discountPercent ? `${promoData.invoiceDiscount.discountPercent}%` : 'tiền mặt'}:
+                    Chiết khấu tổng đơn {promoData.invoiceDiscount.discountPercent ? `${promoData.invoiceDiscount.discountPercent}%` : 'tiền mặt'}:
                   </span>
                   <span style={{ fontWeight: 700 }}>- {formatCurrency(promoData.invoiceDiscount.discountAmount)} đ</span>
                 </div>

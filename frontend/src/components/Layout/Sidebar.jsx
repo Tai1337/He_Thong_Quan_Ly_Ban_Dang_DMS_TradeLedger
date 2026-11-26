@@ -17,7 +17,6 @@ import './Layout.css';
 
 const catalogSubMenu = [
   { id: 'cat-products', label: 'Quản lý sản phẩm & SKU', path: '/catalog/products' },
-  { id: 'cat-promotions', label: 'Chương trình khuyến mãi', path: '/catalog/promotions' },
 ];
 
 const buyingSubMenu = [
@@ -27,6 +26,7 @@ const buyingSubMenu = [
 
 const salesSubMenu = [
   { id: 'sales-so', label: 'Danh sách đơn hàng bán (SO)', path: '/sales/sales-orders' },
+  { id: 'sales-promotions', label: 'Chương trình khuyến mãi', path: '/promotions' },
   { id: 'sales-trips', label: 'Chuyến xe & Điều phối giao', path: '/logistics/delivery-trips' },
   { id: 'sales-rpt057', label: 'RPT057 - Doanh số & Sản lượng', path: '/reports/rpt057' },
 ];

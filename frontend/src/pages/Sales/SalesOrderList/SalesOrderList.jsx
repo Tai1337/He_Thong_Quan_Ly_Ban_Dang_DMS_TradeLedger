@@ -92,6 +92,17 @@ const SalesOrderList = () => {
   const [showVnbhDropdown, setShowVnbhDropdown] = useState(false);
   const [showRetailerDropdown, setShowRetailerDropdown] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const statusDropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target)) {
+        setShowStatusDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Modals
   const navigate = useNavigate();
@@ -410,7 +421,7 @@ const SalesOrderList = () => {
               )}
             </div>
 
-            <div className="filter-item filter-col-3" style={{ position: 'relative' }}>
+            <div className="filter-item filter-col-3" style={{ position: 'relative' }} ref={statusDropdownRef}>
               <button 
                 type="button"
                 className="btn-status-multiselect"

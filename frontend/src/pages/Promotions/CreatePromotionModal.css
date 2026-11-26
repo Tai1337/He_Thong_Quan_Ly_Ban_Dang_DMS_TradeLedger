@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 1200;
   padding: 20px;
 }
 
@@ -16,13 +16,26 @@
   background: #ffffff;
   border-radius: 16px;
   width: 100%;
-  max-width: 680px;
+  max-width: 720px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   overflow: hidden;
+  box-sizing: border-box;
   animation: promoModalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.promo-modal-card.promo-modal-wide {
+  max-width: 780px;
+}
+
+.promo-modal-card > form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 @keyframes promoModalSlideUp {
@@ -37,11 +50,13 @@
 }
 
 .promo-modal-header {
-  padding: 20px 24px;
+  padding: 18px 24px;
   border-bottom: 1px solid #e2e8f0;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-shrink: 0;
+  background: #ffffff;
 }
 
 .promo-modal-header h2 {
@@ -60,8 +75,11 @@
   font-size: 20px;
   color: #94a3b8;
   cursor: pointer;
-  padding: 4px;
+  padding: 6px;
   border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .promo-modal-close:hover {
@@ -71,25 +89,34 @@
 
 .promo-modal-body {
   padding: 20px 24px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
+  box-sizing: border-box;
 }
 
 .promo-type-selector {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 10px;
 }
 
 .promo-type-option {
   border: 2px solid #e2e8f0;
   border-radius: 10px;
-  padding: 12px 16px;
+  padding: 11px 14px;
   cursor: pointer;
   transition: all 0.2s ease;
   background: #f8fafc;
+  text-align: left;
+}
+
+.promo-type-option:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
 }
 
 .promo-type-option.active {
@@ -114,23 +141,28 @@
   line-height: 1.4;
 }
 
-.form-group {
+.promo-modal-card .form-group {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
 }
 
-.form-group label {
+.promo-modal-card .form-group label {
   font-size: 13px;
   font-weight: 600;
   color: #334155;
 }
 
-.form-group label .req {
+.promo-modal-card .form-group label .req {
   color: #ef4444;
 }
 
-.form-input, .form-select, .form-textarea {
+.promo-modal-card .form-input,
+.promo-modal-card .form-select,
+.promo-modal-card .form-textarea {
+  width: 100%;
+  box-sizing: border-box;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   padding: 9px 12px;
@@ -138,18 +170,168 @@
   color: #0f172a;
   background: #ffffff;
   outline: none;
+  font-family: inherit;
   transition: border-color 0.15s ease;
 }
 
-.form-input:focus, .form-select:focus, .form-textarea:focus {
+.promo-modal-card .form-input:focus,
+.promo-modal-card .form-select:focus,
+.promo-modal-card .form-textarea:focus {
   border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
-.form-row {
+.promo-modal-card input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: #2563eb;
+  cursor: pointer;
+}
+
+.promo-modal-card .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+}
+
+.promo-modal-card .promo-row-3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.sku-picker-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 6px 10px;
+  background: #ffffff;
+}
+
+.sku-picker-search-bar input {
+  border: none;
+  outline: none;
+  width: 100%;
+  font-size: 13px;
+}
+
+.sku-multi-checklist {
+  max-height: 185px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  margin-top: 6px;
+}
+
+.sku-check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.sku-check-row:last-child {
+  border-bottom: none;
+}
+
+.sku-check-row.selected {
+  background: #eff6ff;
+}
+
+.sku-code-mini {
+  font-family: monospace;
+  font-size: 11.5px;
+  font-weight: 700;
+  background: #e2e8f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.sku-name-mini {
+  flex: 1;
+  color: #0f172a;
+}
+
+.sku-price-mini {
+  color: #475569;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.combo-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.btn-add-combo-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  cursor: pointer;
+}
+
+.combo-rows-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.combo-row-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.combo-row-item .form-select {
+  flex: 1;
+}
+
+.combo-qty-input {
+  width: 78px;
+  text-align: center;
+}
+
+.combo-del-btn {
+  width: 34px;
+  height: 36px;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #dc2626;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.combo-del-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.combo-saving-preview {
+  background: #ffffff;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  color: #475569;
 }
 
 .rule-config-panel {
@@ -173,15 +355,16 @@
 }
 
 .promo-modal-footer {
-  padding: 16px 24px;
+  padding: 14px 24px;
   border-top: 1px solid #e2e8f0;
   display: flex;
   justify-content: flex-end;
   gap: 12px;
   background: #f8fafc;
+  flex-shrink: 0;
 }
 
-.btn-secondary {
+.promo-modal-card .btn-secondary {
   padding: 9px 16px;
   border-radius: 8px;
   font-size: 13.5px;
@@ -192,12 +375,12 @@
   cursor: pointer;
 }
 
-.btn-secondary:hover {
+.promo-modal-card .btn-secondary:hover:not(:disabled) {
   background: #f1f5f9;
   color: #0f172a;
 }
 
-.btn-primary {
+.promo-modal-card .btn-primary {
   padding: 9px 20px;
   border-radius: 8px;
   font-size: 13.5px;
@@ -209,7 +392,15 @@
   box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
 }
 
-.btn-primary:hover {
+.promo-modal-card .btn-primary:hover:not(:disabled) {
   background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+}
+
+@media (max-width: 640px) {
+  .promo-type-selector,
+  .promo-modal-card .form-row,
+  .promo-modal-card .promo-row-3 {
+    grid-template-columns: 1fr;
+  }
 }
 

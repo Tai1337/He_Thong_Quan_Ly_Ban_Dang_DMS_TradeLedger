@@ -432,7 +432,8 @@
 @media print {
   .report-actions,
   .filters-card,
-  .rpt-tabs {
+  .rpt-tabs,
+  .chart-mode-toggle {
     display: none !important;
   }
   .report-container {
@@ -441,5 +442,18 @@
   .table-card {
     box-shadow: none;
     border: none;
+  }
+}
+
+/* Charts Analytics Grid */
+.rpt-charts-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(300px, 1fr);
+  gap: 18px;
+}
+
+@media (max-width: 1024px) {
+  .rpt-charts-grid {
+    grid-template-columns: 1fr;
   }
 }

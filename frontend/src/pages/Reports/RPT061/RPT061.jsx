@@ -11,14 +11,62 @@ import {
   Gift,
   Filter
 } from 'lucide-react';
+import {
+  ResponsiveContainer,
+  ComposedChart,
+  Area,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+} from 'recharts';
 import { getReportRpt061, exportReportRpt061 } from '../../../services/api';
+import FinanceChartCard from '../../../components/Charts/FinanceChartCard';
+import DonutBreakdownChart from '../../../components/Charts/DonutBreakdownChart';
+import {
+  ORDER_STATUS_META,
+  formatVnd,
+  formatCount,
+  formatCompactVnd,
+  parseViDateTimestamp,
+} from '../../../utils/chartFormatters';
 import './RPT061.css';
 
-const formatMoney = (val) =>
-  new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(Number(val) || 0) + ' đ';
-
-const formatNumber = (val) =>
-  new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(Number(val) || 0);
+const Rpt061DailyTooltip = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  const row = payload[0].payload;
+  return (
+    <div className="chart-tooltip-box">
+      <div className="chart-tooltip-title">Ngày {label}</div>
+      <div className="chart-tooltip-row">
+        <span className="chart-tooltip-label">
+          <span className="chart-tooltip-dot" style={{ backgroundColor: '#1a73e8' }} />
+          Doanh số bán
+        </span>
+        <span className="chart-tooltip-val">{formatVnd(row.revenue)}</span>
+      </div>
+      <div className="chart-tooltip-row">
+        <span className="chart-tooltip-label">
+          <span className="chart-tooltip-dot" style={{ backgroundColor: '#f59e0b' }} />
+          Chiết khấu dòng
+        </span>
+        <span className="chart-tooltip-val">{formatVnd(row.discount)}</span>
+      </div>
+      <div className="chart-tooltip-row">
+        <span className="chart-tooltip-label">Số dòng hàng</span>
+        <span className="chart-tooltip-val">{formatCount(row.lineCount, 0)} dòng</span>
+      </div>
+      {row.promoQty > 0 && (
+        <div className="chart-tooltip-row">
+          <span className="chart-tooltip-label">Hàng tặng KM</span>
+          <span className="chart-tooltip-val">{formatCount(row.promoQty)} Thùng</span>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default function RPT061() {
   const [datePreset, setDatePreset] = useState('this_month');
@@ -124,8 +172,63 @@ export default function RPT061() {
     const totalLines = filteredList.length;
     const totalQuantity = filteredList.reduce((s, it) => s + Number(it.quantity || 0), 0);
     const totalAmount = filteredList.reduce((s, it) => s + Number(it.totalAmount || 0), 0);
+    const totalDiscount = filteredList.reduce((s, it) => s + Number(it.discountAmount || 0), 0);
     const promoCount = filteredList.filter((it) => it.isPromotion).length;
-    return { totalLines, totalQuantity, totalAmount, promoCount };
+    const promoQty = filteredList
+      .filter((it) => it.isPromotion)
+      .reduce((s, it) => s + Number(it.quantity || 0), 0);
+    return { totalLines, totalQuantity, totalAmount, totalDiscount, promoCount, promoQty };
+  }, [filteredList]);
+
+  const dailySeries = useMemo(() => {
+    const map = {};
+    filteredList.forEach((item) => {
+      const dateKey = item.orderDate || 'Khác';
+      if (!map[dateKey]) {
+        map[dateKey] = {
+          orderDate: dateKey,
+          ts: parseViDateTimestamp(dateKey),
+          revenue: 0,
+          discount: 0,
+          lineCount: 0,
+          promoQty: 0,
+        };
+      }
+      map[dateKey].revenue += Number(item.totalAmount) || 0;
+      map[dateKey].discount += Number(item.discountAmount) || 0;
+      map[dateKey].lineCount += 1;
+      if (item.isPromotion) {
+        map[dateKey].promoQty += Number(item.quantity) || 0;
+      }
+    });
+
+    return Object.values(map).sort((a, b) => a.ts - b.ts);
+  }, [filteredList]);
+
+  const statusDonutData = useMemo(() => {
+    const statusMap = {};
+    filteredList.forEach((item) => {
+      const key = item.status || 'UNKNOWN';
+      if (!statusMap[key]) {
+        const meta = ORDER_STATUS_META[key] || { label: key, color: '#64748b' };
+        statusMap[key] = {
+          name: meta.label,
+          color: meta.color,
+          value: 0,
+          lineCount: 0,
+        };
+      }
+      statusMap[key].value += Number(item.totalAmount) || 0;
+      statusMap[key].lineCount += 1;
+    });
+
+    return Object.values(statusMap)
+      .filter((s) => s.value > 0)
+      .sort((a, b) => b.value - a.value)
+      .map((s) => ({
+        ...s,
+        meta: `${s.lineCount} dòng hàng`,
+      }));
   }, [filteredList]);
 
   const handleExportExcel = () => {
@@ -169,7 +272,7 @@ export default function RPT061() {
           </div>
           <div>
             <h4 className="summary-card-title">Tổng Doanh số Dòng hàng (VNĐ)</h4>
-            <p className="summary-card-value">{formatMoney(summary.totalAmount)}</p>
+            <p className="summary-card-value">{formatVnd(summary.totalAmount)}</p>
           </div>
         </div>
 
@@ -180,7 +283,7 @@ export default function RPT061() {
           <div>
             <h4 className="summary-card-title">Tổng Sản lượng Xuất bán</h4>
             <p className="summary-card-value">
-              {formatNumber(summary.totalQuantity)} <span className="unit-label">Thùng</span>
+              {formatCount(summary.totalQuantity)} <span className="unit-label">Thùng</span>
             </p>
           </div>
         </div>
@@ -192,7 +295,7 @@ export default function RPT061() {
           <div>
             <h4 className="summary-card-title">Tổng Số Dòng Hàng</h4>
             <p className="summary-card-value">
-              {formatNumber(summary.totalLines)} <span className="unit-label">Dòng</span>
+              {formatCount(summary.totalLines)} <span className="unit-label">Dòng</span>
             </p>
           </div>
         </div>
@@ -278,6 +381,76 @@ export default function RPT061() {
         </div>
       </div>
 
+      {/* 3.5. Visual Charts Grid */}
+      {!loading && filteredList.length > 0 && (
+        <div className="rpt061-charts-grid">
+          <FinanceChartCard
+            title="Diễn biến Doanh số & Chiết khấu theo Ngày"
+            subtitle="Theo dõi nhịp phát sinh doanh số dòng hàng và chiết khấu đối soát"
+            isEmpty={dailySeries.length === 0}
+          >
+            <ResponsiveContainer width="100%" height={275}>
+              <ComposedChart data={dailySeries} margin={{ top: 12, right: 20, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="rpt061RevenueArea" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#1a73e8" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="#1a73e8" stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="orderDate" stroke="#64748b" fontSize={11.5} tickLine={false} />
+                <YAxis
+                  stroke="#64748b"
+                  fontSize={11}
+                  tickLine={false}
+                  tickFormatter={formatCompactVnd}
+                />
+                <Tooltip content={<Rpt061DailyTooltip />} />
+                <Legend verticalAlign="bottom" height={34} />
+                <Area
+                  type="monotone"
+                  dataKey="revenue"
+                  name="Doanh số bán"
+                  stroke="#1a73e8"
+                  strokeWidth={2.2}
+                  fill="url(#rpt061RevenueArea)"
+                />
+                <Bar
+                  dataKey="discount"
+                  name="Chiết khấu dòng"
+                  fill="#f59e0b"
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={26}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </FinanceChartCard>
+
+          <FinanceChartCard
+            title="Cơ cấu Doanh thu theo Trạng thái Đơn"
+            subtitle="Kiểm soát tiến độ ghi nhận doanh thu và đối soát thanh toán"
+            isEmpty={statusDonutData.length === 0}
+            footer={
+              <div className="rpt061-promo-summary">
+                <span>
+                  Hàng tặng KM (0đ): <strong>{formatCount(summary.promoCount, 0)} dòng</strong> (
+                  {formatCount(summary.promoQty)} Thùng)
+                </span>
+                <span>
+                  Tổng CK: <strong>{formatVnd(summary.totalDiscount)}</strong>
+                </span>
+              </div>
+            }
+          >
+            <DonutBreakdownChart
+              items={statusDonutData}
+              centerTitle="Doanh số"
+              centerValue={formatCompactVnd(summary.totalAmount)}
+            />
+          </FinanceChartCard>
+        </div>
+      )}
+
       {/* 4. Data Table */}
       <div className="table-card">
         {error && <div className="rpt-error-box">{error}</div>}
@@ -341,12 +514,12 @@ export default function RPT061() {
                       <td className="text-center">
                         <span className="unit-badge">{row.unit || 'THÙNG'}</span>
                       </td>
-                      <td className="text-right font-bold">{formatNumber(row.quantity)}</td>
+                      <td className="text-right font-bold">{formatCount(row.quantity)}</td>
                       <td className="text-right text-slate-600">
-                        {row.isPromotion ? '0 đ' : formatMoney(row.unitPrice)}
+                        {row.isPromotion ? '0 đ' : formatVnd(row.unitPrice)}
                       </td>
                       <td className="text-right font-bold text-blue-700">
-                        {row.isPromotion ? '0 đ' : formatMoney(row.totalAmount)}
+                        {row.isPromotion ? '0 đ' : formatVnd(row.totalAmount)}
                       </td>
                       <td className="text-sm text-slate-600">{row.allocatedLots || 'Chưa phân bổ'}</td>
                       <td className="text-center">
@@ -363,11 +536,11 @@ export default function RPT061() {
                       TỔNG CỘNG ({filteredList.length} dòng):
                     </td>
                     <td className="text-right font-bold text-emerald-700">
-                      {formatNumber(summary.totalQuantity)}
+                      {formatCount(summary.totalQuantity)}
                     </td>
                     <td />
                     <td className="text-right font-bold text-blue-800">
-                      {formatMoney(summary.totalAmount)}
+                      {formatVnd(summary.totalAmount)}
                     </td>
                     <td colSpan={2} />
                   </tr>
