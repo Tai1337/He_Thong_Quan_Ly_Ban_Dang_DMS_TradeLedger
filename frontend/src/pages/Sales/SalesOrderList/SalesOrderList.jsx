@@ -289,7 +289,11 @@ const SalesOrderList = () => {
           <p className="page-subtitle">Quản lý vòng đời đơn hàng, phân bổ lô FEFO và xuất báo cáo vận hành</p>
         </div>
         <div className="page-header-actions">
+<<<<<<< Updated upstream
           <button
+=======
+          <button 
+>>>>>>> Stashed changes
             className="btn-create-order"
             onClick={() => setIsCreateModalOpen(true)}
           >
@@ -366,9 +370,15 @@ const SalesOrderList = () => {
 
             {/* Hàng 2: VNBH (3) + Cửa hàng (3) + Trạng thái (3) + Nút thao tác (3) = 12 cột */}
             <div className="filter-item filter-col-3 filter-item-rel">
+<<<<<<< Updated upstream
               <input
                 type="text"
                 placeholder="Mã hoặc Tên VNBH"
+=======
+              <input 
+                type="text" 
+                placeholder="Mã hoặc Tên VNBH" 
+>>>>>>> Stashed changes
                 value={filterForm.vnbhName}
                 onChange={(e) => {
                   handleFilterChange('vnbhName', e.target.value);
@@ -408,9 +418,15 @@ const SalesOrderList = () => {
             </div>
 
             <div className="filter-item filter-col-3 filter-item-rel">
+<<<<<<< Updated upstream
               <input
                 type="text"
                 placeholder="Mã hoặc Tên Cửa hàng / Đại lý"
+=======
+              <input 
+                type="text" 
+                placeholder="Mã hoặc Tên Cửa hàng / Đại lý" 
+>>>>>>> Stashed changes
                 value={filterForm.retailer}
                 onChange={(e) => {
                   handleFilterChange('retailer', e.target.value);
@@ -438,7 +454,11 @@ const SalesOrderList = () => {
             </div>
 
             <div className="filter-item filter-col-3 filter-item-rel">
+<<<<<<< Updated upstream
               <button
+=======
+              <button 
+>>>>>>> Stashed changes
                 type="button"
                 className="btn-status-multiselect"
                 onClick={() => setShowStatusDropdown(!showStatusDropdown)}
@@ -564,7 +584,11 @@ const SalesOrderList = () => {
           </div>
           <div className="kpi-icon"><Layers size={16} /></div>
         </div>
+<<<<<<< Updated upstream
         <div
+=======
+        <div 
+>>>>>>> Stashed changes
           className="kpi-card kpi-card-alert"
           title="Nhấn để lọc các đơn đã giao / lập hóa đơn đang chờ đóng đơn"
           role="button"
@@ -775,7 +799,11 @@ const SalesOrderList = () => {
                     </td>
                     <td>
                       <div className="delivery-date">
+<<<<<<< Updated upstream
                         <Calendar size={14} />
+=======
+                        <Calendar size={14} /> 
+>>>>>>> Stashed changes
                         {new Date(row.expectedDate).toLocaleDateString('vi-VN')}
                       </div>
                       <div className="order-created-time">

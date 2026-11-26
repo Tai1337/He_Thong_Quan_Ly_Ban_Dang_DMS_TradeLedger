@@ -15,14 +15,15 @@
 }
 
 .rpt005-modal-container {
-  background: #ffffff;
-  border-radius: 12px;
+  background: var(--surface-color, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: var(--radius-card, 8px);
   width: 95%;
   max-width: 1100px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--shadow-modal);
   overflow: hidden;
 }
 
@@ -195,11 +196,13 @@
 .badge-shortage {
   display: inline-block;
   padding: 2px 8px;
-  background: #fee2e2;
-  color: #dc2626;
-  border-radius: 12px;
-  font-weight: 700;
+  background: var(--color-danger-bg, #fef2f2);
+  color: var(--color-danger, #dc2626);
+  border: 1px solid var(--color-danger-border, #fecaca);
+  border-radius: var(--radius-badge, 4px);
+  font-weight: 500;
   font-size: 12px;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Inline Edit */

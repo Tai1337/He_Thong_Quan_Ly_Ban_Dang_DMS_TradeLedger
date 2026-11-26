@@ -1587,6 +1587,7 @@
 
 .btn-danger:hover {
   background: #b91c1c;
+<<<<<<< Updated upstream
 }
 
 /* =========================================================
@@ -2141,4 +2142,6 @@
   .kpi-cards-row {
     grid-template-columns: 1fr;
   }
+=======
+>>>>>>> Stashed changes
 }

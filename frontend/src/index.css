@@ -3,41 +3,42 @@
 
 :root {
   /* ==========================================================================
-     PHƯƠNG ÁN 2: MODERN SLATE & INDIGO (DESIGN TOKENS GỐC HỆ THỐNG)
-     Chuẩn UI/UX Pro Max & Vercel Web Interface Guidelines
+     ENTERPRISE SAAS – NEUTRAL LIGHT DESIGN SYSTEM (DMS TradeLedger)
      ========================================================================== */
 
-  /* Brand & Theme Colors (Indigo + Emerald Accent) */
-  --primary-color: #4f46e5;
-  --primary-hover: #4338ca;
-  --primary-active: #3730a3;
-  --primary-light: #eef2ff;
-  --primary-border: #c7d2fe;
-  --secondary-color: #6366f1;
+  /* Brand & Primary Accent */
+  --primary-color: #1d4ed8;
+  --primary-hover: #1e40af;
+  --primary-active: #1e3a8a;
+  --primary-light: #eff6ff;
+  --primary-border: #bfdbfe;
+  --secondary-color: #3b82f6;
 
-  /* Accent Tokens (Emerald Green CTA & AI Highlights) */
+  /* Semantic Secondary Accent */
   --accent-color: #059669;
   --accent-hover: #047857;
   --accent-light: #ecfdf5;
   --accent-border: #a7f3d0;
 
-  /* Typography Colors (High Contrast WCAG 2.2 AA ≥ 4.5:1) */
-  --text-primary: #111827;
-  --text-secondary: #374151;
+  /* Typography Colors */
+  --text-primary: #172033;
+  --text-secondary: #64748b;
   --text-muted: #64748b;
   --text-inverse: #ffffff;
 
   /* Layout Surfaces */
-  --bg-color: #f9fafb;
+  --bg-color: #f5f7fa;
+  --surface-color: #ffffff;
   --card-bg: #ffffff;
-  --header-bg: #111827;
-  --header-text: #ffffff;
-  --sidebar-bg: #0f172a;
-  --sidebar-text: #f1f5f9;
-  --sidebar-active: #4f46e5;
-  --border-color: #e5e7eb;
-  --border-strong: #d1d5db;
-  --table-stripe: #f9fafb;
+  --surface-raised: #f8fafc;
+  --header-bg: #ffffff;
+  --header-text: #172033;
+  --sidebar-bg: #ffffff;
+  --sidebar-text: #172033;
+  --sidebar-active: #1d4ed8;
+  --border-color: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --table-stripe: #f8fafc;
   --table-sticky-bg: #ffffff;
 
   /* Semantic Feedback Tokens */
@@ -57,24 +58,41 @@
   --color-info-bg: #f0f9ff;
   --color-info-border: #bae6fd;
 
-  /* Elevation & Shadows */
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
-  --shadow-modal: 0 20px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.08);
+  /* Spacing Scale (4px grid) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Control Heights */
+  --control-height-sm: 32px;
+  --control-height: 36px;
+  --control-height-lg: 44px;
+
+  /* Elevation & Shadows (Minimal Neutral) */
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 8px 24px rgba(15, 23, 42, 0.08);
+  --shadow-modal: 0 16px 32px rgba(15, 23, 42, 0.14);
 
   /* Radius Tokens */
+  --radius-badge: 4px;
+  --radius-control: 6px;
+  --radius-card: 8px;
   --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 8px;
-  --radius-lg: 10px;
+  --radius-lg: 8px;
   --radius-xl: 12px;
   --radius-full: 9999px;
 
-  /* Hardware-Accelerated Motion Curves */
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* Motion Curves */
+  --transition-fast: 150ms cubic-bezier(0.22, 1, 0.36, 1);
+  --transition-normal: 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 * {
@@ -99,6 +117,12 @@ h1, h2, h3, h4, h5, h6 {
 a {
   color: var(--primary-color);
   text-decoration: none;
+  text-underline-offset: 3px;
+}
+
+::selection {
+  background-color: var(--primary-light);
+  color: var(--primary-active);
 }
 
 /* Tabular Numbers & Vercel Typography Utilities */

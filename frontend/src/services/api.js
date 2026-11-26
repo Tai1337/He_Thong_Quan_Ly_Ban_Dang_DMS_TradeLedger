@@ -428,7 +428,7 @@ export const exportReportRpt061 = (filters = {}) => {
 export const exportReportExcel = (reportType, filters = {}) => {
   const cleanFilters = { ...filters, export: 'excel' };
   const query = new URLSearchParams(cleanFilters).toString();
-  
+
   let endpoint = `${API_URL}/reports/${reportType}?${query}`;
   if (reportType === 'sales-orders') {
     endpoint = `${API_URL}/sales-orders/export?${new URLSearchParams(filters).toString()}`;
@@ -787,11 +787,11 @@ export const updateDeliveryTripStatus = async (tripId, toStatus, notes = '') => 
   const response = await fetch(`${API_URL}/delivery-trips/${tripId}/status`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ status: toStatus, toStatus, notes })
+    body: JSON.stringify({ toStatus, notes })
   });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.message || data.error || 'Lỗi khi cập nhật trạng thái chuyến xe');
+    throw new Error(data.error || 'Lỗi khi cập nhật trạng thái chuyến xe');
   }
   return data;
 };
@@ -824,7 +824,7 @@ export const confirmStopDelivery = async (tripId, payload) => {
   });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.message || data.error || 'Lỗi khi xác nhận kết quả giao hàng');
+    throw new Error(data.error || 'Lỗi khi xác nhận kết quả giao hàng');
   }
   return data;
 };
@@ -833,7 +833,7 @@ export const getTripReturnSummary = async (tripId, distributorId = 1) => {
   const response = await fetch(`${API_URL}/delivery-trips/${tripId}/return-summary?distributorId=${distributorId}`);
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.message || data.error || 'Lỗi khi tải bảng kê hàng rớt & quyết toán COD');
+    throw new Error(data.error || 'Lỗi khi tải bảng kê hàng rớt & quyết toán COD');
   }
   return data;
 };
@@ -846,7 +846,7 @@ export const closeDeliveryTrip = async (tripId, payload) => {
   });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.message || data.error || 'Lỗi khi làm thủ tục đóng chuyến xe');
+    throw new Error(data.error || 'Lỗi khi làm thủ tục đóng chuyến xe');
   }
   return data;
 };

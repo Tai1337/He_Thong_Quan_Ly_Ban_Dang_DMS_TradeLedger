@@ -1,20 +1,24 @@
 /* src/pages/Sales/SalesOrderList/SalesOrderDetail.css */
 .sales-order-detail-page {
+  padding: 24px;
+  background-color: var(--bg-color, #f5f7fa);
+  min-height: calc(100vh - 52px);
   display: flex;
   flex-direction: column;
   gap: 16px;
   font-family: Inter, system-ui, -apple-system, sans-serif;
+  color: var(--text-primary, #172033);
 }
 
 .detail-toast-success {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 18px;
-  background-color: #dcfce7;
+  padding: 12px 16px;
+  background-color: var(--color-success-bg, #ecfdf5);
   color: #15803d;
-  border: 1px solid #bbf7d0;
-  border-radius: 6px;
+  border: 1px solid var(--color-success-border, #a7f3d0);
+  border-radius: var(--radius-control, 6px);
   font-size: 13px;
   font-weight: 500;
 }
@@ -24,10 +28,10 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: white;
+  background: var(--surface-color, #ffffff);
   padding: 16px 20px;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border-radius: var(--radius-card, 8px);
+  border: 1px solid var(--border-color, #e2e8f0);
   flex-wrap: wrap;
   gap: 12px;
 }
@@ -35,7 +39,7 @@
 .detail-header-left {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
 }
 
 .btn-back {
@@ -44,52 +48,97 @@
   justify-content: center;
   width: 36px;
   height: 36px;
-  border-radius: 6px;
-  border: 1px solid #e2e8f0;
-  color: #475569;
+  border-radius: var(--radius-control, 6px);
+  border: 1px solid var(--border-color, #e2e8f0);
+  color: var(--text-secondary, #64748b);
   text-decoration: none;
-  background: #f8fafc;
-  transition: all 0.15s;
+  background: var(--surface-raised, #f8fafc);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 
 .btn-back:hover {
   background: #f1f5f9;
-  color: #0f172a;
+  color: var(--text-primary, #172033);
 }
 
 .order-title-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .order-title-row h2 {
   margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-  color: #0f172a;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #172033);
+  font-variant-numeric: tabular-nums;
 }
 
 .order-meta {
   margin: 4px 0 0 0;
   font-size: 12px;
-  color: #64748b;
+  color: var(--text-secondary, #64748b);
+  font-variant-numeric: tabular-nums;
 }
 
 .status-badge-lg {
-  padding: 4px 12px;
-  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: var(--radius-badge, 4px);
+  border: 1px solid transparent;
   font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
+  font-weight: 500;
 }
 
-.status-badge-lg.pending    { background: #fef9c3; color: #854d0e; }
-.status-badge-lg.allocated  { background: #e0e7ff; color: #3730a3; }
-.status-badge-lg.shipped    { background: #dbeafe; color: #1e40af; }
-.status-badge-lg.delivered  { background: #d1fae5; color: #065f46; }
-.status-badge-lg.paid       { background: #dcfce7; color: #166534; }
-.status-badge-lg.cancelled  { background: #f1f5f9; color: #94a3b8; }
+.status-badge-lg.pending {
+  background: #fffbeb;
+  color: #b45309;
+  border-color: #fde68a;
+}
+
+.status-badge-lg.submitted {
+  background: #f0f9ff;
+  color: #0369a1;
+  border-color: #bae6fd;
+}
+
+.status-badge-lg.allocated {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.status-badge-lg.shipped {
+  background: #eff6ff;
+  color: #1e40af;
+  border-color: #bfdbfe;
+}
+
+.status-badge-lg.delivered {
+  background: #ecfdf5;
+  color: #047857;
+  border-color: #a7f3d0;
+}
+
+.status-badge-lg.invoiced {
+  background: #f0fdf4;
+  color: #15803d;
+  border-color: #bbf7d0;
+}
+
+.status-badge-lg.paid {
+  background: #f8fafc;
+  color: #334155;
+  border-color: #cbd5e1;
+}
+
+.status-badge-lg.cancelled {
+  background: #f1f5f9;
+  color: #64748b;
+  border-color: #e2e8f0;
+}
 
 .detail-header-actions {
   display: flex;
@@ -162,7 +211,7 @@
 .info-card {
   background: white;
   border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   overflow: hidden;
 }
 
@@ -217,7 +266,7 @@
 .detail-table-card {
   background: white;
   border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   overflow: hidden;
 }
 
@@ -525,7 +574,8 @@
   font-style: italic;
 }
 
-.detail-loading, .detail-error-container {
+.detail-loading,
+.detail-error-container {
   background: white;
   padding: 60px;
   border-radius: 8px;
@@ -548,6 +598,7 @@
 
 /* KHI BẤM IN (WINDOW.PRINT) HOẶC CTRL + P */
 @media print {
+
   /* 1. Ẩn toàn bộ header, sidebar, topbar, modal, breadcrumb của ứng dụng web */
   body * {
     visibility: hidden;
@@ -769,4 +820,3 @@
   font-size: 12.5px;
   color: #475569;
 }
-

@@ -13,16 +13,17 @@
 }
 
 .ui-dialog-container {
-  background: #ffffff;
-  border-radius: 14px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  background: var(--surface-color, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: var(--radius-card, 8px);
+  box-shadow: var(--shadow-modal);
   max-width: 620px;
   width: 100%;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: ui-zoom-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: ui-zoom-in 180ms cubic-bezier(0.22, 1, 0.36, 1);
   box-sizing: border-box;
 }
 

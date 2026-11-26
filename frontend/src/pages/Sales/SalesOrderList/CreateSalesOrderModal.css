@@ -1,13 +1,14 @@
 /* src/pages/Sales/SalesOrderList/CreateSalesOrderModal.css */
 .create-order-modal-container {
-  background: #ffffff;
-  border-radius: 12px;
+  background: var(--surface-color, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: var(--radius-card, 8px);
   width: 95%;
   max-width: 980px;
   max-height: 92vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-modal);
   overflow: hidden;
 }
 
@@ -202,19 +203,21 @@
 }
 
 .summary-val {
-  font-size: 17px;
-  font-weight: 700;
-  color: #0f172a;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary, #172033);
+  font-variant-numeric: tabular-nums;
 }
 
 .summary-val.final-val {
-  font-size: 19px;
-  color: #1e40af;
+  font-size: 18px;
+  color: var(--primary-color, #1d4ed8);
 }
 
 .summary-discount {
-  color: #7c3aed;
+  color: var(--text-secondary, #64748b);
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .promo-gift-row {
