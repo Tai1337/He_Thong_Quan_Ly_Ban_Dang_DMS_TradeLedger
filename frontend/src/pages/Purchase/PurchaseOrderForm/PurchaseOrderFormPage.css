@@ -1,7 +1,6 @@
 .po-form-page {
-  min-height: calc(100vh - 64px);
-  background: #f8fafc;
-  padding: 20px 24px 48px;
+  background: transparent;
+  padding: 0 0 28px 0;
   color: #0f172a;
 }
 

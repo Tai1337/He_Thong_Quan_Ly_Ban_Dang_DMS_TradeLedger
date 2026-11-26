@@ -25,6 +25,7 @@ import {
 import { getReportRpt057, exportReportRpt057 } from '../../../services/api';
 import FinanceChartCard from '../../../components/Charts/FinanceChartCard';
 import DonutBreakdownChart from '../../../components/Charts/DonutBreakdownChart';
+import DmsSectionPanel from '../../../components/DmsUi/DmsSectionPanel';
 import {
   FINANCE_CHART_PALETTE,
   formatVnd,
@@ -35,9 +36,9 @@ import {
 import './RPT057.css';
 
 const DIMENSION_CHART_META = {
-  product: { label: 'Sản phẩm (SKU)', color: '#1a73e8' },
-  retailer: { label: 'Khách hàng / Đại lý', color: '#10b981' },
-  vnbh: { label: 'Nhân viên Bán hàng', color: '#8b5cf6' },
+  product: { label: 'Sản phẩm (SKU)', color: '#2b5b8c' },
+  retailer: { label: 'Khách hàng / Đại lý', color: '#059669' },
+  vnbh: { label: 'Nhân viên Bán hàng', color: '#152b44' },
 };
 
 const Rpt057BarTooltip = ({ active, payload }) => {
@@ -279,20 +280,20 @@ export default function RPT057() {
   return (
     <div className="report-container rpt057-page">
       {/* 1. Header Toolbar */}
-      <div className="report-header">
-        <div className="report-title-section">
+      <div className="dms-page-title-bar">
+        <div>
           <h2>RPT057 - Báo cáo Doanh số & Sản lượng</h2>
-          <p>Dữ liệu doanh số bán hàng thực tế và phân tích sản lượng đa chiều của Nhà Phân Phối</p>
+          <p className="dms-page-subtitle">Dữ liệu doanh số bán hàng thực tế và phân tích sản lượng đa chiều của Nhà Phân Phối</p>
         </div>
         <div className="report-actions">
-          <button className="btn-secondary" onClick={fetchReport} title="Làm mới dữ liệu" disabled={loading}>
-            <RotateCw size={15} className={loading ? 'spin-icon' : ''} /> Làm mới
+          <button className="dms-btn dms-btn-outline" onClick={fetchReport} title="Làm mới dữ liệu" disabled={loading}>
+            <RotateCw size={14} className={loading ? 'spin-icon' : ''} /> Làm mới
           </button>
-          <button className="btn-secondary" onClick={handlePrint} title="In bảng báo cáo">
-            <Printer size={15} /> In báo cáo
+          <button className="dms-btn dms-btn-outline" onClick={handlePrint} title="In bảng báo cáo">
+            <Printer size={14} /> In báo cáo
           </button>
-          <button className="btn-primary" onClick={handleExportExcel} title="Tải file Excel mẫu chuẩn">
-            <Download size={15} /> Xuất Excel
+          <button className="dms-btn dms-btn-steel" onClick={handleExportExcel} title="Tải file Excel mẫu chuẩn">
+            <Download size={14} /> Xuất Excel
           </button>
         </div>
       </div>
@@ -345,29 +346,30 @@ export default function RPT057() {
       </div>
 
       {/* 3. Dimension Tabs & Filters Toolbar */}
-      <div className="rpt-control-panel">
-        <div className="rpt-tabs">
-          <button
-            className={`rpt-tab-btn ${dimension === 'product' ? 'active' : ''}`}
-            onClick={() => setDimension('product')}
-          >
-            <Package size={16} /> Theo Mặt hàng (SKU)
-          </button>
-          <button
-            className={`rpt-tab-btn ${dimension === 'retailer' ? 'active' : ''}`}
-            onClick={() => setDimension('retailer')}
-          >
-            <Store size={16} /> Theo Khách hàng / Đại lý
-          </button>
-          <button
-            className={`rpt-tab-btn ${dimension === 'vnbh' ? 'active' : ''}`}
-            onClick={() => setDimension('vnbh')}
-          >
-            <Users size={16} /> Theo Nhân viên Bán hàng (VNBH)
-          </button>
-        </div>
+      <DmsSectionPanel title="Tìm kiếm & Chiều phân tích">
+        <div className="rpt-control-panel">
+          <div className="rpt-tabs">
+            <button
+              className={`rpt-tab-btn ${dimension === 'product' ? 'active' : ''}`}
+              onClick={() => setDimension('product')}
+            >
+              <Package size={16} /> Theo Mặt hàng (SKU)
+            </button>
+            <button
+              className={`rpt-tab-btn ${dimension === 'retailer' ? 'active' : ''}`}
+              onClick={() => setDimension('retailer')}
+            >
+              <Store size={16} /> Theo Khách hàng / Đại lý
+            </button>
+            <button
+              className={`rpt-tab-btn ${dimension === 'vnbh' ? 'active' : ''}`}
+              onClick={() => setDimension('vnbh')}
+            >
+              <Users size={16} /> Theo Nhân viên Bán hàng (VNBH)
+            </button>
+          </div>
 
-        <div className="filters-card">
+          <div className="filters-card" style={{ border: 'none', padding: '10px 0 0 0', boxShadow: 'none' }}>
           <div className="filter-group">
             <label>Khoảng thời gian</label>
             <div className="filter-input-wrap">
@@ -431,7 +433,8 @@ export default function RPT057() {
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      </DmsSectionPanel>
 
       {/* 3.5. Visual Charts Grid */}
       {!loading && filteredList.length > 0 && (
@@ -515,7 +518,7 @@ export default function RPT057() {
       )}
 
       {/* 4. Data Table */}
-      <div className="table-card">
+      <DmsSectionPanel title="Bảng tổng hợp doanh số & sản lượng" count={filteredList.length} noPadding>
         {error && <div className="rpt-error-box">{error}</div>}
 
         {loading ? (
@@ -530,8 +533,8 @@ export default function RPT057() {
             <p>Vui lòng thay đổi khoảng thời gian hoặc từ khóa tìm kiếm</p>
           </div>
         ) : (
-          <div className="table-responsive">
-            <table className="data-table">
+          <div className="dms-ledger-table-wrap" style={{ border: 'none' }}>
+            <table className="dms-ledger-table data-table">
               <thead>
                 {dimension === 'product' && (
                   <tr>
@@ -584,14 +587,14 @@ export default function RPT057() {
                         <td>
                           <span className="sku-tag">{row.sku}</span>
                         </td>
-                        <td className="font-semibold text-slate-800">{row.productName}</td>
+                        <td>{row.productName}</td>
                         <td className="text-center">
                           <span className="unit-badge">{row.unit || 'Thùng'}</span>
                         </td>
                         <td className="text-right">{formatCount(row.orderCount)}</td>
-                        <td className="text-right font-medium">{formatCount(row.totalQuantity)}</td>
-                        <td className="text-right text-slate-600">{formatVnd(row.avgPrice)}</td>
-                        <td className="text-right font-bold text-blue-700">{formatVnd(row.totalAmount)}</td>
+                        <td className="text-right">{formatCount(row.totalQuantity)}</td>
+                        <td className="text-right">{formatVnd(row.avgPrice)}</td>
+                        <td className="text-right">{formatVnd(row.totalAmount)}</td>
                         <td>
                           <div className="share-cell">
                             <div className="share-bar-wrap">
@@ -611,12 +614,12 @@ export default function RPT057() {
                         <td>
                           <span className="sku-tag">{row.retailerCode}</span>
                         </td>
-                        <td className="font-semibold text-slate-800">{row.retailerName}</td>
+                        <td>{row.retailerName}</td>
                         <td className="text-slate-600 text-sm">{row.address || 'Chưa cập nhật'}</td>
                         <td className="text-slate-600">{row.phone || 'N/A'}</td>
                         <td className="text-right">{formatCount(row.orderCount)}</td>
-                        <td className="text-right font-medium">{formatCount(row.totalQuantity)}</td>
-                        <td className="text-right font-bold text-blue-700">{formatVnd(row.totalAmount)}</td>
+                        <td className="text-right">{formatCount(row.totalQuantity)}</td>
+                        <td className="text-right">{formatVnd(row.totalAmount)}</td>
                         <td>
                           <div className="share-cell">
                             <div className="share-bar-wrap">
@@ -636,10 +639,10 @@ export default function RPT057() {
                         <td>
                           <span className="sku-tag">{row.vnbhCode}</span>
                         </td>
-                        <td className="font-semibold text-slate-800">{row.vnbhName}</td>
+                        <td>{row.vnbhName}</td>
                         <td className="text-right">{formatCount(row.totalOrders || row.orderCount)}</td>
-                        <td className="text-right font-medium">{formatCount(row.totalQuantity)}</td>
-                        <td className="text-right font-bold text-blue-700">{formatVnd(row.totalAmount)}</td>
+                        <td className="text-right">{formatCount(row.totalQuantity)}</td>
+                        <td className="text-right">{formatVnd(row.totalAmount)}</td>
                         <td>
                           <div className="share-cell">
                             <div className="share-bar-wrap">
@@ -680,7 +683,7 @@ export default function RPT057() {
             </table>
           </div>
         )}
-      </div>
+      </DmsSectionPanel>
     </div>
   );
 }

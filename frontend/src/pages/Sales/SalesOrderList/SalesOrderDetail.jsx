@@ -42,6 +42,9 @@ import TripDispatchConsoleModal from '../../Logistics/TripDispatchConsoleModal';
 import CreateTripModal from '../../Logistics/CreateTripModal';
 import TripReportPrintModal from '../../Logistics/TripReportPrintModal';
 import { useNotification } from '../../../components/Common/NotificationProvider';
+import DmsDocumentShell from '../../../components/DmsUi/DmsDocumentShell';
+import DmsSectionPanel from '../../../components/DmsUi/DmsSectionPanel';
+import { numberToVietnameseWords } from '../../../utils/chartFormatters';
 import './SalesOrderDetail.css';
 
 const formatCurrency = (val) => new Intl.NumberFormat('vi-VN').format(val || 0);
@@ -437,145 +440,432 @@ const SalesOrderDetail = () => {
     );
   }
 
+  const finalPayableAmount =
+    order.finalAmount != null
+      ? Number(order.finalAmount)
+      : Math.max(0, Number(order.totalAmount || 0) - Number(order.totalDiscountAmount || 0));
+
+  const promoBenefits = (isEditingOrder ? editItems : order.items).filter(
+    (it) => !it.isDeleted && (it.isPromotion || Number(it.discountAmount) > 0),
+  );
+
   return (
     <div className="sales-order-detail-page">
-      {/* Toast Alert */}
       {successMsg && (
         <div className="detail-toast-success">
           <CheckCircle2 size={16} /> {successMsg}
         </div>
       )}
 
-      {/* Top Header */}
-      <div className="detail-header-card">
-        <div className="detail-header-left">
-          <Link to="/sales/sales-orders" className="btn-back">
-            <ArrowLeft size={18} />
-          </Link>
-          <div>
-            <div className="order-title-row">
-              <h2>Đơn hàng: {order.orderCode}</h2>
-              <span className={`status-badge-lg ${order.status.toLowerCase()}`}>
-                {STATUS_LABELS[order.status] || order.status}
-              </span>
-            </div>
-            <p className="order-meta">
-              Ngày tạo: {new Date(order.createdAt).toLocaleString('vi-VN')} | Kho: {order.warehouseName} | Loại đơn: {order.orderType === 'IMMEDIATE' ? 'Giao ngay' : 'Giao sau'}
-            </p>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="detail-header-actions">
-          <button className="btn-outline" onClick={() => window.print()}>
-            <Printer size={15} /> In phiếu đơn
-          </button>
-
-          {order.deliveryTrip && (
-            <>
-              <button
-                type="button"
-                className="btn-outline"
-                onClick={() => setIsRpt004PrintOpen(true)}
-              >
-                <Printer size={15} /> In RPT004
-              </button>
-              <button
-                type="button"
-                className="btn-outline"
-                onClick={() => setIsDispatchConsoleOpen(true)}
-              >
-                <SlidersHorizontal size={15} /> Điều phối xe
-              </button>
-            </>
-          )}
-
-          {order.status === 'PENDING' && (
-            <>
-              <button 
-                className="btn-danger-outline" 
-                onClick={() => setCancelModalOpen(true)}
-                disabled={actionLoading}
-              >
-                <Ban size={15} /> Huỷ đơn
-              </button>
-              <button 
-                className="btn-primary" 
-                onClick={handleConfirmAction}
-                disabled={actionLoading}
-              >
-                <Check size={15} /> Xác nhận đơn (FEFO)
-              </button>
-            </>
-          )}
-
-          {order.status === 'ALLOCATED' && (
-            <>
-              <button 
-                className="btn-danger-outline" 
-                onClick={() => setCancelModalOpen(true)}
-                disabled={actionLoading}
-              >
-                <Ban size={15} /> Huỷ đơn
-              </button>
-              <button 
-                className="btn-primary" 
-                onClick={() => setTripModalOpen(true)}
-                disabled={actionLoading}
-              >
-                <Truck size={15} /> Gán chuyến xe
-              </button>
-            </>
-          )}
-
-          {order.status === 'SHIPPED' && (
-            <button 
-              className="btn-primary" 
-              onClick={() => setDeliveryModalOpen(true)}
-              disabled={actionLoading}
-            >
-              <PackageCheck size={15} /> Xác nhận giao hàng
-            </button>
-          )}
-
-          {order.status === 'DELIVERED' && (
-            <button 
-              className="btn-success" 
-              onClick={handleCloseAction}
-              disabled={actionLoading}
-            >
-              <CheckCircle2 size={15} /> Đối soát & Đóng đơn
-            </button>
-          )}
+      <div className="so-detail-top-nav">
+        <Link to="/sales/sales-orders" className="dms-btn dms-btn-outline">
+          <ArrowLeft size={14} /> Quay lại danh sách đơn hàng
+        </Link>
+        <div className="so-detail-top-badges">
+          <span className={`status-badge-lg ${order.status.toLowerCase()}`}>
+            {STATUS_LABELS[order.status] || order.status}
+          </span>
         </div>
       </div>
 
-      {/* Info Grid (3 Cards) */}
-      <div className="detail-info-grid">
-        {/* Card 1: Khách hàng */}
-        <div className="info-card">
-          <div className="info-card-header">
-            <Building2 size={16} /> Thông tin Khách hàng / Đại lý
+      {/* Main Document Shell (Image 3 Style: CHI TIẾT ĐƠN ĐẶT HÀNG) */}
+      <DmsDocumentShell
+        title={`Chi tiết đơn bán hàng • ${order.orderCode}`}
+        icon={FileText}
+        metaFields={[
+          { label: 'Số phiếu', value: order.orderCode, highlight: true },
+          {
+            label: 'Ngày giao DK',
+            value: new Date(order.expectedDate).toLocaleDateString('vi-VN'),
+          },
+          {
+            label: 'Ngày tạo',
+            value: new Date(order.createdAt).toLocaleString('vi-VN'),
+          },
+          {
+            label: 'Khách hàng',
+            value: `[${order.retailerCode}] ${order.retailerName}`,
+            highlight: true,
+          },
+          { label: 'Điện thoại', value: order.retailerPhone || 'Chưa cập nhật' },
+          {
+            label: 'Nhân viên QL',
+            value: `${order.vnbhName || '—'} ${order.vnbhCode ? `(${order.vnbhCode})` : ''}`,
+          },
+          { label: 'Địa chỉ', value: order.retailerAddress, fullWidth: true },
+          {
+            label: 'Kho xuất / Loại',
+            value: `${order.warehouseName} (${order.orderType === 'IMMEDIATE' ? 'Giao ngay' : 'Giao sau'})`,
+          },
+          {
+            label: 'Chuyến xe',
+            value: order.deliveryTrip ? (
+              <Link to={`/logistics/delivery-trips/${order.deliveryTrip.id}`} className="order-trip-link">
+                {order.deliveryTrip.tripCode} ({order.deliveryTrip.driverName || 'Chưa gán tài xế'})
+              </Link>
+            ) : (
+              'Chưa điều phối'
+            ),
+          },
+          {
+            label: 'Tình trạng',
+            value: STATUS_LABELS[order.status] || order.status,
+            highlight: true,
+          },
+        ]}
+        footerActions={
+          <>
+            <button type="button" className="dms-btn dms-btn-outline" onClick={() => window.print()}>
+              <Printer size={14} /> In phiếu đơn
+            </button>
+
+            {order.deliveryTrip && (
+              <>
+                <button
+                  type="button"
+                  className="dms-btn dms-btn-outline"
+                  onClick={() => setIsRpt004PrintOpen(true)}
+                >
+                  <Printer size={14} /> In RPT004
+                </button>
+                <button
+                  type="button"
+                  className="dms-btn dms-btn-outline"
+                  onClick={() => setIsDispatchConsoleOpen(true)}
+                >
+                  <SlidersHorizontal size={14} /> Điều phối xe
+                </button>
+              </>
+            )}
+
+            {!isEditingOrder && canEditOrder && (
+              <button
+                type="button"
+                className="dms-btn dms-btn-blue"
+                onClick={handleStartEditOrder}
+              >
+                <Edit3 size={14} /> Sửa đơn hàng
+              </button>
+            )}
+
+            {isEditingOrder && (
+              <>
+                <button
+                  type="button"
+                  className="dms-btn dms-btn-outline"
+                  onClick={() => setShowAddProductModal(true)}
+                >
+                  <Plus size={14} /> Thêm sản phẩm
+                </button>
+                <button
+                  type="button"
+                  className="dms-btn dms-btn-green"
+                  onClick={handleSaveOrderChanges}
+                  disabled={savingOrder}
+                >
+                  <Save size={14} /> {savingOrder ? 'Đang lưu...' : 'Lưu thay đổi'}
+                </button>
+                <button
+                  type="button"
+                  className="dms-btn dms-btn-outline"
+                  onClick={handleCancelEditOrder}
+                  disabled={savingOrder}
+                >
+                  <X size={14} /> Huỷ sửa
+                </button>
+              </>
+            )}
+
+            {order.status === 'PENDING' && !isEditingOrder && (
+              <>
+                <button
+                  type="button"
+                  className="dms-btn dms-btn-navy"
+                  onClick={handleConfirmAction}
+                  disabled={actionLoading}
+                >
+                  <Check size={14} /> Duyệt & Xác nhận (FEFO)
+                </button>
+                <button
+                  type="button"
+                  className="dms-btn dms-btn-danger"
+                  onClick={() => setCancelModalOpen(true)}
+                  disabled={actionLoading}
+                >
+                  <Ban size={14} /> Huỷ đơn
+                </button>
+              </>
+            )}
+
+            {order.status === 'ALLOCATED' && (
+              <>
+                <button
+                  type="button"
+                  className="dms-btn dms-btn-navy"
+                  onClick={() => setTripModalOpen(true)}
+                  disabled={actionLoading}
+                >
+                  <Truck size={14} /> Gán chuyến xe
+                </button>
+                <button
+                  type="button"
+                  className="dms-btn dms-btn-danger"
+                  onClick={() => setCancelModalOpen(true)}
+                  disabled={actionLoading}
+                >
+                  <Ban size={14} /> Huỷ đơn
+                </button>
+              </>
+            )}
+
+            {order.status === 'SHIPPED' && (
+              <button
+                type="button"
+                className="dms-btn dms-btn-green"
+                onClick={() => setDeliveryModalOpen(true)}
+                disabled={actionLoading}
+              >
+                <PackageCheck size={14} /> Xác nhận giao hàng
+              </button>
+            )}
+
+            {order.status === 'DELIVERED' && (
+              <button
+                type="button"
+                className="dms-btn dms-btn-green"
+                onClick={handleCloseAction}
+                disabled={actionLoading}
+              >
+                <CheckCircle2 size={14} /> Đối soát & Đóng đơn
+              </button>
+            )}
+
+            <button
+              type="button"
+              className="dms-btn dms-btn-danger"
+              onClick={() => navigate('/sales/sales-orders')}
+            >
+              Đóng
+            </button>
+          </>
+        }
+      >
+        <div className="dms-doc-split-grid">
+          {/* Left: Product Line Items & Summary (with Bằng chữ) */}
+          <div className="so-doc-left-pane">
+            <h4 className="dms-doc-subhead">
+              Danh sách sản phẩm đặt hàng ({order.items.length} dòng)
+            </h4>
+            <div className="dms-ledger-table-wrap">
+              <table className="dms-ledger-table">
+                <thead>
+                  <tr>
+                    <th className="text-center" style={{ width: '40px' }}>TT</th>
+                    <th>Mã SP</th>
+                    <th>Tên SP</th>
+                    <th className="text-center">Đvt</th>
+                    <th className="text-right">SL</th>
+                    <th className="text-right">Đơn giá</th>
+                    <th className="text-right">Thành tiền</th>
+                    <th className="text-right">Chiết khấu</th>
+                    <th>Lô FEFO & Tồn</th>
+                    {isEditingOrder && <th className="text-center">Xoá</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {(isEditingOrder ? editItems : order.items).map((item, idx) => (
+                    <tr
+                      key={item.id || idx}
+                      className={`${item.isDeleted ? 'row-will-delete' : ''} ${item.isPromotion ? 'promo-row-highlight' : ''}`}
+                    >
+                      <td className="text-center">{idx + 1}</td>
+                      <td>
+                        <code>{item.productSku}</code>
+                        {item.isNew && (
+                          <span className="so-badge-new">Mới</span>
+                        )}
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 600 }}>
+                          <span style={item.isDeleted ? { textDecoration: 'line-through', color: '#dc2626' } : {}}>
+                            {item.productName}
+                          </span>
+                        </div>
+                        {item.isPromotion && (
+                          <div className="so-inline-promo">
+                            🎁 Hàng tặng 0đ{item.promotionName ? `: ${item.promotionName}` : ''}
+                          </div>
+                        )}
+                      </td>
+                      <td className="text-center">{item.unit}</td>
+                      <td className="text-right" style={{ fontWeight: 600 }}>
+                        {isEditingOrder ? (
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <input
+                              type="number"
+                              min="0"
+                              className={`edit-order-qty-input ${item.isDeleted ? 'deleted' : ''}`}
+                              value={item.quantity}
+                              onChange={(e) => handleItemQtyChange(idx, e.target.value)}
+                            />
+                            {item.isDeleted && <span className="badge-will-delete">Xoá</span>}
+                          </div>
+                        ) : editingItemId === item.id ? (
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <input
+                              type="number"
+                              min="0"
+                              className="dms-input"
+                              style={{ width: '64px', textAlign: 'right' }}
+                              value={editQty}
+                              onChange={(e) => setEditQty(e.target.value)}
+                              autoFocus
+                            />
+                            <button
+                              type="button"
+                              className="dms-btn dms-btn-green"
+                              style={{ padding: '4px 6px' }}
+                              onClick={() => handleSaveEditItem(item)}
+                              disabled={savingItem}
+                            >
+                              <Check size={12} />
+                            </button>
+                            <button
+                              type="button"
+                              className="dms-btn dms-btn-outline"
+                              style={{ padding: '4px 6px' }}
+                              onClick={handleCancelEditItem}
+                              disabled={savingItem}
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        ) : (
+                          <span style={Number(item.quantity) === 0 ? { color: '#dc2626', textDecoration: 'line-through' } : {}}>
+                            {item.quantity}
+                          </span>
+                        )}
+                      </td>
+                      <td className="text-right">
+                        {item.isPromotion ? '0' : formatCurrency(item.unitPrice)}
+                      </td>
+                      <td className="text-right" style={{ fontWeight: 600 }}>
+                        {item.isPromotion ? '0' : formatCurrency(item.totalAmount)}
+                      </td>
+                      <td className="text-right" style={{ color: Number(item.discountAmount) > 0 ? '#7c3aed' : undefined }}>
+                        {Number(item.discountAmount) > 0 ? formatCurrency(item.discountAmount) : '0'}
+                      </td>
+                      <td>
+                        {isEditingOrder ? (
+                          <span className="so-muted-italic">Tự phân bổ lại khi lưu</span>
+                        ) : (
+                          <div className="so-lot-stack">
+                            {item.allocations && item.allocations.length > 0 ? (
+                              item.allocations.map((a) => (
+                                <span key={a.id} className="lot-badge">
+                                  {a.lotNumber} ({a.quantity})
+                                  {a.expiryDate && ` · ${new Date(a.expiryDate).toLocaleDateString('vi-VN')}`}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="so-muted-italic">
+                                {order.status === 'PENDING' ? 'FEFO khi duyệt' : 'Chưa phân bổ'}
+                              </span>
+                            )}
+                            <span className={`item-stock-tag ${item.isShortage ? 'shortage' : 'enough'}`}>
+                              {item.isShortage ? `Thiếu (${item.availableStock})` : `Đủ (${item.availableStock})`}
+                            </span>
+                          </div>
+                        )}
+                      </td>
+                      {isEditingOrder && (
+                        <td className="text-center">
+                          <button
+                            type="button"
+                            className="btn-remove-row-item"
+                            onClick={() => handleItemRemove(idx)}
+                            title={item.isDeleted ? 'Đã đánh dấu xoá' : 'Xoá sản phẩm'}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colSpan={6} className="text-right" style={{ color: '#0f172a' }}>
+                      Tổng cộng (1):
+                    </td>
+                    <td className="text-right" style={{ color: '#0f172a' }}>
+                      {formatCurrency(order.totalAmount)} đ
+                    </td>
+                    <td className="text-right" style={{ color: '#7c3aed' }}>
+                      {formatCurrency(order.totalDiscountAmount || 0)} đ
+                    </td>
+                    <td colSpan={isEditingOrder ? 2 : 1} />
+                  </tr>
+                  <tr>
+                    <td colSpan={6} className="text-right" style={{ color: '#152b44' }}>
+                      Phải thanh toán = (1) - Chiết khấu:
+                    </td>
+                    <td colSpan={2} className="text-right" style={{ fontSize: '14px', color: '#b91c1c' }}>
+                      {formatCurrency(finalPayableAmount)} đ
+                    </td>
+                    <td colSpan={isEditingOrder ? 2 : 1} />
+                  </tr>
+                  <tr>
+                    <td colSpan={isEditingOrder ? 10 : 9} className="so-words-row">
+                      <span>Bằng chữ:</span>{' '}
+                      <em>{numberToVietnameseWords(finalPayableAmount)}</em>
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
           </div>
-          <div className="info-card-body">
-            <div className="info-row">
-              <span className="label">Mã đại lý:</span>
-              <span className="value"><strong>{order.retailerCode}</strong></span>
+
+          {/* Right: Promotions & Delivery Map */}
+          <div className="so-doc-right-pane">
+            <h4 className="dms-doc-subhead">
+              Danh sách chương trình KM nhận được ({promoBenefits.length})
+            </h4>
+            <div className="dms-ledger-table-wrap" style={{ marginBottom: 14 }}>
+              <table className="dms-ledger-table">
+                <thead>
+                  <tr>
+                    <th>Tên chương trình / Cơ chế</th>
+                    <th>Sản phẩm KM</th>
+                    <th className="text-right">SL / Giá trị</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {promoBenefits.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="text-center" style={{ color: '#64748b', padding: '16px' }}>
+                        Đơn hàng không áp dụng chương trình khuyến mãi
+                      </td>
+                    </tr>
+                  ) : (
+                    promoBenefits.map((pb, pIdx) => (
+                      <tr key={pb.id || pIdx}>
+                        <td>{pb.promotionName || (pb.isPromotion ? 'Tặng hàng FOC (0đ)' : 'Chiết khấu dòng hàng')}</td>
+                        <td>{pb.productName}</td>
+                        <td className="text-right" style={{ fontWeight: 600 }}>
+                          {pb.isPromotion
+                            ? `${pb.quantity} ${pb.unit || ''}`
+                            : `-${formatCurrency(pb.discountAmount)} đ`}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
-            <div className="info-row">
-              <span className="label">Tên cửa hàng:</span>
-              <span className="value">{order.retailerName}</span>
-            </div>
-            <div className="info-row">
-              <span className="label">Số điện thoại:</span>
-              <span className="value">{order.retailerPhone || 'Chưa cập nhật'}</span>
-            </div>
-            <div className="info-row">
-              <span className="label">Địa chỉ giao:</span>
-              <span className="value">{order.retailerAddress}</span>
-            </div>
-            {/* Mini-map vị trí cửa hàng */}
-            <div style={{ marginTop: 12 }}>
+
+            <h4 className="dms-doc-subhead">Vị trí giao hàng & Điều phối</h4>
+            <div className="so-map-card">
               <MiniDeliveryMap
                 lat={order.retailerLatitude}
                 lng={order.retailerLongitude}
@@ -583,352 +873,33 @@ const SalesOrderDetail = () => {
                 address={order.retailerAddress}
                 phone={order.retailerPhone}
               />
-            </div>
-          </div>
-        </div>
-
-        {/* Card 2: Nhân viên & Vận chuyển */}
-        <div className="info-card">
-          <div className="info-card-header">
-            <Truck size={16} /> Giao nhận & Vận chuyển
-          </div>
-          <div className="info-card-body">
-            <div className="info-row">
-              <span className="label">Ngày giao dự kiến:</span>
-              <span className="value">
-                {new Date(order.expectedDate).toLocaleDateString('vi-VN')}
-              </span>
-            </div>
-            <div className="info-row">
-              <span className="label">Chuyến xe:</span>
-              <span className="value">
+              <div className="so-map-actions">
                 {order.deliveryTrip ? (
-                  <Link
-                    to={`/logistics/delivery-trips/${order.deliveryTrip.id}`}
-                    className="order-trip-link"
-                    title="Xem chi tiết chuyến xe"
-                  >
-                    {order.deliveryTrip.tripCode}
-                  </Link>
-                ) : (
-                  'Chưa điều phối'
-                )}
-              </span>
-            </div>
-            <div className="info-row">
-              <span className="label">Tài xế / NVGH:</span>
-              <span className="value">
-                {order.deliveryTrip?.driverName || 'Chưa gán tài xế'}
-              </span>
-            </div>
-            <div className="info-row">
-              <span className="label">Đại diện kinh doanh:</span>
-              <span className="value">
-                {order.vnbhName} ({order.vnbhCode})
-              </span>
-            </div>
-            <div className="order-dispatch-inline">
-              {order.deliveryTrip ? (
-                <button
-                  type="button"
-                  className="btn-dispatch-inline"
-                  onClick={() => setIsDispatchConsoleOpen(true)}
-                >
-                  <SlidersHorizontal size={14} /> Mở bàn điều phối & bốc xếp xe
-                </button>
-              ) : (
-                order.status === 'ALLOCATED' && (
                   <button
                     type="button"
-                    className="btn-dispatch-inline"
-                    onClick={() => setTripModalOpen(true)}
+                    className="dms-btn dms-btn-steel"
+                    style={{ width: '100%' }}
+                    onClick={() => setIsDispatchConsoleOpen(true)}
                   >
-                    <Truck size={14} /> Điều phối / Gán chuyến xe
+                    <SlidersHorizontal size={14} /> Mở bàn điều phối & bốc xếp xe
                   </button>
-                )
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Card 3: Giá trị đơn hàng */}
-        <div className="info-card">
-          <div className="info-card-header">
-            <FileText size={16} /> Tổng kết đơn hàng
-          </div>
-          <div className="info-card-body">
-            <div className="info-row">
-              <span className="label">Số mặt hàng:</span>
-              <span className="value">
-                {order.items.length} sản phẩm
-                {order.freeItemsCount > 0 && ` (gồm ${order.freeItemsCount} thùng quà tặng FOC)`}
-              </span>
-            </div>
-            {order.freeItemsCount > 0 && (
-              <div className="info-row" style={{ color: '#15803d' }}>
-                <span className="label">🎁 Hàng tặng (FOC):</span>
-                <span className="value" style={{ fontWeight: 700, color: '#15803d' }}>
-                  +{order.freeItemsCount} thùng (0 đ)
-                </span>
-              </div>
-            )}
-            <div className="info-row">
-              <span className="label">Tiền hàng (chưa giảm):</span>
-              <span className="value">{formatCurrency(order.totalAmount)} đ</span>
-            </div>
-            <div className="info-row" style={{ color: (order.totalDiscountAmount > 0) ? '#7c3aed' : undefined }}>
-              <span className="label">Chiết khấu bậc thang:</span>
-              <span className="value" style={{ fontWeight: (order.totalDiscountAmount > 0) ? 700 : 400 }}>
-                {(order.totalDiscountAmount > 0) ? `- ${formatCurrency(order.totalDiscountAmount)} đ` : '0 đ'}
-              </span>
-            </div>
-            <div className="info-row total-highlight">
-              <span className="label">Tổng thanh toán:</span>
-              <span className="value-total">
-                {formatCurrency(order.finalAmount != null ? order.finalAmount : (order.totalAmount - (order.totalDiscountAmount || 0)))} đ
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Line Items Table */}
-      <div className="detail-table-card">
-        <div className="card-title-bar">
-          <h3>Danh sách sản phẩm & Phân bổ lô hàng (FEFO)</h3>
-          
-          <div className="card-title-actions">
-            {!isEditingOrder ? (
-              canEditOrder && (
-                <button 
-                  type="button" 
-                  className="btn-edit-order"
-                  onClick={handleStartEditOrder}
-                >
-                  <Edit3 size={15} /> Chỉnh sửa đơn hàng
-                </button>
-              )
-            ) : (
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <button
-                  type="button"
-                  className="btn-add-product-open"
-                  onClick={() => setShowAddProductModal(true)}
-                >
-                  <Plus size={15} /> Thêm sản phẩm
-                </button>
-                <button
-                  type="button"
-                  className="btn-save-order"
-                  onClick={handleSaveOrderChanges}
-                  disabled={savingOrder}
-                >
-                  <Save size={15} /> {savingOrder ? 'Đang lưu...' : 'Lưu thay đổi'}
-                </button>
-                <button
-                  type="button"
-                  className="btn-cancel-edit-order"
-                  onClick={handleCancelEditOrder}
-                  disabled={savingOrder}
-                >
-                  <X size={15} /> Huỷ
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <table className="detail-table">
-          <thead>
-            <tr>
-              <th style={{ width: '40px', textAlign: 'center' }}>#</th>
-              <th>Mã SKU</th>
-              <th>Tên sản phẩm</th>
-              <th>ĐVT</th>
-              <th style={{ textAlign: 'right' }}>Số lượng đặt</th>
-              <th style={{ textAlign: 'right' }}>Đơn giá</th>
-              <th style={{ textAlign: 'right' }}>Thành tiền</th>
-              <th>Lô hàng phân bổ (FEFO) & HSD</th>
-              <th style={{ textAlign: 'center' }}>Trạng thái tồn</th>
-              {isEditingOrder && <th style={{ width: '50px', textAlign: 'center' }}>Xoá</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {(isEditingOrder ? editItems : order.items).map((item, idx) => (
-              <tr 
-                key={item.id || idx} 
-                className={`${item.isDeleted ? 'row-will-delete' : ''} ${item.isPromotion ? 'promo-row-highlight' : ''}`}
-                style={item.isPromotion ? { backgroundColor: '#f0fdf4' } : {}}
-              >
-                <td style={{ textAlign: 'center' }}>{idx + 1}</td>
-                <td>
-                  <code>{item.productSku}</code>
-                  {item.isNew && (
-                    <span style={{ marginLeft: '4px', background: '#ecfdf5', color: '#059669', fontSize: '10px', padding: '1px 5px', borderRadius: '4px', fontWeight: 600 }}>Mới</span>
-                  )}
-                </td>
-                <td style={{ fontWeight: 500 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    <span style={item.isDeleted ? { textDecoration: 'line-through', color: '#dc2626' } : {}}>
-                      {item.productName}
-                    </span>
-                    {item.isPromotion && (
-                      <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        background: '#dcfce7',
-                        color: '#15803d',
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        padding: '2px 8px',
-                        borderRadius: '4px',
-                        width: 'fit-content',
-                        border: '1px solid #bbf7d0'
-                      }}>
-                        🎁 Hàng tặng 0đ (FOC){item.promotionName ? `: ${item.promotionName}` : ''}
-                      </span>
-                    )}
-                    {Number(item.discountAmount) > 0 && (
-                      <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        background: '#faf5ff',
-                        color: '#7c3aed',
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        padding: '2px 8px',
-                        borderRadius: '4px',
-                        width: 'fit-content',
-                        border: '1px solid #e9d5ff'
-                      }}>
-                        🏷️ Chiết khấu bậc thang: -{formatCurrency(item.discountAmount)} đ
-                      </span>
-                    )}
-                  </div>
-                </td>
-                <td>{item.unit}</td>
-                <td style={{ textAlign: 'right', fontWeight: 600 }}>
-                  {isEditingOrder ? (
-                    <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
-                      <input 
-                        type="number" 
-                        min="0"
-                        className={`edit-order-qty-input ${item.isDeleted ? 'deleted' : ''}`}
-                        value={item.quantity}
-                        onChange={(e) => handleItemQtyChange(idx, e.target.value)}
-                      />
-                      {item.isDeleted && (
-                        <span className="badge-will-delete">Xoá</span>
-                      )}
-                    </div>
-                  ) : editingItemId === item.id ? (
-                    <div className="inline-edit-qty-wrap" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                      <input 
-                        type="number" 
-                        min="0"
-                        style={{ width: '70px', padding: '4px 6px', border: '1px solid #3b82f6', borderRadius: '4px', textAlign: 'right', fontSize: '13px' }}
-                        value={editQty}
-                        onChange={(e) => setEditQty(e.target.value)}
-                        autoFocus
-                      />
-                      <button 
-                        type="button"
-                        style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: '4px', padding: '4px 6px', cursor: 'pointer' }}
-                        title="Lưu số lượng"
-                        onClick={() => handleSaveEditItem(item)}
-                        disabled={savingItem}
-                      >
-                        <Check size={13} />
-                      </button>
-                      <button 
-                        type="button"
-                        style={{ background: '#64748b', color: 'white', border: 'none', borderRadius: '4px', padding: '4px 6px', cursor: 'pointer' }}
-                        title="Huỷ"
-                        onClick={handleCancelEditItem}
-                        disabled={savingItem}
-                      >
-                        <X size={13} />
-                      </button>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
-                      <span style={Number(item.quantity) === 0 ? { color: '#ef4444', textDecoration: 'line-through' } : {}}>
-                        {item.quantity}
-                      </span>
-                      {Number(item.quantity) === 0 && (
-                        <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: 500 }}>(Cắt về 0)</span>
-                      )}
-                    </div>
-                  )}
-                </td>
-                <td style={{ textAlign: 'right' }}>
-                  {item.isPromotion ? (
-                    <span style={{ color: '#15803d', fontWeight: 600 }}>0 đ (Tặng)</span>
-                  ) : (
-                    `${formatCurrency(item.unitPrice)} đ`
-                  )}
-                </td>
-                <td style={{ textAlign: 'right', fontWeight: 600 }}>
-                  {item.isPromotion ? (
-                    <span style={{ color: '#15803d' }}>0 đ</span>
-                  ) : (
-                    <span style={item.isDeleted ? { textDecoration: 'line-through', color: '#94a3b8' } : {}}>
-                      {formatCurrency(item.totalAmount)} đ
-                    </span>
-                  )}
-                </td>
-                <td>
-                  {isEditingOrder ? (
-                    <span style={{ fontSize: '12px', color: '#64748b', fontStyle: 'italic' }}>
-                      Sẽ tự động phân bổ lô lại sau khi lưu
-                    </span>
-                  ) : item.allocations && item.allocations.length > 0 ? (
-                    <div className="allocations-list">
-                      {item.allocations.map(a => (
-                        <span key={a.id} className="lot-badge">
-                          Lô: <strong>{a.lotNumber}</strong> (SL: {a.quantity}) 
-                          {a.expiryDate && ` - HSD: ${new Date(a.expiryDate).toLocaleDateString('vi-VN')}`}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <span style={{ fontSize: '12px', color: '#64748b', fontStyle: 'italic' }}>
-                      {order.status === 'PENDING' ? 'Sẽ tự động chọn lô theo FEFO khi xác nhận' : 'Chưa phân bổ lô'}
-                    </span>
-                  )}
-                </td>
-                <td style={{ textAlign: 'center' }}>
-                  {isEditingOrder ? (
-                    <span style={{ fontSize: '12px', color: '#64748b' }}>-</span>
-                  ) : item.isShortage ? (
-                    <span className="item-stock-tag shortage">
-                      Thiếu tồn (Có: {item.availableStock})
-                    </span>
-                  ) : (
-                    <span className="item-stock-tag enough">
-                      Đủ tồn (Có: {item.availableStock})
-                    </span>
-                  )}
-                </td>
-                {isEditingOrder && (
-                  <td style={{ textAlign: 'center' }}>
-                    <button 
-                      type="button" 
-                      className="btn-remove-row-item"
-                      onClick={() => handleItemRemove(idx)}
-                      title={item.isDeleted ? 'Đã đánh dấu xoá' : 'Xoá sản phẩm này khỏi đơn'}
+                ) : (
+                  order.status === 'ALLOCATED' && (
+                    <button
+                      type="button"
+                      className="dms-btn dms-btn-steel"
+                      style={{ width: '100%' }}
+                      onClick={() => setTripModalOpen(true)}
                     >
-                      <Trash2 size={14} />
+                      <Truck size={14} /> Điều phối / Gán chuyến xe
                     </button>
-                  </td>
+                  )
                 )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </DmsDocumentShell>
 
       {/* Modal Thêm sản phẩm khi chỉnh sửa */}
       {showAddProductModal && (

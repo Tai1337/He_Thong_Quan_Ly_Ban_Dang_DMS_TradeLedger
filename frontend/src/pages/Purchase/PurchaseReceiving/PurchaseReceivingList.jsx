@@ -19,6 +19,7 @@ import { getInboundTripDetail } from '../../../services/api';
 import { useInboundDeliveryTrips } from '../../../hooks/useInboundDeliveryTrips';
 import { useNotification } from '../../../components/Common/NotificationProvider';
 import ReceiveTripModal from './ReceiveTripModal';
+import DmsSectionPanel from '../../../components/DmsUi/DmsSectionPanel';
 import './PurchaseReceivingList.css';
 
 const PurchaseReceivingList = () => {
@@ -61,19 +62,16 @@ const PurchaseReceivingList = () => {
   return (
     <div className="receiving-page-container">
       {/* 1. Header */}
-      <div className="receiving-page-header">
-        <div className="receiving-header-left">
-          <h1>
-            <Truck size={26} color="#2563eb" />
-            <span>Nhập Kho Đặt Hàng — Chuyến Xe Giao Hàng (D+3)</span>
-          </h1>
-          <p>
+      <div className="dms-page-title-bar">
+        <div>
+          <h2>Nhập Kho Đặt Hàng — Chuyến Xe Giao Hàng (D+3)</h2>
+          <p className="dms-page-subtitle">
             Quản lý các chuyến xe vận chuyển hàng từ Nhà máy / NCC về kho NPP. Tiến hành nhận hàng, kiểm đếm số lượng và cập nhật Lô - Hạn dùng.
           </p>
         </div>
 
         <div className="receiving-header-actions">
-          <Link to="/purchase/purchase-orders" className="btn-link-po">
+          <Link to="/purchase/purchase-orders" className="dms-btn dms-btn-outline">
             <span>Quản lý Đơn mua PO</span>
           </Link>
         </div>
@@ -136,54 +134,59 @@ const PurchaseReceivingList = () => {
       </div>
 
       {/* 3. Filters */}
-      <div className="receiving-filter-bar">
-        <div className="filter-input-search">
-          <Search size={16} />
-          <input 
-            type="text"
-            placeholder="Tìm theo mã chuyến xe, mã PO, tên NCC..."
-            value={filters.search}
-            onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value, page: 1 }))}
-          />
-        </div>
-
-        <div className="filter-select-group">
-          <label>Lọc ngày giao:</label>
-          <select 
-            value={filters.dateFilter} 
-            onChange={(e) => setFilters(prev => ({ ...prev, dateFilter: e.target.value, page: 1 }))}
+      <DmsSectionPanel
+        title="Tìm kiếm chuyến xe nhập kho"
+        actions={
+          <button 
+            type="button" 
+            className="dms-btn dms-btn-outline"
+            onClick={() => setFilters({ search: '', status: 'ALL', dateFilter: 'ALL', page: 1, limit: 15 })}
           >
-            <option value="TODAY_AND_PAST">Đã đến ngày nhận (Hôm nay & Quá hạn)</option>
-            <option value="TODAY">Chỉ hôm nay</option>
-            <option value="FUTURE">Chuyến tương lai (Sau hôm nay)</option>
-            <option value="ALL">Tất cả thời gian</option>
-          </select>
-        </div>
+            <RotateCcw size={14} />
+            <span>Đặt lại</span>
+          </button>
+        }
+      >
+        <div className="receiving-filter-bar" style={{ border: 'none', padding: 0, boxShadow: 'none' }}>
+          <div className="filter-input-search">
+            <Search size={16} />
+            <input 
+              type="text"
+              placeholder="Tìm theo mã chuyến xe, mã PO, tên NCC..."
+              value={filters.search}
+              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value, page: 1 }))}
+            />
+          </div>
 
-        <div className="filter-select-group">
-          <label>Trạng thái:</label>
-          <select 
-            value={filters.status} 
-            onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value, page: 1 }))}
-          >
-            <option value="ALL">Tất cả trạng thái</option>
-            <option value="SHIPPING">Đang vận chuyển / Chờ nhập kho</option>
-            <option value="COMPLETED">Đã hoàn tất nhập kho</option>
-          </select>
-        </div>
+          <div className="filter-select-group">
+            <label>Lọc ngày giao:</label>
+            <select 
+              value={filters.dateFilter} 
+              onChange={(e) => setFilters(prev => ({ ...prev, dateFilter: e.target.value, page: 1 }))}
+            >
+              <option value="TODAY_AND_PAST">Đã đến ngày nhận (Hôm nay & Quá hạn)</option>
+              <option value="TODAY">Chỉ hôm nay</option>
+              <option value="FUTURE">Chuyến tương lai (Sau hôm nay)</option>
+              <option value="ALL">Tất cả thời gian</option>
+            </select>
+          </div>
 
-        <button 
-          type="button" 
-          className="btn-reset-filter"
-          onClick={() => setFilters({ search: '', status: 'ALL', dateFilter: 'ALL', page: 1, limit: 15 })}
-        >
-          <RotateCcw size={14} />
-          <span>Đặt lại</span>
-        </button>
-      </div>
+          <div className="filter-select-group">
+            <label>Trạng thái:</label>
+            <select 
+              value={filters.status} 
+              onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value, page: 1 }))}
+            >
+              <option value="ALL">Tất cả trạng thái</option>
+              <option value="SHIPPING">Đang vận chuyển / Chờ nhập kho</option>
+              <option value="COMPLETED">Đã hoàn tất nhập kho</option>
+            </select>
+          </div>
+        </div>
+      </DmsSectionPanel>
 
       {/* 4. Trips Table */}
-      <div className="receiving-table-card">
+      <DmsSectionPanel title="Danh sách chuyến xe giao hàng" count={total} noPadding>
         {loading ? (
           <div className="loading-state">Đang tải danh sách chuyến xe...</div>
         ) : error ? (
@@ -194,8 +197,8 @@ const PurchaseReceivingList = () => {
             <p>Không có chuyến xe hàng về nào phù hợp với điều kiện lọc.</p>
           </div>
         ) : (
-          <div className="table-responsive">
-            <table className="receiving-table">
+          <div className="dms-ledger-table-wrap">
+            <table className="dms-ledger-table receiving-table">
               <thead>
                 <tr>
                   <th style={{ width: '160px' }}>Mã Chuyến Xe</th>
@@ -332,7 +335,7 @@ const PurchaseReceivingList = () => {
             </button>
           </div>
         </div>
-      </div>
+      </DmsSectionPanel>
 
       {/* Modal Receive Goods */}
       {selectedTripDetail && (

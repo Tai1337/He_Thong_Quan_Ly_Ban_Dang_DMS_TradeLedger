@@ -24,6 +24,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { getInventoryTransactions, exportInventoryTransactions, getWarehouses } from '../../../services/api';
+import DmsSectionPanel from '../../../components/DmsUi/DmsSectionPanel';
 import './InventoryTransactions.css';
 
 export default function InventoryTransactions() {
@@ -188,15 +189,10 @@ export default function InventoryTransactions() {
   return (
     <div className="inventory-transactions-page">
       {/* 1. Header Toolbar */}
-      <div className="it-header-toolbar">
-        <div className="it-header-left">
-          <div className="it-breadcrumb">
-            <span>Tồn kho</span>
-            <span className="it-slash">/</span>
-            <span className="current">Nhật Ký Giao Dịch Kho</span>
-          </div>
-          <h1 className="it-page-title">Sổ Nhật Ký Giao Dịch Xuất Nhập Kho</h1>
-          <p className="it-page-desc">
+      <div className="dms-page-title-bar">
+        <div>
+          <h2>Sổ Nhật Ký Giao Dịch Xuất Nhập Kho</h2>
+          <p className="dms-page-subtitle">
             Theo dõi chi tiết toàn bộ dòng luân chuyển hàng hoá (FEFO, Số Lô, Đơn vị tính, Chứng từ gốc PO/SO)
           </p>
         </div>
@@ -204,21 +200,21 @@ export default function InventoryTransactions() {
         <div className="it-header-actions">
           <button 
             type="button" 
-            className="it-btn outline"
+            className="dms-btn dms-btn-outline"
             onClick={fetchTransactions}
             title="Tải lại danh sách"
           >
-            <RefreshCw size={15} className={loading ? 'spin-icon' : ''} />
+            <RefreshCw size={14} className={loading ? 'spin-icon' : ''} />
             <span>Làm mới</span>
           </button>
 
           <button 
             type="button" 
-            className="it-btn export-btn"
+            className="dms-btn dms-btn-steel"
             onClick={handleExportExcel}
             title="Xuất Excel sổ thẻ kho"
           >
-            <Download size={15} />
+            <Download size={14} />
             <span>Xuất Excel</span>
           </button>
         </div>
@@ -291,7 +287,7 @@ export default function InventoryTransactions() {
       </div>
 
       {/* 3. Filter Section */}
-      <div className="it-filter-card">
+      <DmsSectionPanel title="Tìm kiếm giao dịch kho">
         <div className="it-filter-top-row">
           <div className="it-search-box">
             <Search size={16} color="#94a3b8" />
@@ -425,12 +421,12 @@ export default function InventoryTransactions() {
             </button>
           )}
         </div>
-      </div>
+      </DmsSectionPanel>
 
       {/* 4. Transactions Data Table */}
-      <div className="it-table-card">
-        <div className="it-table-wrap">
-          <table className="it-table">
+      <DmsSectionPanel title="Danh sách giao dịch xuất nhập kho" count={total} noPadding>
+        <div className="dms-ledger-table-wrap" style={{ border: 'none' }}>
+          <table className="dms-ledger-table it-table">
             <thead>
               <tr>
                 <th style={{ width: '50px', textAlign: 'center' }}>STT</th>
@@ -615,7 +611,7 @@ export default function InventoryTransactions() {
             </button>
           </div>
         </div>
-      </div>
+      </DmsSectionPanel>
 
       {/* 6. Transaction Detail Modal */}
       {selectedTxn && (

@@ -1,13 +1,39 @@
 .finance-chart-card {
   background-color: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 18px 20px;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  border: 1px solid #d1d8e0;
+  border-radius: 0;
+  padding: 14px 16px;
+  box-shadow: none;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   min-width: 0;
+}
+
+.finance-chart-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e3a5f;
+}
+
+.chart-mode-toggle {
+  display: inline-flex;
+  background-color: #f1f5f9;
+  padding: 2px;
+  border-radius: 0;
+  border: 1px solid #cbd5e1;
+}
+
+.chart-mode-btn {
+  border: none;
+  background: transparent;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #475569;
+  border-radius: 0;
+  cursor: pointer;
 }
 
 .finance-chart-header {

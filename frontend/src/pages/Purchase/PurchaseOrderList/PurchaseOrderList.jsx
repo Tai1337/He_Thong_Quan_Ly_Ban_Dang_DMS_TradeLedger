@@ -33,6 +33,7 @@ import CancelCloseModal from './CancelCloseModal';
 import DiscrepancyModal from './DiscrepancyModal';
 import PrintPurchaseOrderModal from './PrintPurchaseOrderModal';
 import { useNotification } from '../../../components/Common/NotificationProvider';
+import DmsSectionPanel from '../../../components/DmsUi/DmsSectionPanel';
 import './PurchaseOrderList.css';
 
 const formatCurrency = (val) => new Intl.NumberFormat('vi-VN').format(val || 0);
@@ -198,40 +199,37 @@ const PurchaseOrderList = () => {
   return (
     <div className="po-page-container">
       {/* 1. Header & Quick Actions */}
-      <div className="po-page-header">
-        <div className="po-header-left">
-          <h1>
-            <ShoppingCart size={26} color="#2563eb" />
-            <span>Quản lý Đơn đặt hàng mua (PO) & Nhập kho</span>
-          </h1>
-          <p>Lập đơn mua từ Nhà cung cấp, theo dõi tiến độ giao hàng và nhập kho theo số lô/hạn dùng</p>
+      <div className="dms-page-title-bar">
+        <div>
+          <h2>Quản lý Đơn đặt hàng mua (PO) & Nhập kho</h2>
+          <p className="dms-page-subtitle">Lập đơn mua từ Nhà cung cấp, theo dõi tiến độ giao hàng và nhập kho theo số lô/hạn dùng</p>
         </div>
 
         <div className="po-header-actions">
           <button 
             type="button" 
-            className="btn-secondary-action"
+            className="dms-btn dms-btn-outline"
             onClick={() => setIsDiscrepancyModalOpen(true)}
           >
-            <AlertTriangle size={16} color="#d97706" />
+            <AlertTriangle size={15} color="#d97706" />
             <span>Báo cáo chênh lệch nhận</span>
           </button>
 
           <button 
             type="button" 
-            className="btn-secondary-action"
+            className="dms-btn dms-btn-outline"
             onClick={handleExportExcel}
           >
-            <Download size={16} />
+            <Download size={15} />
             <span>Xuất Excel</span>
           </button>
 
           <button 
             type="button" 
-            className="btn-primary-action"
+            className="dms-btn dms-btn-steel"
             onClick={() => navigate('/purchase/purchase-orders/create')}
           >
-            <Plus size={18} />
+            <Plus size={15} />
             <span>Lập Đơn đặt hàng mua</span>
           </button>
         </div>
@@ -319,23 +317,20 @@ const PurchaseOrderList = () => {
       </div>
 
       {/* 3. Filter Box */}
-      <div className="po-filter-card">
-        <div className="po-filter-row-top">
-          <div className="filter-heading">
-            <Filter size={18} color="#2563eb" />
-            <span>Bộ lọc tra cứu đơn đặt hàng mua</span>
-          </div>
+      <DmsSectionPanel
+        title="Tìm kiếm đơn đặt hàng mua"
+        actions={
           <button 
             type="button" 
-            className="action-icon-btn" 
+            className="dms-btn dms-btn-outline"
             onClick={handleResetFilters}
             title="Làm mới bộ lọc"
           >
             <RotateCcw size={14} />
             <span>Xoá bộ lọc</span>
           </button>
-        </div>
-
+        }
+      >
         <div className="po-filter-grid">
           <div className="filter-field">
             <label>Mã Đơn hàng (PO)</label>
@@ -408,12 +403,12 @@ const PurchaseOrderList = () => {
             );
           })}
         </div>
-      </div>
+      </DmsSectionPanel>
 
       {/* 4. Data Table */}
-      <div className="po-table-card">
-        <div className="po-table-responsive">
-          <table className="po-data-table">
+      <DmsSectionPanel title="Danh sách đơn đặt hàng mua (PO)" count={total} noPadding>
+        <div className="dms-ledger-table-wrap">
+          <table className="dms-ledger-table po-data-table">
             <thead>
               <tr>
                 <th style={{ width: '40px', textAlign: 'center' }}>STT</th>
@@ -661,6 +656,19 @@ const PurchaseOrderList = () => {
                 })
               )}
             </tbody>
+            {!loading && orders.length > 0 && (
+              <tfoot>
+                <tr>
+                  <td colSpan={6} className="text-right">
+                    Tổng trang ({orders.length} đơn PO):
+                  </td>
+                  <td className="text-right">
+                    {formatCurrency(orders.reduce((s, po) => s + Number(po.metrics?.totalAmount || 0), 0))} đ
+                  </td>
+                  <td colSpan={3} />
+                </tr>
+              </tfoot>
+            )}
           </table>
         </div>
 
@@ -690,7 +698,7 @@ const PurchaseOrderList = () => {
             </button>
           </div>
         </div>
-      </div>
+      </DmsSectionPanel>
 
       {/* 6. Modals */}
       {isReceiveModalOpen && receivingOrder && (

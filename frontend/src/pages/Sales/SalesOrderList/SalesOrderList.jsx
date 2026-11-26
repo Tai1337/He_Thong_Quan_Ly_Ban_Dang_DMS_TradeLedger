@@ -33,6 +33,7 @@ import {
 } from '../../../services/api';
 import Rpt005Modal from './Rpt005Modal';
 import CreateSalesOrderModal from './CreateSalesOrderModal';
+import DmsSectionPanel from '../../../components/DmsUi/DmsSectionPanel';
 import './SalesOrderList.css';
 
 // Helper format tiền tệ VNĐ
@@ -267,20 +268,20 @@ const SalesOrderList = () => {
       )}
 
       {/* Header */}
-      <div className="page-header-row">
+      <div className="dms-page-title-bar">
         <div>
           <h2>Danh sách Đơn bán hàng (Sales Orders)</h2>
-          <p className="page-subtitle">Quản lý vòng đời đơn hàng, phân bổ lô FEFO và xuất báo cáo vận hành</p>
+          <p className="dms-page-subtitle">Quản lý vòng đời đơn hàng, phân bổ lô FEFO và xuất báo cáo vận hành</p>
         </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <button 
-            className="btn-create-order"
+            className="dms-btn dms-btn-steel"
             onClick={() => setIsCreateModalOpen(true)}
           >
-            <Plus size={16} /> Tạo đơn bán hàng (BH_BM1)
+            <Plus size={15} /> Tạo đơn bán hàng (BH_BM1)
           </button>
           <button 
-            className="filter-toggle"
+            className="dms-btn dms-btn-outline"
             onClick={() => setIsFilterExpanded(!isFilterExpanded)}
           >
             {isFilterExpanded ? 'Thu gọn bộ lọc' : 'Mở rộng bộ lọc'}
@@ -291,9 +292,21 @@ const SalesOrderList = () => {
 
       {/* Filters Section */}
       {isFilterExpanded && (
-        <div className="filters-section">
+        <DmsSectionPanel
+          title="Tìm kiếm"
+          actions={
+            <>
+              <button className="dms-btn dms-btn-outline" onClick={handleResetFilters} title="Xoá bộ lọc">
+                <RotateCcw size={14} /> Xoá lọc
+              </button>
+              <button className="dms-btn dms-btn-steel" onClick={handleSearch} disabled={loading}>
+                <Search size={14} /> Tìm kiếm
+              </button>
+            </>
+          }
+        >
           <div className="filter-grid">
-            {/* Hàng 1: Loại ngày (2) + Khoảng ngày (4) + NPP (2) + Kho (2) + Mã đơn (2) = 12 cột */}
+            {/* Hàng 1 */}
             <div className="filter-item filter-col-2">
               <select 
                 value={filterForm.dateType} 
@@ -348,8 +361,8 @@ const SalesOrderList = () => {
               />
             </div>
 
-            {/* Hàng 2: VNBH (3) + Cửa hàng (3) + Trạng thái (3) + Nút thao tác (3) = 12 cột */}
-            <div className="filter-item filter-col-3" style={{ position: 'relative' }}>
+            {/* Hàng 2 */}
+            <div className="filter-item filter-col-4" style={{ position: 'relative' }}>
               <input 
                 type="text" 
                 placeholder="Mã hoặc Tên VNBH" 
@@ -391,7 +404,7 @@ const SalesOrderList = () => {
               )}
             </div>
 
-            <div className="filter-item filter-col-3" style={{ position: 'relative' }}>
+            <div className="filter-item filter-col-4" style={{ position: 'relative' }}>
               <input 
                 type="text" 
                 placeholder="Mã hoặc Tên Cửa hàng / Đại lý" 
@@ -421,7 +434,7 @@ const SalesOrderList = () => {
               )}
             </div>
 
-            <div className="filter-item filter-col-3" style={{ position: 'relative' }} ref={statusDropdownRef}>
+            <div className="filter-item filter-col-4" style={{ position: 'relative' }} ref={statusDropdownRef}>
               <button 
                 type="button"
                 className="btn-status-multiselect"
@@ -465,20 +478,11 @@ const SalesOrderList = () => {
                 </div>
               )}
             </div>
-
-            <div className="filter-item filter-col-3 filter-actions">
-              <button className="btn-search" onClick={handleSearch} disabled={loading}>
-                <Search size={15} /> Tìm kiếm
-              </button>
-              <button className="btn-reset" onClick={handleResetFilters} title="Xoá bộ lọc">
-                <RotateCcw size={15} /> Xoá lọc
-              </button>
-            </div>
           </div>
 
           {/* Badges trạng thái đang chọn */}
           {selectedStatusList.length > 0 && (
-            <div className="active-status-tags">
+            <div className="active-status-tags" style={{ marginTop: 8 }}>
               <span className="tags-label">Trạng thái lọc:</span>
               {selectedStatusList.map(code => {
                 const item = ALL_STATUSES.find(s => s.code === code);
@@ -491,7 +495,7 @@ const SalesOrderList = () => {
               })}
             </div>
           )}
-        </div>
+        </DmsSectionPanel>
       )}
 
       {/* KPI Cards Row */}
@@ -549,21 +553,26 @@ const SalesOrderList = () => {
             applyFilters(nextFilters);
           }}
         >
-          <div className="kpi-info">
-            <h4 style={{ color: '#c2410c', fontWeight: 600 }}>Đơn chưa đóng ⚠️</h4>
-            <p style={{ color: '#ea580c', fontWeight: 700 }}>
-              {kpis.unclosedOrdersCount || 0}
-              <span style={{ fontSize: '12px', fontWeight: 500, marginLeft: '6px', color: '#9a3412' }}>
-                ({formatCurrency(kpis.unclosedOrdersAmount)} đ)
-              </span>
-            </p>
-          </div>
-          <div className="kpi-icon" style={{ color: '#ea580c' }}><Truck size={20} /></div>
+            <div className="kpi-info">
+              <h4>Đơn chưa đóng</h4>
+              <p>
+                {kpis.unclosedOrdersCount || 0}
+                <span style={{ fontSize: '11.5px', fontWeight: 400, marginLeft: '5px', color: '#64748b' }}>
+                  ({formatCurrency(kpis.unclosedOrdersAmount)} đ)
+                </span>
+              </p>
+            </div>
+            <div className="kpi-icon"><Truck size={18} /></div>
         </div>
       </div>
 
       {/* Table & Reports Section */}
-      <div className="table-section">
+      <DmsSectionPanel
+        title="Danh sách đơn bán hàng"
+        count={pagination.total || 0}
+        noPadding
+      >
+        <div className="table-section" style={{ border: 'none', boxShadow: 'none', borderRadius: 0 }}>
         {/* Table Toolbar & Report Buttons */}
         <div className="table-toolbar">
           <div className="table-toolbar-row-top">
@@ -666,13 +675,13 @@ const SalesOrderList = () => {
         </div>
 
         {/* Data Table */}
-        <div className="so-table-container">
+        <div className="so-table-container dms-ledger-table-wrap">
           {loading ? (
             <div className="table-loading">Đang tải danh sách đơn hàng...</div>
           ) : orders.length === 0 ? (
             <div className="table-empty">Không tìm thấy đơn hàng nào phù hợp với bộ lọc.</div>
           ) : (
-            <table className="so-table">
+            <table className="so-table dms-ledger-table">
               <thead>
                 <tr>
                   <th className="checkbox-cell">
@@ -715,45 +724,18 @@ const SalesOrderList = () => {
                           {row.orderCode}
                         </Link>
                         {row.orderCode?.startsWith('R-') && (
-                          <span style={{
-                            background: '#fef3c7',
-                            color: '#92400e',
-                            border: '1px solid #fde68a',
-                            fontSize: '10px',
-                            fontWeight: 600,
-                            padding: '1px 6px',
-                            borderRadius: '4px',
-                            whiteSpace: 'nowrap'
-                          }} title="Đơn hàng trực tuyến từ Web Bán Hàng">
-                            Web Retailer
+                          <span className="so-inline-tag" title="Đơn hàng trực tuyến từ Web Bán Hàng">
+                            Web
                           </span>
                         )}
                         {row.hasPromotion && (
-                          <span style={{
-                            background: '#dcfce7',
-                            color: '#15803d',
-                            border: '1px solid #bbf7d0',
-                            fontSize: '10px',
-                            fontWeight: 600,
-                            padding: '1px 6px',
-                            borderRadius: '4px',
-                            whiteSpace: 'nowrap'
-                          }} title={`Có quà tặng khuyến mãi FOC (+${row.freeGiftsCount || 1} phần)`}>
-                            🎁 Quà KM
+                          <span className="so-inline-tag" title={`Có quà tặng khuyến mãi FOC (+${row.freeGiftsCount || 1} phần)`}>
+                            KM
                           </span>
                         )}
                         {row.discount > 0 && (
-                          <span style={{
-                            background: '#faf5ff',
-                            color: '#7c3aed',
-                            border: '1px solid #e9d5ff',
-                            fontSize: '10px',
-                            fontWeight: 600,
-                            padding: '1px 6px',
-                            borderRadius: '4px',
-                            whiteSpace: 'nowrap'
-                          }} title={`Chiết khấu bậc thang: -${formatCurrency(row.discount)} đ`}>
-                            🏷️ -{formatCurrency(row.discount)}đ
+                          <span className="so-inline-tag" title={`Chiết khấu bậc thang: -${formatCurrency(row.discount)} đ`}>
+                            CK -{formatCurrency(row.discount)}đ
                           </span>
                         )}
                       </div>
@@ -813,6 +795,16 @@ const SalesOrderList = () => {
                   </tr>
                 ))}
               </tbody>
+              <tfoot>
+                <tr>
+                  <td colSpan={9} className="text-right">
+                    Tổng trang ({orders.length} đơn):
+                  </td>
+                  <td className="text-right">
+                    {formatCurrency(orders.reduce((sum, r) => sum + Number(r.totalAmount || 0), 0))} đ
+                  </td>
+                </tr>
+              </tfoot>
             </table>
           )}
         </div>
@@ -833,7 +825,8 @@ const SalesOrderList = () => {
             Trang sau ›
           </button>
         </div>
-      </div>
+        </div>
+      </DmsSectionPanel>
 
       {/* MODAL 1: RPT005 Báo cáo thiếu tồn & Sửa số lượng */}
       <Rpt005Modal 

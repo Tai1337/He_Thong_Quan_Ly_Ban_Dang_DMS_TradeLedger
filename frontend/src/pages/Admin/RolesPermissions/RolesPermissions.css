@@ -1,7 +1,6 @@
 .roles-permissions-page {
-  padding: 24px 32px;
-  background-color: var(--bg-primary, #f8fafc);
-  min-height: calc(100vh - 64px);
+  padding: 0;
+  background-color: transparent;
   color: var(--text-primary, #1e293b);
   font-family: inherit;
 }

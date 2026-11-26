@@ -13,6 +13,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { useInventoryRpt083 } from '../../../hooks/useInventoryRpt083';
+import DmsSectionPanel from '../../../components/DmsUi/DmsSectionPanel';
 import './RPT083.css';
 
 const DEFAULT_FILTER_FORM = {
@@ -87,17 +88,17 @@ const RPT083 = ({ user }) => {
 
   return (
     <div className="rpt083-container">
-      <div className="rpt083-page-header">
+      <div className="dms-page-title-bar">
         <div>
-          <h2 className="rpt083-page-title">BÁO CÁO TỒN KHO NPP (RPT083)</h2>
-          <p className="rpt083-page-subtitle">
+          <h2>Báo cáo Tồn kho NPP (RPT083)</h2>
+          <p className="dms-page-subtitle">
             Theo dõi số lượng tồn chẵn/lẻ theo từng kho, lô hàng và hạn sử dụng FEFO
           </p>
         </div>
 
         <button
           type="button"
-          className="rpt083-toggle-filter-btn"
+          className="dms-btn dms-btn-outline"
           onClick={() => setIsFilterVisible((prev) => !prev)}
         >
           {isFilterVisible ? <ChevronUp size={15} /> : <SlidersHorizontal size={15} />}
@@ -106,19 +107,21 @@ const RPT083 = ({ user }) => {
       </div>
 
       {isFilterVisible && (
-        <div className="rpt083-filter-card">
-          <div className="rpt083-filter-card-header">
-            <h3>Lọc dữ liệu</h3>
-            <button
-              type="button"
-              className="rpt083-btn-close"
-              onClick={() => setIsFilterVisible(false)}
-              title="Thu gọn bộ lọc"
-            >
-              <X size={16} />
-            </button>
-          </div>
-
+        <DmsSectionPanel
+          title="Tìm kiếm & Lọc tồn kho"
+          actions={
+            <>
+              <button type="button" className="dms-btn dms-btn-outline" onClick={handleReset} title="Xoá bộ lọc">
+                <RotateCcw size={14} />
+                <span>Xoá lọc</span>
+              </button>
+              <button type="button" className="dms-btn dms-btn-steel" onClick={handleSearch}>
+                <Search size={14} />
+                <span>Tìm kiếm</span>
+              </button>
+            </>
+          }
+        >
           <div className="rpt083-filter-grid">
             <div className="rpt083-filter-field">
               <select defaultValue={distributorId} disabled title="Nhà phân phối hiện tại">
@@ -224,30 +227,22 @@ const RPT083 = ({ user }) => {
                 onChange={(e) => handleFilterChange('toDate', e.target.value)}
               />
             </div>
-            <div className="rpt083-filter-field rpt083-filter-actions">
-              <button type="button" className="rpt083-btn-search" onClick={handleSearch}>
-                <Search size={14} />
-                <span>Tìm kiếm</span>
-              </button>
-              <button type="button" className="rpt083-btn-reset" onClick={handleReset} title="Xoá bộ lọc">
-                <RotateCcw size={14} />
-                <span>Xoá lọc</span>
-              </button>
-            </div>
           </div>
-        </div>
+        </DmsSectionPanel>
       )}
 
-      <div className="rpt083-table-card">
-        <div className="rpt083-table-header">
-          <h3>Danh sách tồn kho NPP</h3>
+      <DmsSectionPanel
+        title="Danh sách tồn kho NPP"
+        count={pagination.total || data.length}
+        noPadding
+        actions={
           <div className="rpt083-table-actions">
             <div className="rpt083-toggle-group">
               <span>Hiện số lô</span>
               <div
                 className="rpt083-toggle-switch"
                 onClick={() => setShowLot(!showLot)}
-                style={{ backgroundColor: showLot ? '#10b981' : '#cbd5e1' }}
+                style={{ backgroundColor: showLot ? '#059669' : '#cbd5e1' }}
               >
                 <div
                   className="rpt083-toggle-knob"
@@ -256,24 +251,24 @@ const RPT083 = ({ user }) => {
                     left: showLot ? 'auto' : '2px'
                   }}
                 >
-                  {showLot && <Check size={12} color="#10b981" />}
+                  {showLot && <Check size={12} color="#059669" />}
                 </div>
               </div>
             </div>
-            <button type="button" className="rpt083-btn-export" onClick={handleExport}>
+            <button type="button" className="dms-btn dms-btn-steel" onClick={handleExport}>
               <Download size={14} /> Xuất Excel
             </button>
           </div>
-        </div>
-
-        <div className="rpt083-table-wrapper">
+        }
+      >
+        <div className="dms-ledger-table-wrap" style={{ border: 'none' }}>
           {error && <div className="rpt083-error-box">{error}</div>}
           {loading ? (
             <div className="rpt083-empty-box">Đang tải dữ liệu tồn kho...</div>
           ) : data.length === 0 ? (
             <div className="rpt083-empty-box">Không tìm thấy dữ liệu tồn kho nào phù hợp.</div>
           ) : (
-            <table className="rpt-table">
+            <table className="dms-ledger-table rpt-table">
               <thead>
                 <tr>
                   <th style={{ width: '44px' }}>#</th>
@@ -388,7 +383,7 @@ const RPT083 = ({ user }) => {
             </div>
           </div>
         )}
-      </div>
+      </DmsSectionPanel>
     </div>
   );
 };

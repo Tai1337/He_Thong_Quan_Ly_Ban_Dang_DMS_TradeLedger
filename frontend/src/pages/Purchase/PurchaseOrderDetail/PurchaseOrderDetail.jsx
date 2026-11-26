@@ -24,6 +24,7 @@ import ReceiveGoodsModal from '../PurchaseOrderList/ReceiveGoodsModal';
 import CancelCloseModal from '../PurchaseOrderList/CancelCloseModal';
 import PrintPurchaseOrderModal from '../PurchaseOrderList/PrintPurchaseOrderModal';
 import { useNotification } from '../../../components/Common/NotificationProvider';
+import { numberToVietnameseWords } from '../../../utils/chartFormatters';
 import './PurchaseOrderDetail.css';
 
 const formatCurrency = (val) => new Intl.NumberFormat('vi-VN').format(val || 0);
@@ -338,7 +339,7 @@ const PurchaseOrderDetail = () => {
                   className="erp-accordion-header"
                   onClick={() => toggleAccordion('status')}
                 >
-                  <span className="erp-accordion-title">Order Status</span>
+                  <span className="erp-accordion-title">Thông tin & Trạng thái đơn</span>
                   <ChevronDown size={16} className="erp-accordion-chevron" />
                 </div>
 
@@ -417,7 +418,7 @@ const PurchaseOrderDetail = () => {
                   className="erp-accordion-header"
                   onClick={() => toggleAccordion('supplier')}
                 >
-                  <span className="erp-accordion-title">Supplier Information</span>
+                  <span className="erp-accordion-title">Thông tin Nhà cung cấp</span>
                   <ChevronDown size={16} className="erp-accordion-chevron" />
                 </div>
 
@@ -457,7 +458,7 @@ const PurchaseOrderDetail = () => {
                   onClick={() => toggleAccordion('items')}
                 >
                   <span className="erp-accordion-title">
-                    Items ({order.items?.length || 0})
+                    Danh sách mặt hàng đặt mua ({order.items?.length || 0})
                   </span>
                   <ChevronDown size={16} className="erp-accordion-chevron" />
                 </div>
@@ -465,37 +466,37 @@ const PurchaseOrderDetail = () => {
                 <div className="erp-accordion-collapse-wrapper">
                   <div className="erp-accordion-content-inner">
                     <div className="erp-accordion-content no-padding">
-                      <div className="erp-table-responsive">
-                        <table className="erp-data-table">
+                      <div className="dms-ledger-table-wrap" style={{ border: 'none' }}>
+                        <table className="dms-ledger-table erp-data-table">
                           <thead>
                             <tr>
-                              <th style={{ width: '40px', textAlign: 'center' }}>No.</th>
-                              <th style={{ width: '130px' }}>Item Code</th>
-                              <th>Item Name</th>
-                              <th style={{ width: '80px', textAlign: 'center' }}>UOM</th>
-                              <th style={{ width: '110px', textAlign: 'right' }}>Rate (đ)</th>
-                              <th style={{ width: '90px', textAlign: 'right' }}>Qty</th>
-                              <th style={{ width: '100px', textAlign: 'right' }}>Received</th>
-                              <th style={{ width: '100px', textAlign: 'right' }}>Remaining</th>
-                              <th style={{ width: '130px', textAlign: 'right' }}>Amount</th>
+                              <th className="text-center" style={{ width: '40px' }}>STT</th>
+                              <th style={{ width: '130px' }}>Mã SKU</th>
+                              <th>Tên sản phẩm</th>
+                              <th className="text-center" style={{ width: '80px' }}>ĐVT</th>
+                              <th className="text-right" style={{ width: '110px' }}>Đơn giá (đ)</th>
+                              <th className="text-right" style={{ width: '90px' }}>SL đặt</th>
+                              <th className="text-right" style={{ width: '100px' }}>Đã nhận</th>
+                              <th className="text-right" style={{ width: '100px' }}>Còn lại</th>
+                              <th className="text-right" style={{ width: '130px' }}>Thành tiền</th>
                             </tr>
                           </thead>
                           <tbody>
                             {(order.items || []).map((item, idx) => (
                               <tr key={item.id}>
-                                <td style={{ textAlign: 'center', color: '#9ca3af' }}>{idx + 1}</td>
+                                <td className="text-center" style={{ color: '#64748b' }}>{idx + 1}</td>
                                 <td className="erp-sku-cell">{item.product?.sku}</td>
                                 <td className="erp-name-cell">{item.product?.name}</td>
-                                <td style={{ textAlign: 'center', color: '#6b7280' }}>{item.product?.unit}</td>
-                                <td style={{ textAlign: 'right' }}>{formatCurrency(item.unitPrice)}</td>
-                                <td style={{ textAlign: 'right', fontWeight: 600 }}>{item.quantity}</td>
-                                <td style={{ textAlign: 'right', fontWeight: 600, color: item.quantityReceived > 0 ? '#16a34a' : '#9ca3af' }}>
+                                <td className="text-center" style={{ color: '#64748b' }}>{item.product?.unit}</td>
+                                <td className="text-right">{formatCurrency(item.unitPrice)}</td>
+                                <td className="text-right" style={{ fontWeight: 600 }}>{item.quantity}</td>
+                                <td className="text-right" style={{ fontWeight: 600, color: item.quantityReceived > 0 ? '#16a34a' : '#64748b' }}>
                                   {item.quantityReceived}
                                 </td>
-                                <td style={{ textAlign: 'right', color: item.quantityRemaining > 0 ? '#d97706' : '#9ca3af' }}>
+                                <td className="text-right" style={{ color: item.quantityRemaining > 0 ? '#d97706' : '#64748b' }}>
                                   {item.quantityRemaining}
                                 </td>
-                                <td style={{ textAlign: 'right', fontWeight: 600, color: '#111827' }}>
+                                <td className="text-right" style={{ fontWeight: 600, color: '#111827' }}>
                                   {formatCurrency(item.lineTotal)} đ
                                 </td>
                               </tr>
@@ -503,11 +504,16 @@ const PurchaseOrderDetail = () => {
                           </tbody>
                           <tfoot>
                             <tr>
-                              <td colSpan={5} style={{ textAlign: 'right', fontWeight: 600 }}>Total:</td>
-                              <td style={{ textAlign: 'right', fontWeight: 700 }}>{order.metrics?.totalOrderedQty || 0}</td>
-                              <td style={{ textAlign: 'right', fontWeight: 700, color: '#16a34a' }}>{order.metrics?.totalReceivedQty || 0}</td>
-                              <td colSpan={2} style={{ textAlign: 'right', fontWeight: 700, fontSize: '14px', color: '#1d4ed8' }}>
+                              <td colSpan={5} className="text-right" style={{ fontWeight: 700, color: '#0f172a' }}>Tổng cộng:</td>
+                              <td className="text-right" style={{ fontWeight: 700, color: '#0f172a' }}>{order.metrics?.totalOrderedQty || 0}</td>
+                              <td className="text-right" style={{ fontWeight: 700, color: '#059669' }}>{order.metrics?.totalReceivedQty || 0}</td>
+                              <td colSpan={2} className="text-right" style={{ fontWeight: 700, fontSize: '14px', color: '#b91c1c' }}>
                                 {formatCurrency(order.metrics?.totalAmount)} đ
+                              </td>
+                            </tr>
+                            <tr>
+                              <td colSpan={9} style={{ backgroundColor: '#ffffff', color: '#334155', fontWeight: 500 }}>
+                                <strong>Bằng chữ:</strong> <em>{numberToVietnameseWords(order.metrics?.totalAmount)}</em>
                               </td>
                             </tr>
                           </tfoot>

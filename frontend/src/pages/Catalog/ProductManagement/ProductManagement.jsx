@@ -34,6 +34,7 @@ import ProductCreateModal from './ProductCreateModal';
 import SampleAllocationModal from './SampleAllocationModal';
 import SampleFeedbackModal from './SampleFeedbackModal';
 import SampleApprovalModal from './SampleApprovalModal';
+import DmsSectionPanel from '../../../components/DmsUi/DmsSectionPanel';
 import './ProductManagement.css';
 
 export default function ProductManagement() {
@@ -170,25 +171,20 @@ export default function ProductManagement() {
       )}
 
       {/* Header Section */}
-      <div className="product-mgmt-header">
-        <div className="product-mgmt-title-group">
-          <h1>
-            <span className="title-icon-wrapper">
-              <Package size={22} />
-            </span>
-            Quản Lý Sản Phẩm & Quy Trình Mẫu Thử [S]
-          </h1>
-          <p>
+      <div className="dms-page-title-bar">
+        <div>
+          <h2>Quản Lý Sản Phẩm & Quy Trình Mẫu Thử [S]</h2>
+          <p className="dms-page-subtitle">
             Quy trình chuẩn FMCG: Thử nghiệm tại điểm bán [S] → Thu thập đánh giá khách hàng & Pre-order → Duyệt mở bán sỉ cho Cửa hàng
           </p>
         </div>
 
         <button
-          className="header-action-btn"
+          className="dms-btn dms-btn-steel"
           onClick={() => setIsCreateOpen(true)}
           aria-label="Thêm sản phẩm mới"
         >
-          <Plus size={18} />
+          <Plus size={16} />
           Thêm Sản Phẩm Mới
         </button>
       </div>
@@ -308,92 +304,94 @@ export default function ProductManagement() {
         </div>
       </div>
 
-      {/* Filter Toolbar (Segmented Control + Search) */}
-      <div className="mgmt-toolbar">
-        <div className="mgmt-tabs-group" role="tablist">
-          <button
-            className={`mgmt-tab-btn ${activeTab === 'ALL' ? 'active' : ''}`}
-            onClick={() => setActiveTab('ALL')}
-            role="tab"
-            aria-selected={activeTab === 'ALL'}
-          >
-            Tất cả <span className="tab-badge">{kpis.totalProducts || 0}</span>
-          </button>
-          <button
-            className={`mgmt-tab-btn ${activeTab === 'SAMPLE' ? 'active' : ''}`}
-            onClick={() => setActiveTab('SAMPLE')}
-            role="tab"
-            aria-selected={activeTab === 'SAMPLE'}
-          >
-            Mẫu Thử [S] <span className="tab-badge">{kpis.totalSampleProducts || 0}</span>
-          </button>
-          <button
-            className={`mgmt-tab-btn ${activeTab === 'READY' ? 'active' : ''}`}
-            onClick={() => setActiveTab('READY')}
-            role="tab"
-            aria-selected={activeTab === 'READY'}
-          >
-            Sẵn Sàng Duyệt <span className="tab-badge">{kpis.totalReadyToApprove || 0}</span>
-          </button>
-          <button
-            className={`mgmt-tab-btn ${activeTab === 'COMMERCIAL' ? 'active' : ''}`}
-            onClick={() => setActiveTab('COMMERCIAL')}
-            role="tab"
-            aria-selected={activeTab === 'COMMERCIAL'}
-          >
-            Bán Chính Thức <span className="tab-badge">{kpis.totalCommercialProducts || 0}</span>
-          </button>
-          <button
-            className={`mgmt-tab-btn ${activeTab === 'REJECTED' ? 'active' : ''}`}
-            onClick={() => setActiveTab('REJECTED')}
-            role="tab"
-            aria-selected={activeTab === 'REJECTED'}
-          >
-            Dừng / R&D
-          </button>
-        </div>
-
-        <form onSubmit={handleSearchSubmit} className="mgmt-search-group">
-          <select
-            className="mgmt-select-filter"
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            aria-label="Lọc theo ngành hàng"
-          >
-            <option value="">Tất cả ngành hàng</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-
-          <div className="mgmt-search-input-wrap">
-            <Search size={15} className="search-icon-inside" />
-            <input
-              type="text"
-              className="mgmt-search-input"
-              placeholder="Tìm mã SKU, tên SP..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              aria-label="Tìm kiếm sản phẩm"
-            />
+      {/* Filter Toolbar */}
+      <DmsSectionPanel title="Tìm kiếm & Lọc sản phẩm">
+        <div className="mgmt-toolbar" style={{ border: 'none', padding: 0, boxShadow: 'none' }}>
+          <div className="mgmt-tabs-group" role="tablist">
+            <button
+              className={`mgmt-tab-btn ${activeTab === 'ALL' ? 'active' : ''}`}
+              onClick={() => setActiveTab('ALL')}
+              role="tab"
+              aria-selected={activeTab === 'ALL'}
+            >
+              Tất cả <span className="tab-badge">{kpis.totalProducts || 0}</span>
+            </button>
+            <button
+              className={`mgmt-tab-btn ${activeTab === 'SAMPLE' ? 'active' : ''}`}
+              onClick={() => setActiveTab('SAMPLE')}
+              role="tab"
+              aria-selected={activeTab === 'SAMPLE'}
+            >
+              Mẫu Thử [S] <span className="tab-badge">{kpis.totalSampleProducts || 0}</span>
+            </button>
+            <button
+              className={`mgmt-tab-btn ${activeTab === 'READY' ? 'active' : ''}`}
+              onClick={() => setActiveTab('READY')}
+              role="tab"
+              aria-selected={activeTab === 'READY'}
+            >
+              Sẵn Sàng Duyệt <span className="tab-badge">{kpis.totalReadyToApprove || 0}</span>
+            </button>
+            <button
+              className={`mgmt-tab-btn ${activeTab === 'COMMERCIAL' ? 'active' : ''}`}
+              onClick={() => setActiveTab('COMMERCIAL')}
+              role="tab"
+              aria-selected={activeTab === 'COMMERCIAL'}
+            >
+              Bán Chính Thức <span className="tab-badge">{kpis.totalCommercialProducts || 0}</span>
+            </button>
+            <button
+              className={`mgmt-tab-btn ${activeTab === 'REJECTED' ? 'active' : ''}`}
+              onClick={() => setActiveTab('REJECTED')}
+              role="tab"
+              aria-selected={activeTab === 'REJECTED'}
+            >
+              Dừng / R&D
+            </button>
           </div>
 
-          <button
-            type="button"
-            className="btn-icon-action"
-            onClick={loadData}
-            title="Tải lại dữ liệu"
-            aria-label="Làm mới"
-          >
-            <RefreshCw size={14} />
-          </button>
-        </form>
-      </div>
+          <form onSubmit={handleSearchSubmit} className="mgmt-search-group">
+            <select
+              className="mgmt-select-filter"
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              aria-label="Lọc theo ngành hàng"
+            >
+              <option value="">Tất cả ngành hàng</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+
+            <div className="mgmt-search-input-wrap">
+              <Search size={15} className="search-icon-inside" />
+              <input
+                type="text"
+                className="mgmt-search-input"
+                placeholder="Tìm mã SKU, tên SP..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                aria-label="Tìm kiếm sản phẩm"
+              />
+            </div>
+
+            <button
+              type="button"
+              className="dms-btn dms-btn-outline"
+              onClick={loadData}
+              title="Tải lại dữ liệu"
+              aria-label="Làm mới"
+            >
+              <RefreshCw size={14} />
+            </button>
+          </form>
+        </div>
+      </DmsSectionPanel>
 
       {/* Main Table Card */}
-      <div className="mgmt-table-card">
+      <DmsSectionPanel title="Danh sách sản phẩm & SKU" count={products.length} noPadding>
         {loading ? (
           <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b' }}>
             <RefreshCw size={24} style={{ animation: 'spin 1s linear infinite', marginBottom: '10px' }} />
@@ -408,8 +406,8 @@ export default function ProductManagement() {
             </p>
           </div>
         ) : (
-          <div className="table-responsive">
-            <table className="mgmt-table">
+          <div className="dms-ledger-table-wrap" style={{ border: 'none' }}>
+            <table className="dms-ledger-table mgmt-table">
               <thead>
                 <tr>
                   <th style={{ width: '150px' }}>Mã SKU</th>
@@ -611,7 +609,7 @@ export default function ProductManagement() {
             </table>
           </div>
         )}
-      </div>
+      </DmsSectionPanel>
 
       {/* Modals */}
       <ProductCreateModal

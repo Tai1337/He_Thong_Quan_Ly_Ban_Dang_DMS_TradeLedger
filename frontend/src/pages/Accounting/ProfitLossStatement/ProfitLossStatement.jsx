@@ -21,6 +21,7 @@ import {
 import { getProfitLossStatement, exportProfitLossExcel } from '../../../services/api';
 import FinanceChartCard from '../../../components/Charts/FinanceChartCard';
 import DonutBreakdownChart from '../../../components/Charts/DonutBreakdownChart';
+import DmsSectionPanel from '../../../components/DmsUi/DmsSectionPanel';
 import {
   FINANCE_CHART_PALETTE,
   formatVnd,
@@ -282,15 +283,15 @@ const ProfitLossStatement = () => {
                 <Tooltip content={<ProfitLossTooltip />} />
                 <Legend verticalAlign="bottom" height={34} />
                 <ReferenceLine y={0} stroke="#cbd5e1" />
-                <Bar dataKey="income" name="Doanh thu" fill="#1a73e8" radius={[4, 4, 0, 0]} maxBarSize={36} />
+                <Bar dataKey="income" name="Doanh thu" fill="#2b5b8c" radius={[4, 4, 0, 0]} maxBarSize={36} />
                 <Bar dataKey="expense" name="Giá vốn (COGS)" fill="#94a3b8" radius={[4, 4, 0, 0]} maxBarSize={36} />
                 <Line
                   type="monotone"
                   dataKey="netProfit"
                   name="Lợi nhuận thuần"
-                  stroke="#10b981"
+                  stroke="#059669"
                   strokeWidth={2.5}
-                  dot={{ r: 3.5, fill: '#10b981' }}
+                  dot={{ r: 3.5, fill: '#059669' }}
                   activeDot={{ r: 5.5 }}
                 />
               </ComposedChart>
@@ -307,9 +308,9 @@ const ProfitLossStatement = () => {
                 <Tooltip content={<ProfitLossTooltip />} />
                 <Legend verticalAlign="bottom" height={34} />
                 <ReferenceLine y={0} stroke="#cbd5e1" />
-                <Line type="monotone" dataKey="income" name="Doanh thu" stroke="#1a73e8" strokeWidth={2.2} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="income" name="Doanh thu" stroke="#2b5b8c" strokeWidth={2.2} dot={{ r: 3 }} />
                 <Line type="monotone" dataKey="expense" name="Giá vốn (COGS)" stroke="#64748b" strokeWidth={2} dot={{ r: 3 }} />
-                <Line type="monotone" dataKey="netProfit" name="Lợi nhuận thuần" stroke="#10b981" strokeWidth={2.5} dot={{ r: 3.5 }} />
+                <Line type="monotone" dataKey="netProfit" name="Lợi nhuận thuần" stroke="#059669" strokeWidth={2.5} dot={{ r: 3.5 }} />
               </LineChart>
             )}
           </ResponsiveContainer>
@@ -330,8 +331,9 @@ const ProfitLossStatement = () => {
       </div>
 
       {/* 5. Hierarchical Tree Table */}
-      <div className="pnl-tree-table-card">
-        <table className="pnl-data-table">
+      <DmsSectionPanel title="Bảng chi tiết kết quả kinh doanh (P&L)" noPadding>
+        <div className="dms-ledger-table-wrap" style={{ border: 'none' }}>
+          <table className="dms-ledger-table pnl-data-table">
           <thead>
             <tr>
               <th style={{ width: '40%' }}>Tài khoản</th>
@@ -423,7 +425,8 @@ const ProfitLossStatement = () => {
             </tr>
           </tfoot>
         </table>
-      </div>
+        </div>
+      </DmsSectionPanel>
     </div>
   );
 };

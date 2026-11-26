@@ -11,9 +11,10 @@
 }
 
 .erp-doc-page {
-  padding: 20px 32px 60px 32px;
+  padding: 16px 20px 36px 20px;
   background-color: #ffffff;
-  min-height: 100%;
+  border: 1px solid #d5dee8;
+  border-radius: 6px;
   box-sizing: border-box;
   animation: erpPageFadeIn 0.2s var(--anim-ease-smooth);
 }

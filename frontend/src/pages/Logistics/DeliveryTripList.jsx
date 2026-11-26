@@ -25,6 +25,7 @@ import { useDeliveryTrips } from '../../hooks/useDeliveryTrips';
 import { getDriverAvailability } from '../../services/api';
 import CreateTripModal from './CreateTripModal';
 import BatchPrintRPT002Modal from './BatchPrintRPT002Modal';
+import DmsSectionPanel from '../../components/DmsUi/DmsSectionPanel';
 import './DeliveryTripList.css';
 
 export default function DeliveryTripList() {
@@ -146,13 +147,10 @@ export default function DeliveryTripList() {
   return (
     <div className="trips-page-container">
       {/* 1. Page Header */}
-      <div className="trips-page-header">
-        <div className="trips-header-left">
-          <h1>
-            <Truck size={24} color="#2563eb" />
-            <span>Quản Lý Chuyến Xe Vận Chuyển & Điều Phối Đơn Hàng</span>
-          </h1>
-          <p>
+      <div className="dms-page-title-bar">
+        <div>
+          <h2>Quản Lý Chuyến Xe Vận Chuyển & Điều Phối Đơn Hàng</h2>
+          <p className="dms-page-subtitle">
             Giám sát tải trọng xe tải, kiểm soát bốc xếp hàng theo số lô và theo dõi chu trình giao hàng tới các điểm bán.
           </p>
         </div>
@@ -160,10 +158,10 @@ export default function DeliveryTripList() {
         <div className="trips-header-actions">
           <button 
             type="button" 
-            className="btn-create-trip"
+            className="dms-btn dms-btn-steel"
             onClick={() => setIsCreateModalOpen(true)}
           >
-            <Plus size={16} />
+            <Plus size={15} />
             <span>Khởi Tạo Chuyến Xe</span>
           </button>
         </div>
@@ -257,8 +255,9 @@ export default function DeliveryTripList() {
       </div>
 
       {/* 3. Filter Toolbar */}
-      <div className="trips-toolbar-card">
-        <div className="trips-toolbar-left">
+      <DmsSectionPanel title="Tìm kiếm & Điều phối chuyến xe">
+        <div className="trips-toolbar-card" style={{ border: 'none', padding: 0, boxShadow: 'none' }}>
+          <div className="trips-toolbar-left">
           <div className="trips-search-box">
             <Search size={16} />
             <input 
@@ -309,7 +308,7 @@ export default function DeliveryTripList() {
 
           <button 
             type="button" 
-            className="btn-toolbar-refresh"
+            className="dms-btn dms-btn-outline"
             onClick={refetch}
             disabled={loading}
             title="Làm mới danh sách"
@@ -318,10 +317,12 @@ export default function DeliveryTripList() {
             <span>Làm mới</span>
           </button>
         </div>
-      </div>
+        </div>
+      </DmsSectionPanel>
 
       {/* 4. Table Card */}
-      <div className="trips-table-card">
+      <DmsSectionPanel title="Danh sách chuyến xe giao nhận" count={total} noPadding>
+        <div className="dms-ledger-table-wrap" style={{ border: 'none' }}>
         {loading ? (
           <div style={{ padding: 40, textAlign: 'center', color: '#64748b' }}>
             Đang tải dữ liệu chuyến xe...
@@ -335,7 +336,7 @@ export default function DeliveryTripList() {
             Không tìm thấy chuyến xe nào phù hợp với bộ lọc.
           </div>
         ) : (
-          <table className="trips-table">
+          <table className="dms-ledger-table trips-table">
             <thead>
               <tr>
                 <th style={{ width: 36, textAlign: 'center' }}>
@@ -478,7 +479,8 @@ export default function DeliveryTripList() {
             </button>
           </div>
         </div>
-      </div>
+        </div>
+      </DmsSectionPanel>
 
       {/* Modal Khởi tạo chuyến xe mới */}
       <CreateTripModal 

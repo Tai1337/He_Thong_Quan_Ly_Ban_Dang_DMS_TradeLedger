@@ -16,6 +16,7 @@ import {
   createUser,
   toggleUserStatus
 } from '../../../services/api';
+import DmsSectionPanel from '../../../components/DmsUi/DmsSectionPanel';
 import './UserManagement.css';
 
 export default function UserManagement() {
@@ -106,13 +107,13 @@ export default function UserManagement() {
 
   return (
     <div className="users-management-page">
-      <div className="um-header">
-        <div className="um-title-group">
-          <h1>Quản lý Người dùng & Nhân sự</h1>
-          <p>Danh sách tài khoản nhân viên, phân bổ vai trò và kiểm soát trạng thái đăng nhập</p>
+      <div className="dms-page-title-bar">
+        <div>
+          <h2>Quản lý Người dùng & Nhân sự</h2>
+          <p className="dms-page-subtitle">Danh sách tài khoản nhân viên, phân bổ vai trò và kiểm soát trạng thái đăng nhập</p>
         </div>
-        <button className="um-add-btn" onClick={() => setIsModalOpen(true)}>
-          <UserPlus size={16} />
+        <button className="dms-btn dms-btn-steel" onClick={() => setIsModalOpen(true)}>
+          <UserPlus size={15} />
           <span>Thêm người dùng mới</span>
         </button>
       </div>
@@ -120,46 +121,44 @@ export default function UserManagement() {
       {alert && (
         <div
           style={{
-            padding: '12px 16px',
-            borderRadius: 8,
-            marginBottom: 20,
+            padding: '10px 14px',
+            borderRadius: 4,
+            marginBottom: 12,
             display: 'flex',
             alignItems: 'center',
             gap: 10,
-            backgroundColor: alert.type === 'success' ? '#dcfce7' : '#fee2e2',
-            color: alert.type === 'success' ? '#15803d' : '#b91c1c'
+            backgroundColor: alert.type === 'success' ? '#ecfdf5' : '#fef2f2',
+            color: alert.type === 'success' ? '#047857' : '#b91c1c',
+            border: `1px solid ${alert.type === 'success' ? '#a7f3d0' : '#fecaca'}`
           }}
         >
-          {alert.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+          {alert.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
           <span>{alert.message}</span>
         </div>
       )}
 
-      <div style={{ marginBottom: 16, display: 'flex', gap: 12 }}>
-        <div style={{ position: 'relative', width: 320 }}>
-          <Search size={16} style={{ position: 'absolute', left: 12, top: 11, color: '#94a3b8' }} />
-          <input
-            type="text"
-            placeholder="Tìm theo tên, username, vai trò..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '9px 12px 9px 36px',
-              border: '1px solid #cbd5e1',
-              borderRadius: 8,
-              fontSize: 13,
-              outline: 'none'
-            }}
-          />
+      <DmsSectionPanel title="Tìm kiếm tài khoản">
+        <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ position: 'relative', width: 340 }}>
+            <Search size={15} style={{ position: 'absolute', left: 10, top: 9, color: '#64748b' }} />
+            <input
+              type="text"
+              placeholder="Tìm theo tên, username, vai trò..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="dms-input"
+              style={{ width: '100%', paddingLeft: 32 }}
+            />
+          </div>
         </div>
-      </div>
+      </DmsSectionPanel>
 
-      <div className="um-table-card">
+      <DmsSectionPanel title="Danh sách tài khoản nhân sự" count={filteredUsers.length} noPadding>
         {loading ? (
           <div style={{ padding: 40, textAlign: 'center', color: '#64748b' }}>Đang tải người dùng...</div>
         ) : (
-          <table className="um-table">
+          <div className="dms-ledger-table-wrap" style={{ border: 'none' }}>
+          <table className="dms-ledger-table um-table">
             <thead>
               <tr>
                 <th>Nhân sự</th>
@@ -212,8 +211,9 @@ export default function UserManagement() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
-      </div>
+      </DmsSectionPanel>
 
       {/* Modal Thêm người dùng mới */}
       {isModalOpen && (

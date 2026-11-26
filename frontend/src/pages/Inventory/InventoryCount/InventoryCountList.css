@@ -4,9 +4,8 @@
    ========================================================================== */
 
 .inventory-count-erp-page {
-  padding: 24px;
-  background-color: #f8fafc;
-  min-height: calc(100vh - 60px);
+  padding: 0;
+  background-color: transparent;
   color: #0f172a;
 }
 

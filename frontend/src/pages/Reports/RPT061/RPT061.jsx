@@ -25,6 +25,7 @@ import {
 import { getReportRpt061, exportReportRpt061 } from '../../../services/api';
 import FinanceChartCard from '../../../components/Charts/FinanceChartCard';
 import DonutBreakdownChart from '../../../components/Charts/DonutBreakdownChart';
+import DmsSectionPanel from '../../../components/DmsUi/DmsSectionPanel';
 import {
   ORDER_STATUS_META,
   formatVnd,
@@ -246,20 +247,20 @@ export default function RPT061() {
   return (
     <div className="report-container rpt061-page">
       {/* 1. Header Toolbar */}
-      <div className="report-header">
-        <div className="report-title-section">
+      <div className="dms-page-title-bar">
+        <div>
           <h2>RPT061 - Báo cáo Chi tiết Dòng hàng Bán (Line Item)</h2>
-          <p>Bảng kê chi tiết từng mặt hàng xuất bán, giá bán, chiết khấu và doanh thu đối soát</p>
+          <p className="dms-page-subtitle">Bảng kê chi tiết từng mặt hàng xuất bán, giá bán, chiết khấu và doanh thu đối soát</p>
         </div>
         <div className="report-actions">
-          <button className="btn-secondary" onClick={fetchReport} title="Làm mới" disabled={loading}>
-            <RotateCw size={15} className={loading ? 'spin-icon' : ''} /> Làm mới
+          <button className="dms-btn dms-btn-outline" onClick={fetchReport} title="Làm mới" disabled={loading}>
+            <RotateCw size={14} className={loading ? 'spin-icon' : ''} /> Làm mới
           </button>
-          <button className="btn-secondary" onClick={handlePrint} title="In bảng kê">
-            <Printer size={15} /> In bảng kê
+          <button className="dms-btn dms-btn-outline" onClick={handlePrint} title="In bảng kê">
+            <Printer size={14} /> In bảng kê
           </button>
-          <button className="btn-primary" onClick={handleExportExcel} title="Tải file Excel đầy đủ">
-            <Download size={15} /> Xuất Excel
+          <button className="dms-btn dms-btn-steel" onClick={handleExportExcel} title="Tải file Excel đầy đủ">
+            <Download size={14} /> Xuất Excel
           </button>
         </div>
       </div>
@@ -302,7 +303,8 @@ export default function RPT061() {
       </div>
 
       {/* 3. Filters Toolbar */}
-      <div className="filters-card">
+      <DmsSectionPanel title="Tìm kiếm & Lọc dòng hàng">
+        <div className="filters-card" style={{ border: 'none', padding: 0, boxShadow: 'none' }}>
         <div className="filter-group">
           <label>Khoảng thời gian</label>
           <div className="filter-input-wrap">
@@ -379,7 +381,8 @@ export default function RPT061() {
             />
           </div>
         </div>
-      </div>
+        </div>
+      </DmsSectionPanel>
 
       {/* 3.5. Visual Charts Grid */}
       {!loading && filteredList.length > 0 && (
@@ -452,7 +455,7 @@ export default function RPT061() {
       )}
 
       {/* 4. Data Table */}
-      <div className="table-card">
+      <DmsSectionPanel title="Bảng kê chi tiết dòng hàng bán (RPT061)" count={filteredList.length} noPadding>
         {error && <div className="rpt-error-box">{error}</div>}
 
         {loading ? (
@@ -468,8 +471,8 @@ export default function RPT061() {
           </div>
         ) : (
           <>
-            <div className="table-responsive">
-              <table className="data-table">
+            <div className="dms-ledger-table-wrap" style={{ border: 'none' }}>
+              <table className="dms-ledger-table data-table">
                 <thead>
                   <tr>
                     <th style={{ width: '45px' }}>STT</th>
@@ -496,7 +499,7 @@ export default function RPT061() {
                       </td>
                       <td className="text-center text-slate-600 text-sm">{row.orderDate}</td>
                       <td>
-                        <div className="retailer-name-cell font-semibold text-slate-800">{row.retailerName}</div>
+                        <div className="retailer-name-cell">{row.retailerName}</div>
                         {row.retailerCode && <span className="text-xs text-slate-600">[{row.retailerCode}]</span>}
                       </td>
                       <td className="text-slate-600 text-sm">{row.vnbhName || 'Chưa gán'}</td>
@@ -504,7 +507,7 @@ export default function RPT061() {
                         <span className="sku-tag">{row.sku}</span>
                       </td>
                       <td>
-                        <div className="font-medium text-slate-800">{row.productName}</div>
+                        <div>{row.productName}</div>
                         {row.isPromotion && (
                           <span className="promo-badge">
                             <Gift size={12} /> Hàng tặng 0đ
@@ -514,11 +517,11 @@ export default function RPT061() {
                       <td className="text-center">
                         <span className="unit-badge">{row.unit || 'THÙNG'}</span>
                       </td>
-                      <td className="text-right font-bold">{formatCount(row.quantity)}</td>
-                      <td className="text-right text-slate-600">
+                      <td className="text-right">{formatCount(row.quantity)}</td>
+                      <td className="text-right">
                         {row.isPromotion ? '0 đ' : formatVnd(row.unitPrice)}
                       </td>
-                      <td className="text-right font-bold text-blue-700">
+                      <td className="text-right">
                         {row.isPromotion ? '0 đ' : formatVnd(row.totalAmount)}
                       </td>
                       <td className="text-sm text-slate-600">{row.allocatedLots || 'Chưa phân bổ'}</td>
@@ -578,7 +581,7 @@ export default function RPT061() {
             )}
           </>
         )}
-      </div>
+      </DmsSectionPanel>
     </div>
   );
 }

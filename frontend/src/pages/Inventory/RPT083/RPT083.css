@@ -1,14 +1,12 @@
 /* src/pages/Inventory/RPT083/RPT083.css */
 .rpt083-container {
-  padding: 24px 32px;
-  background-color: #f8fafc;
-  min-height: calc(100vh - 50px);
+  padding: 0;
+  background-color: transparent;
   width: 100%;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  gap: 10px;
 }
 
 .rpt083-page-header {
