@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { 
-  FileText, 
-  Wallet, 
-  Tag, 
+import {
+  FileText,
+  Wallet,
+  Tag,
   CreditCard,
   Box,
   Layers,
@@ -18,18 +18,18 @@ import {
   RotateCcw,
   Check,
   Download,
-  Info,
+  Gift,
   SlidersHorizontal,
   ChevronUp,
   Plus,
   Menu
 } from 'lucide-react';
 import { useSalesOrders } from '../../../hooks/useSalesOrders';
-import { 
-  getWarehouses, 
-  getSalesReps, 
+import {
+  getWarehouses,
+  getSalesReps,
   getRetailers,
-  exportReportExcel 
+  exportReportExcel
 } from '../../../services/api';
 import Rpt005Modal from './Rpt005Modal';
 import CreateSalesOrderModal from './CreateSalesOrderModal';
@@ -92,6 +92,33 @@ const SalesOrderList = () => {
   const [showVnbhDropdown, setShowVnbhDropdown] = useState(false);
   const [showRetailerDropdown, setShowRetailerDropdown] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const statusPopoverRef = useRef(null);
+  const noticeDialogRef = useRef(null);
+  const [noticeMessage, setNoticeMessage] = useState('');
+
+  // Native Popover API: tự đóng khi click ra ngoài / nhấn Escape.
+  useEffect(() => {
+    const popover = statusPopoverRef.current;
+    if (!popover) return;
+
+    if (showStatusDropdown && !popover.matches(':popover-open')) {
+      popover.showPopover();
+    } else if (!showStatusDropdown && popover.matches(':popover-open')) {
+      popover.hidePopover();
+    }
+  }, [showStatusDropdown]);
+
+  // Native HTMLDialogElement cho thông báo nghiệp vụ.
+  useEffect(() => {
+    const dialog = noticeDialogRef.current;
+    if (noticeMessage && dialog && !dialog.open) dialog.showModal();
+  }, [noticeMessage]);
+
+  const showNotice = (message) => setNoticeMessage(message);
+  const closeNotice = () => {
+    if (noticeDialogRef.current?.open) noticeDialogRef.current.close();
+    setNoticeMessage('');
+  };
 
   // Modals
   const navigate = useNavigate();
@@ -104,15 +131,15 @@ const SalesOrderList = () => {
   const handleCreateTripFromSelected = () => {
     setIsActionMenuOpen(false);
     if (!selectedIds || selectedIds.length === 0) {
-      alert('Vui lòng chọn ít nhất 1 đơn hàng đã xác nhận ("Chờ giao") để tạo chuyến xe.');
+      showNotice('Vui lòng chọn ít nhất 1 đơn hàng đã xác nhận ("Chờ giao") để tạo chuyến xe.');
       return;
     }
 
     const selectedOrders = orders.filter(o => selectedIds.includes(o.id));
     const nonAllocated = selectedOrders.filter(o => o.status !== 'ALLOCATED');
-    
+
     if (nonAllocated.length > 0) {
-      alert(`Có ${nonAllocated.length} đơn hàng được chọn chưa ở trạng thái "Chờ giao" (ALLOCATED). Vui lòng chỉ chọn các đơn hàng đã xác nhận đủ tồn để xếp chuyến xe.`);
+      showNotice(`Có ${nonAllocated.length} đơn hàng được chọn chưa ở trạng thái "Chờ giao" (ALLOCATED). Vui lòng chỉ chọn các đơn hàng đã xác nhận đủ tồn để xếp chuyến xe.`);
       return;
     }
 
@@ -153,13 +180,13 @@ const SalesOrderList = () => {
   };
 
   // Custom Hook
-  const { 
-    data: orders, 
-    kpis, 
-    pagination, 
-    loading, 
+  const {
+    data: orders,
+    kpis,
+    pagination,
+    loading,
     actionLoading,
-    error, 
+    error,
     successMessage,
     selectedIds,
     sortBy,
@@ -246,12 +273,12 @@ const SalesOrderList = () => {
       {/* Alert Banners */}
       {successMessage && (
         <div className="toast-banner success">
-          <CheckCircle2 size={18} /> {successMessage}
+          <CheckCircle2 size={16} /> {successMessage}
         </div>
       )}
       {error && (
         <div className="toast-banner error">
-          <AlertCircle size={18} /> {error}
+          <AlertCircle size={16} /> {error}
         </div>
       )}
 
@@ -261,19 +288,19 @@ const SalesOrderList = () => {
           <h2>Danh sách Đơn bán hàng (Sales Orders)</h2>
           <p className="page-subtitle">Quản lý vòng đời đơn hàng, phân bổ lô FEFO và xuất báo cáo vận hành</p>
         </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <button 
+        <div className="page-header-actions">
+          <button
             className="btn-create-order"
             onClick={() => setIsCreateModalOpen(true)}
           >
             <Plus size={16} /> Tạo đơn bán hàng (BH_BM1)
           </button>
-          <button 
+          <button
             className="filter-toggle"
             onClick={() => setIsFilterExpanded(!isFilterExpanded)}
           >
             {isFilterExpanded ? 'Thu gọn bộ lọc' : 'Mở rộng bộ lọc'}
-            {isFilterExpanded ? <ChevronUp size={15} /> : <SlidersHorizontal size={15} />}
+            {isFilterExpanded ? <ChevronUp size={16} /> : <SlidersHorizontal size={16} />}
           </button>
         </div>
       </div>
@@ -284,8 +311,8 @@ const SalesOrderList = () => {
           <div className="filter-grid">
             {/* Hàng 1: Loại ngày (2) + Khoảng ngày (4) + NPP (2) + Kho (2) + Mã đơn (2) = 12 cột */}
             <div className="filter-item filter-col-2">
-              <select 
-                value={filterForm.dateType} 
+              <select
+                value={filterForm.dateType}
                 onChange={(e) => handleFilterChange('dateType', e.target.value)}
               >
                 <option value="expected">Ngày giao dự kiến</option>
@@ -294,17 +321,17 @@ const SalesOrderList = () => {
             </div>
 
             <div className="filter-item filter-col-4 date-range-inputs">
-              <input 
-                type="date" 
-                value={filterForm.startDate} 
-                onChange={(e) => handleFilterChange('startDate', e.target.value)} 
+              <input
+                type="date"
+                value={filterForm.startDate}
+                onChange={(e) => handleFilterChange('startDate', e.target.value)}
                 title="Từ ngày"
               />
               <span className="date-sep">–</span>
-              <input 
-                type="date" 
-                value={filterForm.endDate} 
-                onChange={(e) => handleFilterChange('endDate', e.target.value)} 
+              <input
+                type="date"
+                value={filterForm.endDate}
+                onChange={(e) => handleFilterChange('endDate', e.target.value)}
                 title="Đến ngày"
               />
             </div>
@@ -316,7 +343,7 @@ const SalesOrderList = () => {
             </div>
 
             <div className="filter-item filter-col-2">
-              <select 
+              <select
                 value={filterForm.warehouseId}
                 onChange={(e) => handleFilterChange('warehouseId', e.target.value)}
               >
@@ -328,9 +355,9 @@ const SalesOrderList = () => {
             </div>
 
             <div className="filter-item filter-col-2">
-              <input 
-                type="text" 
-                placeholder="Mã đơn hàng (SO-...)" 
+              <input
+                type="text"
+                placeholder="Mã đơn hàng (SO-...)"
                 value={filterForm.orderCode}
                 onChange={(e) => handleFilterChange('orderCode', e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -338,10 +365,10 @@ const SalesOrderList = () => {
             </div>
 
             {/* Hàng 2: VNBH (3) + Cửa hàng (3) + Trạng thái (3) + Nút thao tác (3) = 12 cột */}
-            <div className="filter-item filter-col-3" style={{ position: 'relative' }}>
-              <input 
-                type="text" 
-                placeholder="Mã hoặc Tên VNBH" 
+            <div className="filter-item filter-col-3 filter-item-rel">
+              <input
+                type="text"
+                placeholder="Mã hoặc Tên VNBH"
                 value={filterForm.vnbhName}
                 onChange={(e) => {
                   handleFilterChange('vnbhName', e.target.value);
@@ -351,7 +378,7 @@ const SalesOrderList = () => {
               />
               {showVnbhDropdown && salesReps.length > 0 && (
                 <div className="autocomplete-dropdown">
-                  <div 
+                  <div
                     className="autocomplete-item"
                     onClick={() => {
                       handleFilterChange('vnbhName', '');
@@ -364,8 +391,8 @@ const SalesOrderList = () => {
                   {salesReps
                     .filter(s => s.fullName.toLowerCase().includes(filterForm.vnbhName.toLowerCase()) || s.username.toLowerCase().includes(filterForm.vnbhName.toLowerCase()))
                     .map(s => (
-                      <div 
-                        key={s.id} 
+                      <div
+                        key={s.id}
                         className="autocomplete-item"
                         onClick={() => {
                           handleFilterChange('vnbhName', s.fullName);
@@ -380,10 +407,10 @@ const SalesOrderList = () => {
               )}
             </div>
 
-            <div className="filter-item filter-col-3" style={{ position: 'relative' }}>
-              <input 
-                type="text" 
-                placeholder="Mã hoặc Tên Cửa hàng / Đại lý" 
+            <div className="filter-item filter-col-3 filter-item-rel">
+              <input
+                type="text"
+                placeholder="Mã hoặc Tên Cửa hàng / Đại lý"
                 value={filterForm.retailer}
                 onChange={(e) => {
                   handleFilterChange('retailer', e.target.value);
@@ -394,8 +421,8 @@ const SalesOrderList = () => {
               {showRetailerDropdown && retailerSuggestions.length > 0 && (
                 <div className="autocomplete-dropdown">
                   {retailerSuggestions.map(r => (
-                    <div 
-                      key={r.id} 
+                    <div
+                      key={r.id}
                       className="autocomplete-item"
                       onClick={() => {
                         handleFilterChange('retailer', r.name);
@@ -403,32 +430,39 @@ const SalesOrderList = () => {
                       }}
                     >
                       <strong>[{r.code}]</strong> {r.name}
-                      <div style={{ fontSize: '11px', color: '#64748b' }}>{r.address}</div>
+                      <div className="autocomplete-sub">{r.address}</div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
 
-            <div className="filter-item filter-col-3" style={{ position: 'relative' }}>
-              <button 
+            <div className="filter-item filter-col-3 filter-item-rel">
+              <button
                 type="button"
                 className="btn-status-multiselect"
                 onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+                aria-expanded={showStatusDropdown}
+                aria-haspopup="true"
               >
                 <span className="status-multiselect-text">
-                  {selectedStatusList.length === 0 
-                    ? 'Tất cả trạng thái' 
+                  {selectedStatusList.length === 0
+                    ? 'Tất cả trạng thái'
                     : `Đã chọn (${selectedStatusList.length}) trạng thái`}
                 </span>
                 <ChevronDown size={14} />
               </button>
               {showStatusDropdown && (
-                <div className="status-dropdown-menu">
+                <div
+                  ref={statusPopoverRef}
+                  className="status-dropdown-menu"
+                  popover="auto"
+                  onToggle={(event) => setShowStatusDropdown(event.newState === 'open')}
+                >
                   <div className="status-dropdown-header">
                     <span>Chọn trạng thái đơn</span>
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       className="btn-link"
                       onClick={() => {
                         setSelectedStatusList([]);
@@ -442,12 +476,15 @@ const SalesOrderList = () => {
                     const isChecked = selectedStatusList.includes(st.code);
                     return (
                       <label key={st.code} className="status-checkbox-item">
-                        <input 
+                        <input
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => toggleStatusSelection(st.code)}
                         />
-                        <span className={`status-pill ${st.color}`}>{st.label}</span>
+                        <span className={`status-pill ${st.color}`}>
+                          <span className="status-dot" />
+                          {st.label}
+                        </span>
                       </label>
                     );
                   })}
@@ -457,10 +494,10 @@ const SalesOrderList = () => {
 
             <div className="filter-item filter-col-3 filter-actions">
               <button className="btn-search" onClick={handleSearch} disabled={loading}>
-                <Search size={15} /> Tìm kiếm
+                <Search size={16} /> Tìm kiếm
               </button>
               <button className="btn-reset" onClick={handleResetFilters} title="Xoá bộ lọc">
-                <RotateCcw size={15} /> Xoá lọc
+                <RotateCcw size={16} /> Xoá lọc
               </button>
             </div>
           </div>
@@ -485,51 +522,54 @@ const SalesOrderList = () => {
 
       {/* KPI Cards Row */}
       <div className="kpi-cards-row">
-        <div className="kpi-card blue">
+        <div className="kpi-card">
           <div className="kpi-info">
             <h4>Tổng đơn</h4>
             <p>{kpis.totalOrders || 0}</p>
           </div>
-          <div className="kpi-icon"><FileText size={20} /></div>
+          <div className="kpi-icon"><FileText size={16} /></div>
         </div>
-        <div className="kpi-card purple">
+        <div className="kpi-card">
           <div className="kpi-info">
             <h4>Tổng thành tiền</h4>
             <p>{formatCurrency(kpis.totalAmount)} đ</p>
           </div>
-          <div className="kpi-icon"><Wallet size={20} /></div>
+          <div className="kpi-icon"><Wallet size={16} /></div>
         </div>
-        <div className="kpi-card orange">
+        <div className="kpi-card">
           <div className="kpi-info">
             <h4>Tổng chiết khấu</h4>
             <p>{formatCurrency(kpis.totalDiscount)} đ</p>
           </div>
-          <div className="kpi-icon"><Tag size={20} /></div>
+          <div className="kpi-icon"><Tag size={16} /></div>
         </div>
-        <div className="kpi-card green">
+        <div className="kpi-card">
           <div className="kpi-info">
             <h4>Tổng tiền đơn hàng</h4>
             <p>{formatCurrency(kpis.totalOrderValue)} đ</p>
           </div>
-          <div className="kpi-icon"><CreditCard size={20} /></div>
+          <div className="kpi-icon"><CreditCard size={16} /></div>
         </div>
-        <div className="kpi-card lightblue">
+        <div className="kpi-card">
           <div className="kpi-info">
             <h4>Tổng tấn</h4>
             <p>{kpis.totalTons || '0.0000'}</p>
           </div>
-          <div className="kpi-icon"><Box size={20} /></div>
+          <div className="kpi-icon"><Box size={16} /></div>
         </div>
-        <div className="kpi-card gray">
+        <div className="kpi-card">
           <div className="kpi-info">
             <h4>Tổng khối</h4>
             <p>{kpis.totalCbm || '0.0000'}</p>
           </div>
-          <div className="kpi-icon"><Layers size={20} /></div>
+          <div className="kpi-icon"><Layers size={16} /></div>
         </div>
-        <div 
-          className="kpi-card amber"
+        <div
+          className="kpi-card kpi-card-alert"
           title="Nhấn để lọc các đơn đã giao / lập hóa đơn đang chờ đóng đơn"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.currentTarget.click(); } }}
           onClick={() => {
             setSelectedStatusList(['DELIVERED', 'INVOICED']);
             const nextFilters = { ...filterForm, status: 'DELIVERED,INVOICED' };
@@ -539,15 +579,15 @@ const SalesOrderList = () => {
           }}
         >
           <div className="kpi-info">
-            <h4 style={{ color: '#c2410c', fontWeight: 600 }}>Đơn chưa đóng ⚠️</h4>
-            <p style={{ color: '#ea580c', fontWeight: 700 }}>
+            <h4>Đơn chưa đóng</h4>
+            <p>
               {kpis.unclosedOrdersCount || 0}
-              <span style={{ fontSize: '12px', fontWeight: 500, marginLeft: '6px', color: '#9a3412' }}>
+              <span className="kpi-sub-amount">
                 ({formatCurrency(kpis.unclosedOrdersAmount)} đ)
               </span>
             </p>
           </div>
-          <div className="kpi-icon" style={{ color: '#ea580c' }}><Truck size={20} /></div>
+          <div className="kpi-icon kpi-icon-alert"><Truck size={16} /></div>
         </div>
       </div>
 
@@ -557,19 +597,19 @@ const SalesOrderList = () => {
         <div className="table-toolbar">
           <div className="table-toolbar-row-top">
             <div className="stock-tabs">
-              <button 
+              <button
                 className={`stock-tab ${filterForm.stockFilter === 'all' ? 'active' : ''}`}
                 onClick={() => handleStockFilterClick('all')}
               >
                 Tất cả ({pagination.total || 0})
               </button>
-              <button 
+              <button
                 className={`stock-tab ${filterForm.stockFilter === 'enough' ? 'active' : ''}`}
                 onClick={() => handleStockFilterClick('enough')}
               >
                 Đủ tồn
               </button>
-              <button 
+              <button
                 className={`stock-tab danger ${filterForm.stockFilter === 'shortage' ? 'active' : ''}`}
                 onClick={() => handleStockFilterClick('shortage')}
               >
@@ -588,12 +628,12 @@ const SalesOrderList = () => {
                   aria-expanded={isActionMenuOpen}
                   aria-haspopup="menu"
                 >
-                  <Menu size={15} /> Thao tác <ChevronDown size={14} />
+                  <Menu size={14} /> Thao tác <ChevronDown size={14} />
                 </button>
                 {isActionMenuOpen && (
                   <div className="list-action-dropdown" role="menu">
                     <button type="button" role="menuitem" onClick={handleCreateTripFromSelected}>
-                      <Truck size={15} /> Tạo chuyến xe
+                      <Truck size={14} /> Tạo chuyến xe
                     </button>
                   </div>
                 )}
@@ -619,18 +659,18 @@ const SalesOrderList = () => {
             </div>
           </div>
         </div>
-        
+
         {/* Bulk Action Bar (Hiển thị khi có dòng được chọn) */}
         {selectedIds.length > 0 && (
           <div className="bulk-action-bar">
             <span>Đã chọn <strong>{selectedIds.length}</strong> đơn hàng</span>
             <div className="bulk-buttons">
-              <button 
+              <button
                 className="btn-bulk-confirm"
                 onClick={handleBulkConfirm}
                 disabled={actionLoading}
               >
-                <Check size={15} /> Xác nhận hàng loạt (FEFO)
+                <Check size={14} /> Xác nhận hàng loạt (FEFO)
               </button>
               <button className="btn-bulk-cancel" onClick={clearSelection}>
                 Huỷ chọn
@@ -640,10 +680,10 @@ const SalesOrderList = () => {
         )}
 
         <div className="table-controls">
-          <span style={{ fontSize: '13px', color: '#64748b' }}>
+          <span className="table-count-summary">
             Hiển thị <strong>{orders.length}</strong> / <strong>{pagination.total}</strong> đơn hàng
           </span>
-          <select 
+          <select
             className="select-limit"
             value={pagination.limit}
             onChange={(e) => setLimit(e.target.value)}
@@ -665,35 +705,35 @@ const SalesOrderList = () => {
               <thead>
                 <tr>
                   <th className="checkbox-cell">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       checked={selectedIds.length === orders.length && orders.length > 0}
                       onChange={(e) => toggleSelectAll(e.target.checked)}
                     />
                   </th>
-                  <th onClick={() => toggleSort('orderCode')} style={{ cursor: 'pointer' }}>
+                  <th onClick={() => toggleSort('orderCode')} className="th-sortable">
                     Mã đơn hàng {sortBy === 'orderCode' && (sortOrder === 'asc' ? '↑' : '↓')}
                   </th>
                   <th>Cửa hàng / Đại lý</th>
                   <th>Địa chỉ giao</th>
-                  <th onClick={() => toggleSort('createdAt')} style={{ cursor: 'pointer' }}>
+                  <th onClick={() => toggleSort('createdAt')} className="th-sortable">
                     Ngày đặt / Giao dự kiến {sortBy === 'createdAt' && (sortOrder === 'asc' ? '↑' : '↓')}
                   </th>
                   <th>VNBH</th>
                   <th>Chuyến xe</th>
-                  <th onClick={() => toggleSort('status')} style={{ cursor: 'pointer' }}>
+                  <th onClick={() => toggleSort('status')} className="th-sortable">
                     Trạng thái {sortBy === 'status' && (sortOrder === 'asc' ? '↑' : '↓')}
                   </th>
                   <th>TT Tồn kho</th>
-                  <th style={{ textAlign: 'right' }}>Tổng thành tiền</th>
+                  <th className="th-amount">Tổng thành tiền</th>
                 </tr>
               </thead>
               <tbody>
                 {orders.map((row) => (
                   <tr key={row.id} className={selectedIds.includes(row.id) ? 'row-selected' : ''}>
                     <td className="checkbox-cell">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         checked={selectedIds.includes(row.id)}
                         onChange={() => toggleSelectOne(row.id)}
                       />
@@ -703,50 +743,27 @@ const SalesOrderList = () => {
                         <Link to={`/sales/sales-orders/${row.id}`} className="order-link">
                           {row.orderCode}
                         </Link>
-                        {row.orderCode?.startsWith('R-') && (
-                          <span style={{
-                            background: '#fef3c7',
-                            color: '#92400e',
-                            border: '1px solid #fde68a',
-                            fontSize: '10px',
-                            fontWeight: 600,
-                            padding: '1px 6px',
-                            borderRadius: '4px',
-                            whiteSpace: 'nowrap'
-                          }} title="Đơn hàng trực tuyến từ Web Bán Hàng">
-                            Web Retailer
-                          </span>
-                        )}
-                        {row.hasPromotion && (
-                          <span style={{
-                            background: '#dcfce7',
-                            color: '#15803d',
-                            border: '1px solid #bbf7d0',
-                            fontSize: '10px',
-                            fontWeight: 600,
-                            padding: '1px 6px',
-                            borderRadius: '4px',
-                            whiteSpace: 'nowrap'
-                          }} title={`Có quà tặng khuyến mãi FOC (+${row.freeGiftsCount || 1} phần)`}>
-                            🎁 Quà KM
-                          </span>
-                        )}
-                        {row.discount > 0 && (
-                          <span style={{
-                            background: '#faf5ff',
-                            color: '#7c3aed',
-                            border: '1px solid #e9d5ff',
-                            fontSize: '10px',
-                            fontWeight: 600,
-                            padding: '1px 6px',
-                            borderRadius: '4px',
-                            whiteSpace: 'nowrap'
-                          }} title={`Chiết khấu bậc thang: -${formatCurrency(row.discount)} đ`}>
-                            🏷️ -{formatCurrency(row.discount)}đ
-                          </span>
+                        <div className="order-item-count">{row.itemCount} mặt hàng</div>
+                        {(row.orderCode?.startsWith('R-') || row.hasPromotion || row.discount > 0) && (
+                          <div className="order-tags-row">
+                            {row.orderCode?.startsWith('R-') && (
+                              <span className="order-tag order-tag-web" title="Đơn hàng trực tuyến từ Web Bán Hàng">
+                                Web Retailer
+                              </span>
+                            )}
+                            {row.hasPromotion && (
+                              <span className="order-tag order-tag-promo" title={`Có quà tặng khuyến mãi FOC (+${row.freeGiftsCount || 1} phần)`}>
+                                <Gift size={12} /> Quà KM
+                              </span>
+                            )}
+                            {row.discount > 0 && (
+                              <span className="order-tag order-tag-discount" title={`Chiết khấu bậc thang: -${formatCurrency(row.discount)} đ`}>
+                                <Tag size={12} /> -{formatCurrency(row.discount)}đ
+                              </span>
+                            )}
+                          </div>
                         )}
                       </div>
-                      <div style={{ fontSize: '11px', color: '#64748b' }}>{row.itemCount} mặt hàng</div>
                     </td>
                     <td>
                       <div className="shop-title">[{row.retailerCode}]</div>
@@ -758,7 +775,7 @@ const SalesOrderList = () => {
                     </td>
                     <td>
                       <div className="delivery-date">
-                        <Calendar size={13} /> 
+                        <Calendar size={14} />
                         {new Date(row.expectedDate).toLocaleDateString('vi-VN')}
                       </div>
                       <div className="order-created-time">
@@ -766,17 +783,18 @@ const SalesOrderList = () => {
                       </div>
                     </td>
                     <td>
-                      <div style={{ fontWeight: 500 }}>{row.vnbhName}</div>
-                      <div style={{ fontSize: '11px', color: '#64748b' }}>{row.vnbhCode}</div>
+                      <div className="vnbh-name">{row.vnbhName}</div>
+                      <div className="vnbh-code">{row.vnbhCode}</div>
                     </td>
                     <td>
                       <div className="delivery-truck">
-                        <Truck size={13} /> {row.truckCode}
+                        <Truck size={14} /> {row.truckCode}
                       </div>
                       {row.driverName && <div className="driver-name">{row.driverName}</div>}
                     </td>
                     <td>
                       <span className={`status-badge ${row.status.toLowerCase()}`}>
+                        <span className="status-dot" />
                         {ALL_STATUSES.find(s => s.code === row.status)?.label || row.status}
                       </span>
                     </td>
@@ -794,7 +812,7 @@ const SalesOrderList = () => {
                     <td className="money-text">
                       <div>{formatCurrency(row.totalAmount)} đ</div>
                       {row.discount > 0 && (
-                        <div style={{ fontSize: '11px', color: '#7c3aed', fontWeight: 500 }}>
+                        <div className="money-discount-note">
                           (Đã giảm {formatCurrency(row.discount)} đ)
                         </div>
                       )}
@@ -808,14 +826,14 @@ const SalesOrderList = () => {
 
         {/* Pagination */}
         <div className="table-pagination">
-          <button 
+          <button
             disabled={pagination.page <= 1}
             onClick={() => setPage(pagination.page - 1)}
           >
             ‹ Trang trước
           </button>
           <span>Trang <strong>{pagination.page}</strong> / {Math.max(1, Math.ceil(pagination.total / pagination.limit))}</span>
-          <button 
+          <button
             disabled={pagination.page >= Math.ceil(pagination.total / pagination.limit)}
             onClick={() => setPage(pagination.page + 1)}
           >
@@ -824,8 +842,26 @@ const SalesOrderList = () => {
         </div>
       </div>
 
+      {/* Native Chrome/HTML dialog for validation notices */}
+      <dialog
+        ref={noticeDialogRef}
+        className="native-notice-dialog"
+        aria-labelledby="sales-order-notice-title"
+        onCancel={() => setNoticeMessage('')}
+        onClose={() => setNoticeMessage('')}
+      >
+        <div className="native-dialog-icon"><AlertCircle size={20} /></div>
+        <div className="native-dialog-copy">
+          <h3 id="sales-order-notice-title">Chưa thể thực hiện thao tác</h3>
+          <p>{noticeMessage}</p>
+        </div>
+        <div className="native-dialog-actions">
+          <button type="button" className="native-dialog-primary" onClick={closeNotice}>Đã hiểu</button>
+        </div>
+      </dialog>
+
       {/* MODAL 1: RPT005 Báo cáo thiếu tồn & Sửa số lượng */}
-      <Rpt005Modal 
+      <Rpt005Modal
         isOpen={isRpt005Open}
         onClose={handleCloseRpt005Modal}
         appliedFilters={filterForm}
