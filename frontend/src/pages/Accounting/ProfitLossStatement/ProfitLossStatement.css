@@ -126,6 +126,7 @@
   margin-bottom: 16px;
   background-color: #ffffff;
   border: 1px solid #d1d8e0;
+  border-radius: 5px;
   flex-wrap: wrap;
 }
 
@@ -155,7 +156,7 @@
 .pnl-operator-box {
   width: 24px;
   height: 24px;
-  border-radius: 0;
+  border-radius: 4px;
   background-color: #f3f5f8;
   border: 1px solid #d1d8e0;
   display: flex;
@@ -163,7 +164,7 @@
   justify-content: center;
   font-size: 14px;
   font-weight: 600;
-  color: #337ab7;
+  color: #0066da;
 }
 
 /* 4. Financial Analytics Grid */
@@ -275,4 +276,22 @@
 
 .pnl-kpi-val.danger {
   color: #dc2626;
+}
+
+.pnl-cost-basis-note {
+  margin-top: 8px;
+  padding: 7px 12px;
+  background-color: #eef5fd;
+  border: 1px solid #c9dff8;
+  border-left: 3px solid #0066da;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #1e3a5f;
+}
+
+.tree-margin-row td {
+  background-color: #f8fafc;
+  padding: 9px 16px;
+  border-top: 1px solid #e2e8f0;
+  font-size: 12.5px;
 }

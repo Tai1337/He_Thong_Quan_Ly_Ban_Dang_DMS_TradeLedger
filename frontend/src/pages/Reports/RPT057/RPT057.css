@@ -60,7 +60,7 @@
 }
 
 .btn-primary {
-  background-color: #1a73e8;
+  background-color: #0066da;
   color: white;
   border: none;
   padding: 8px 18px;
@@ -72,11 +72,11 @@
   gap: 8px;
   cursor: pointer;
   transition: background-color 0.2s;
-  box-shadow: 0 2px 4px rgba(26, 115, 232, 0.2);
+  box-shadow: 0 2px 4px rgba(0, 102, 218, 0.2);
 }
 
 .btn-primary:hover {
-  background-color: #1557b0;
+  background-color: #0052b4;
 }
 
 /* KPI Summary Cards */
@@ -92,7 +92,7 @@
   padding: 12px 16px;
   box-shadow: none;
   border: 1px solid #d5dee8;
-  border-left: 3px solid #2b5b8c;
+  border-left: 3px solid #0066da;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -112,7 +112,7 @@
   flex-shrink: 0;
 }
 
-.summary-card-icon.blue { background-color: #eff6ff; color: #2563eb; }
+.summary-card-icon.blue { background-color: #eef5fd; color: #0066da; }
 .summary-card-icon.green { background-color: #ecfdf5; color: #059669; }
 .summary-card-icon.orange { background-color: #fffbeb; color: #d97706; }
 .summary-card-icon.purple { background-color: #f5f3ff; color: #7c3aed; }
@@ -358,7 +358,7 @@
 
 .share-bar-fill {
   height: 100%;
-  background-color: #2563eb;
+  background-color: #0066da;
   border-radius: 4px;
   transition: width 0.3s ease;
 }

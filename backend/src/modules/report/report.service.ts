@@ -41,5 +41,9 @@ export class ReportService {
   async exportProfitLossExcel(distributorId: any, query: any) {
     return this.reportDataService.exportProfitLossExcel(distributorId, query);
   }
+
+  async getOperationsGanttData(distributorId: any, query: any) {
+    return this.reportDataService.getOperationsGanttData(distributorId, query);
+  }
 }
 

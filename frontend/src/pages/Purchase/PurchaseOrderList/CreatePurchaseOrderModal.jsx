@@ -87,7 +87,10 @@ const CreatePurchaseOrderModal = ({ isOpen, onClose, onSuccess, initialOrder = n
 
   if (!isOpen) return null;
 
-  // Thêm một dòng sản phẩm mới
+  // Thêm một dòng sản phẩm mới (gợi ý đơn giá nhập ~80% giá bán niêm yết)
+  const suggestPurchaseUnitPrice = (prd) =>
+    prd?.basePrice ? Math.round(Number(prd.basePrice) * 0.8) : 0;
+
   const handleAddLine = () => {
     if (productList.length === 0) return;
     const defaultProduct = productList[0];
@@ -96,7 +99,7 @@ const CreatePurchaseOrderModal = ({ isOpen, onClose, onSuccess, initialOrder = n
       {
         productId: defaultProduct.id,
         quantity: 10,
-        unitPrice: defaultProduct.basePrice || 0,
+        unitPrice: suggestPurchaseUnitPrice(defaultProduct),
         product: defaultProduct
       }
     ]);
@@ -110,7 +113,7 @@ const CreatePurchaseOrderModal = ({ isOpen, onClose, onSuccess, initialOrder = n
       next[index] = {
         ...next[index],
         productId: selectedProductId,
-        unitPrice: prd ? prd.basePrice : next[index].unitPrice,
+        unitPrice: prd ? suggestPurchaseUnitPrice(prd) : next[index].unitPrice,
         product: prd || null
       };
       return next;
@@ -288,13 +291,16 @@ const CreatePurchaseOrderModal = ({ isOpen, onClose, onSuccess, initialOrder = n
           <div>
             <div className="items-section-header">
               <div className="items-section-title">
-                <Package size={18} color="#2563eb" />
+                <Package size={18} color="#0066da" />
                 <span>Danh sách sản phẩm đặt mua ({items.length} mặt hàng)</span>
               </div>
               <button type="button" className="add-sku-btn" onClick={handleAddLine}>
                 <Plus size={16} />
                 <span>+ Thêm mặt hàng</span>
               </button>
+            </div>
+            <div style={{ fontSize: '12px', color: '#64748b', marginTop: '6px' }}>
+              Đơn giá nhập gợi ý bằng 80% giá bán sỉ chuẩn. Vui lòng nhập đúng đơn giá hóa đơn NCC để tính Giá vốn (COGS) chính xác.
             </div>
 
             <div className="po-items-table-wrapper" style={{ marginTop: '12px' }}>

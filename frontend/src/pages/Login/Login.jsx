@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, EyeOff, Layers, Lock, User, AlertCircle, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, Lock, User, AlertCircle, ArrowRight } from 'lucide-react';
 import { login } from '../../services/api';
 import './Login.css';
 
@@ -39,7 +39,7 @@ const Login = ({ onLogin }) => {
         {/* Brand Header */}
         <div className="login-brand">
           <div className="login-brand-header">
-            <Layers size={26} className="login-brand-icon" />
+            <img src="/logo.png" alt="Logo DMS TradeLedger" className="login-brand-logo" />
             <h1 className="login-title">DMS-NPP TradeLedger</h1>
           </div>
           <p className="login-subtitle">Hệ thống Quản lý Bán hàng, Mua hàng & Tồn kho NPP</p>

@@ -3,8 +3,8 @@
  */
 
 export const FINANCE_CHART_PALETTE = [
-  '#234c78',
-  '#4a7ab0',
+  '#0066da',
+  '#4a8be0',
   '#3c6e63',
   '#64748b',
   '#8c6d46',
@@ -14,11 +14,11 @@ export const FINANCE_CHART_PALETTE = [
 
 export const ORDER_STATUS_META = {
   PENDING: { label: 'Chờ duyệt', color: '#8c6d46' },
-  SUBMITTED: { label: 'Đã xác nhận', color: '#4a7ab0' },
+  SUBMITTED: { label: 'Đã xác nhận', color: '#4a8be0' },
   ALLOCATED: { label: 'Đã phân bổ', color: '#64748b' },
-  SHIPPED: { label: 'Đang giao', color: '#3b5b7a' },
+  SHIPPED: { label: 'Đang giao', color: '#2c5e99' },
   DELIVERED: { label: 'Đã giao', color: '#3c6e63' },
-  INVOICED: { label: 'Đã lập HĐ', color: '#234c78' },
+  INVOICED: { label: 'Đã lập HĐ', color: '#0066da' },
   PAID: { label: 'Đã thanh toán', color: '#2e594f' },
   CANCELLED: { label: 'Đã hủy', color: '#a64d4d' },
 };

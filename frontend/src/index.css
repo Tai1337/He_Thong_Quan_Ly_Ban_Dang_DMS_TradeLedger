@@ -6,19 +6,19 @@
      DMS-NPP ENTERPRISE LEDGER DESIGN SYSTEM (Classic Navy & Steel Grid)
      ========================================================================== */
 
-  /* Brand & Theme Colors (Classic Cerulean Steel Blue) */
-  --primary-color: #337ab7;
-  --primary-hover: #286090;
-  --primary-active: #204d74;
-  --primary-light: #edf4fb;
-  --primary-border: #bcd3ea;
-  --secondary-color: #2b4560;
+  /* Brand & Theme Colors (Unified Classic Blue #0066da) */
+  --primary-color: #0066da;
+  --primary-hover: #0052b4;
+  --primary-active: #004292;
+  --primary-light: #eef5fd;
+  --primary-border: #b7d2f2;
+  --secondary-color: #004ca3;
 
-  /* Navy Navigation Tokens */
-  --dms-navy-deep: #1f354d;
-  --dms-navy-mid: #2b4560;
-  --dms-steel: #337ab7;
-  --dms-steel-hover: #286090;
+  /* Navigation & Accent Tokens */
+  --dms-navy-deep: #004ca3;
+  --dms-navy-mid: #0066da;
+  --dms-steel: #0066da;
+  --dms-steel-hover: #0052b4;
 
   /* Accent Tokens */
   --accent-color: #0f766e;
@@ -35,11 +35,11 @@
   /* Layout Surfaces & Ledger Table */
   --bg-color: #f1f4f8;
   --card-bg: #ffffff;
-  --header-bg: #152b44;
+  --header-bg: #0066da;
   --header-text: #ffffff;
-  --sidebar-bg: #224368;
+  --sidebar-bg: #004ca3;
   --sidebar-text: #f1f5f9;
-  --sidebar-active: #2b5b8c;
+  --sidebar-active: #0066da;
   --border-color: #cbd5e1;
   --border-strong: #94a3b8;
   --table-header-bg: #f3f5f8;
@@ -60,9 +60,9 @@
   --color-danger-bg: #fef2f2;
   --color-danger-border: #fecaca;
 
-  --color-info: #2b5b8c;
-  --color-info-bg: #eef4fa;
-  --color-info-border: #bfd1e5;
+  --color-info: #0066da;
+  --color-info-bg: #eef5fd;
+  --color-info-border: #bfd8f8;
 
   /* Elevation & Shadows */
   --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
@@ -71,12 +71,12 @@
   --shadow-lg: 0 10px 22px -4px rgba(15, 23, 42, 0.12);
   --shadow-modal: 0 18px 36px -8px rgba(15, 23, 42, 0.24);
 
-  /* Radius Tokens (Sharp Square Enterprise Grid) */
-  --radius-xs: 0px;
-  --radius-sm: 0px;
-  --radius-md: 0px;
-  --radius-lg: 0px;
-  --radius-xl: 0px;
+  /* Radius Tokens (Subtle Classic Enterprise Rounding) */
+  --radius-xs: 3px;
+  --radius-sm: 4px;
+  --radius-md: 5px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
   --radius-full: 9999px;
 
   /* Hardware-Accelerated Motion Curves */
@@ -179,7 +179,7 @@ a {
   margin: 0;
   font-size: 18px;
   font-weight: 500;
-  color: #337ab7;
+  color: #0052b4;
 }
 
 .dms-page-subtitle {
@@ -195,7 +195,7 @@ a {
   justify-content: center;
   gap: 6px;
   padding: 5px 13px;
-  border-radius: 0;
+  border-radius: 4px;
   font-size: 12.5px;
   font-weight: 500;
   cursor: pointer;
@@ -204,13 +204,13 @@ a {
   white-space: nowrap;
 }
 
-/* Remove rounded corners on all buttons, inputs, selects, and tabs inside DMS workspace */
-.dms-app-shell button,
+/* Subtle 4px rounding on buttons, inputs, selects, and textareas inside DMS workspace */
+.dms-app-shell button:not(.dms-menu-trigger):not(.dms-submenu-item):not(.dms-drop-item):not(.dms-search-result-row),
 .dms-app-shell .dms-btn,
 .dms-app-shell input,
 .dms-app-shell select,
 .dms-app-shell textarea {
-  border-radius: 0 !important;
+  border-radius: 4px !important;
 }
 
 .dms-app-shell .dms-ledger-table th,
@@ -314,7 +314,7 @@ a {
 .dms-app-shell .po-code-link,
 .dms-app-shell .trip-code-link,
 .dms-app-shell .order-code-tag {
-  color: #1f4870 !important;
+  color: #0066da !important;
   font-weight: 500 !important;
 }
 
@@ -368,9 +368,9 @@ a {
 .dms-app-shell .erp-kpi-card {
   background: #ffffff !important;
   border: 1px solid #d1d8e0 !important;
-  border-left: 3px solid #337ab7 !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
+  border-left: 3px solid #0066da !important;
+  border-radius: 5px !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
   padding: 8px 12px !important;
   min-height: 0 !important;
   gap: 10px !important;
@@ -383,10 +383,10 @@ a {
 .dms-app-shell .mgmt-kpi-icon {
   width: 30px !important;
   height: 30px !important;
-  background: #f2f4f7 !important;
-  color: #244368 !important;
-  border: 1px solid #dce3eb !important;
-  border-radius: 0 !important;
+  background: #eef5fd !important;
+  color: #0066da !important;
+  border: 1px solid #d5e5f7 !important;
+  border-radius: 4px !important;
   flex-shrink: 0;
 }
 
@@ -468,11 +468,11 @@ a {
 }
 
 .dms-btn-blue {
-  background-color: #2563eb;
+  background-color: #0066da;
   color: #ffffff;
 }
 .dms-btn-blue:hover:not(:disabled) {
-  background-color: #1d4ed8;
+  background-color: #0052b4;
 }
 
 .dms-btn-green {

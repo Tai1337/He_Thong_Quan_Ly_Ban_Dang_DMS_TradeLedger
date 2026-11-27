@@ -233,7 +233,7 @@ export default function DmsTopNav({ user, onLogout }) {
       desc: 'Đơn hàng trực tuyến đang chờ Kế toán xác nhận & phân bổ.',
       time: '10 phút trước',
       icon: TrendingUp,
-      color: '#2b5b8c',
+      color: '#0066da',
       path: '/sales/sales-orders',
     },
     {
@@ -312,23 +312,14 @@ export default function DmsTopNav({ user, onLogout }) {
     }
   };
 
-  const operatorTitle = (
-    currentUser?.distributor?.name ||
-    currentUser?.fullName ||
-    currentUser?.username ||
-    'DMS TRADE LEDGER'
-  ).toUpperCase();
-
   return (
     <div className="dms-topnav-wrapper" ref={navContainerRef}>
-      {/* TẦNG 1: TOP UTILITY BAR (DEEP NAVY) */}
+      {/* TẦNG 1: TOP UTILITY BAR (TRẮNG SẠCH KIOTVIET STYLE) */}
       <header className="dms-utility-bar">
         <div className="dms-utility-left">
-          <Link to="/" className="dms-brand-link" title="Trang chủ DMS-NPP">
-            <span className="dms-brand-badge">
-              <Layers size={15} />
-            </span>
-            <span className="dms-operator-name">{operatorTitle}</span>
+          <Link to="/" className="dms-brand-link" title="Trang chủ DMS-NPP TradeLedger">
+            <img src="/logo.png" alt="Logo DMS TradeLedger" className="dms-brand-logo" />
+            <span className="dms-operator-name">DMS-NPP TradeLedger</span>
           </Link>
           <span className="dms-role-chip">
             {currentUser?.roleName || currentUser?.roleCode || 'DMS-NPP'}
@@ -346,16 +337,6 @@ export default function DmsTopNav({ user, onLogout }) {
             <span>Tìm nhanh chức năng…</span>
             <kbd>Ctrl+K</kbd>
           </button>
-
-          <Link
-            to="/shop"
-            target="_blank"
-            className="dms-shop-pill"
-            title="Mở Cổng đặt hàng trực tuyến (/shop)"
-          >
-            <ShoppingCart size={13} />
-            <span>Web Bán Hàng</span>
-          </Link>
 
           {/* Notifications */}
           <div className="dms-util-dropdown-wrap">
@@ -434,7 +415,7 @@ export default function DmsTopNav({ user, onLogout }) {
                     alert('Hệ thống DMS-NPP TradeLedger phiên bản Enterprise.\nĐồng bộ quy chuẩn phân phối DMS.');
                   }}
                 >
-                  <BookOpen size={14} style={{ color: '#2b5b8c' }} />
+                  <BookOpen size={14} style={{ color: '#0066da' }} />
                   <span>Hướng dẫn sử dụng</span>
                 </div>
                 <div
@@ -598,6 +579,16 @@ export default function DmsTopNav({ user, onLogout }) {
             );
           })}
         </div>
+
+        <Link
+          to="/shop"
+          target="_blank"
+          className="dms-shop-cta-white"
+          title="Mở Cổng đặt hàng trực tuyến (/shop)"
+        >
+          <ShoppingCart size={14} />
+          <span>Web Bán Hàng</span>
+        </Link>
       </nav>
 
       {/* QUICK SEARCH MODAL (Ctrl + K) */}
@@ -605,7 +596,7 @@ export default function DmsTopNav({ user, onLogout }) {
         <div className="modal-backdrop" onClick={() => setIsSearchOpen(false)}>
           <div className="dms-modal-box dms-search-modal" onClick={(e) => e.stopPropagation()}>
             <div className="dms-search-modal-head">
-              <Search size={17} style={{ color: '#2b5b8c' }} />
+              <Search size={17} style={{ color: '#0066da' }} />
               <input
                 type="text"
                 autoFocus

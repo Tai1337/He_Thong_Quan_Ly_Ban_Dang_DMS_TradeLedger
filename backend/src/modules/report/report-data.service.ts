@@ -24,7 +24,144 @@ export interface ExcelExportOptions {
 
 @Injectable()
 export class ReportDataService {
+  private static readonly DEFAULT_ESTIMATED_COST_RATIO = 0.8;
+
   constructor(private readonly prisma: PrismaService) {}
+
+  private resolveDeliveredQuantity(item: any): number {
+    if (item.deliveredQuantity !== null && item.deliveredQuantity !== undefined) {
+      return Math.max(0, Number(item.deliveredQuantity) || 0);
+    }
+    const ordered = Number(item.quantity) || 0;
+    const failed = Number(item.failedQuantity) || 0;
+    return Math.max(0, ordered - failed);
+  }
+
+  private async buildInboundCostMaps(distributorId: string | number | bigint) {
+    const distId = BigInt(distributorId);
+    const [inboundTxns, poItems] = await Promise.all([
+      this.prisma.inventoryTransaction.findMany({
+        where: {
+          direction: 'IN',
+          referenceType: 'PURCHASE_ORDER',
+          warehouse: { distributorId: distId },
+        },
+        select: {
+          lotId: true,
+          quantity: true,
+          unitPrice: true,
+          stockLot: { select: { productId: true } },
+        },
+      }),
+      this.prisma.purchaseOrderItem.findMany({
+        where: {
+          purchaseOrder: {
+            distributorId: distId,
+            status: { not: 'CANCELLED' },
+          },
+        },
+        select: {
+          productId: true,
+          quantity: true,
+          quantityReceived: true,
+          unitPrice: true,
+        },
+      }),
+    ]);
+
+    const lotTotals = new Map<string, { value: number; qty: number }>();
+    const prodTxnTotals = new Map<string, { value: number; qty: number }>();
+
+    for (const txn of inboundTxns) {
+      const qty = Number(txn.quantity) || 0;
+      const price = Number(txn.unitPrice) || 0;
+      if (qty <= 0 || price <= 0) continue;
+
+      const lotKey = txn.lotId.toString();
+      const prevLot = lotTotals.get(lotKey) || { value: 0, qty: 0 };
+      lotTotals.set(lotKey, { value: prevLot.value + qty * price, qty: prevLot.qty + qty });
+
+      const prodId = txn.stockLot?.productId?.toString();
+      if (prodId) {
+        const prevProd = prodTxnTotals.get(prodId) || { value: 0, qty: 0 };
+        prodTxnTotals.set(prodId, { value: prevProd.value + qty * price, qty: prevProd.qty + qty });
+      }
+    }
+
+    const prodPoTotals = new Map<string, { value: number; qty: number }>();
+    for (const poi of poItems) {
+      const qty = Number(poi.quantityReceived) > 0 ? Number(poi.quantityReceived) : Number(poi.quantity) || 0;
+      const price = Number(poi.unitPrice) || 0;
+      if (qty <= 0 || price <= 0) continue;
+
+      const prodId = poi.productId.toString();
+      const prev = prodPoTotals.get(prodId) || { value: 0, qty: 0 };
+      prodPoTotals.set(prodId, { value: prev.value + qty * price, qty: prev.qty + qty });
+    }
+
+    const lotCostMap = new Map<string, number>();
+    for (const [lotKey, agg] of lotTotals.entries()) {
+      if (agg.qty > 0) lotCostMap.set(lotKey, agg.value / agg.qty);
+    }
+
+    const productCostMap = new Map<string, number>();
+    for (const [prodId, agg] of prodTxnTotals.entries()) {
+      if (agg.qty > 0) productCostMap.set(prodId, agg.value / agg.qty);
+    }
+    for (const [prodId, agg] of prodPoTotals.entries()) {
+      if (!productCostMap.has(prodId) && agg.qty > 0) {
+        productCostMap.set(prodId, agg.value / agg.qty);
+      }
+    }
+
+    return { lotCostMap, productCostMap };
+  }
+
+  private resolveItemUnitCost(
+    item: any,
+    lotCostMap: Map<string, number>,
+    productCostMap: Map<string, number>,
+  ): { unitCost: number; source: 'LOT_ACTUAL' | 'PO_WEIGHTED_AVG' | 'ESTIMATED_80PCT' } {
+    const sellingRef = Number(item.product?.basePrice || item.unitPrice || 0);
+    const isDistinctActualCost = (cost?: number): cost is number =>
+      Boolean(cost && cost > 0 && (sellingRef <= 0 || Math.abs(cost - sellingRef) > 0.01));
+
+    const allocations = item.allocations || [];
+    let allocCostSum = 0;
+    let allocQtySum = 0;
+    for (const alloc of allocations) {
+      const lotCost = lotCostMap.get(alloc.lotId?.toString() || '');
+      const allocQty = Number(alloc.quantity) || 0;
+      if (isDistinctActualCost(lotCost) && allocQty > 0) {
+        allocCostSum += allocQty * lotCost;
+        allocQtySum += allocQty;
+      }
+    }
+    if (allocQtySum > 0) {
+      return { unitCost: allocCostSum / allocQtySum, source: 'LOT_ACTUAL' };
+    }
+
+    const prodCost = productCostMap.get(item.productId?.toString() || '');
+    if (isDistinctActualCost(prodCost)) {
+      return { unitCost: prodCost, source: 'PO_WEIGHTED_AVG' };
+    }
+
+    return {
+      unitCost: Math.round(sellingRef * ReportDataService.DEFAULT_ESTIMATED_COST_RATIO * 100) / 100,
+      source: 'ESTIMATED_80PCT',
+    };
+  }
+
+  private classifyRetailerChannel(retailer: any): string {
+    if (retailer?.channel) return retailer.channel;
+    const name = (retailer?.name || '').toLowerCase();
+    if (name.includes('siêu thị')) return 'Siêu thị Mini';
+    if (name.includes('đại lý')) return 'Đại lý Sỉ';
+    if (name.includes('tiện ích') || name.includes('24/7') || name.includes('bách hóa')) {
+      return 'Cửa hàng Tiện lợi';
+    }
+    return 'Tiệm Tạp Hoá';
+  }
 
   /**
    * Lấy dữ liệu cho RPT005: Báo cáo đơn hàng thiếu tồn kho
@@ -117,6 +254,10 @@ export class ReportDataService {
     const groupMap: Record<string, any> = {};
 
     for (const order of orders) {
+      if (order.status === 'DELIVERY_FAILED' || order.status === 'CANCELLED') {
+        continue;
+      }
+
       const retailerId = order.retailer?.id?.toString() || 'unknown';
       const retailerCode = order.retailer?.code || 'N/A';
       const retailerName = order.retailer?.name || 'Khách vãng lai';
@@ -134,10 +275,13 @@ export class ReportDataService {
         const unit = item.product?.unit || 'Thùng';
         const retailUnit = item.product?.retailUnit || '';
 
-        const qty = Number(item.quantity) || 0;
+        const qty = this.resolveDeliveredQuantity(item);
+        if (qty <= 0) continue;
+
         const price = Number(item.unitPrice) || 0;
         const discount = Number(item.discountAmount) || 0;
-        const lineTotal = Math.max(0, qty * price - discount);
+        const isPromo = Boolean(item.isPromotion);
+        const lineTotal = isPromo ? 0 : Math.max(0, qty * price - discount);
 
         totalRevenue += lineTotal;
         totalVolume += qty;
@@ -309,12 +453,13 @@ export class ReportDataService {
 
     const rows: any[] = [];
     for (const order of orders) {
+      const isVoidOrder = order.status === 'CANCELLED' || order.status === 'DELIVERY_FAILED';
       for (const item of order.items || []) {
-        const qty = Number(item.quantity) || 0;
+        const qty = isVoidOrder ? 0 : this.resolveDeliveredQuantity(item);
         const price = Number(item.unitPrice) || 0;
         const discount = Number(item.discountAmount) || 0;
         const isPromo = Boolean(item.isPromotion);
-        const lineTotal = isPromo ? 0 : Math.max(0, qty * price - discount);
+        const lineTotal = isPromo || isVoidOrder ? 0 : Math.max(0, qty * price - discount);
 
         const lotsStr =
           (item.allocations || [])
@@ -452,68 +597,148 @@ export class ReportDataService {
     const fiscalYear = Number(filters.fiscalYear) || 2026;
     const startDate = new Date(fiscalYear, 0, 1);
     const endDate = new Date(fiscalYear, 11, 31, 23, 59, 59, 999);
+    const realizedStatuses =
+      filters.includePending === 'true'
+        ? ['PENDING', 'SUBMITTED', 'ALLOCATED', 'SHIPPED', 'DELIVERED', 'INVOICED', 'PAID']
+        : ['SHIPPED', 'DELIVERED', 'INVOICED', 'PAID'];
 
-    const salesOrders = await this.prisma.salesOrder.findMany({
-      where: {
-        distributorId: BigInt(distributorId),
-        createdAt: {
-          gte: startDate,
-          lte: endDate,
-        },
-        status: { notIn: ['CANCELLED'] },
-      },
-      include: {
-        items: {
-          include: {
-            product: true,
+    const [salesOrders, { lotCostMap, productCostMap }] = await Promise.all([
+      this.prisma.salesOrder.findMany({
+        where: {
+          distributorId: BigInt(distributorId),
+          createdAt: {
+            gte: startDate,
+            lte: endDate,
           },
+          status: { in: realizedStatuses as any },
         },
-        invoice: true,
-        retailer: true,
-      },
-    });
+        include: {
+          items: {
+            include: {
+              product: true,
+              allocations: true,
+            },
+          },
+          invoice: true,
+          retailer: true,
+        },
+      }),
+      this.buildInboundCostMaps(BigInt(distributorId)),
+    ]);
 
-    const monthlyData: { [key: number]: { income: number; expense: number; netProfit: number } } = {};
+    const monthlyData: {
+      [key: number]: {
+        grossIncome: number;
+        discounts: number;
+        income: number;
+        salesCogs: number;
+        promoCogs: number;
+        expense: number;
+        netProfit: number;
+      };
+    } = {};
     for (let m = 0; m < 12; m++) {
-      monthlyData[m] = { income: 0, expense: 0, netProfit: 0 };
+      monthlyData[m] = {
+        grossIncome: 0,
+        discounts: 0,
+        income: 0,
+        salesCogs: 0,
+        promoCogs: 0,
+        expense: 0,
+        netProfit: 0,
+      };
     }
 
+    let totalGrossRevenue = 0;
     let totalSalesRevenue = 0;
-    let totalDirectCost = 0;
+    let totalSalesCogs = 0;
+    let totalPromoCogs = 0;
     let totalDiscounts = 0;
+    let totalVatCollected = 0;
+    const costSummary = { actualLotLines: 0, poAvgLines: 0, estimatedLines: 0 };
     const channelBreakdown: { [channel: string]: number } = {};
 
     salesOrders.forEach((so) => {
       const month = new Date(so.createdAt).getMonth();
-      let orderRevenue = 0;
-      let orderCost = 0;
-
-      if (so.invoice) {
-        orderRevenue = Number(so.invoice.totalAmount);
-        totalDiscounts += Number(so.invoice.invoiceDiscountAmount || 0);
-      } else {
-        so.items?.forEach((it) => {
-          orderRevenue += Number(it.quantity) * Number(it.unitPrice);
-        });
-      }
+      let orderGrossRevenue = 0;
+      let orderLineDiscount = 0;
+      let orderSalesCogs = 0;
+      let orderPromoCogs = 0;
+      let hasFailedQty = false;
 
       so.items?.forEach((it) => {
-        const costPerUnit = Number(it.product?.basePrice || Number(it.unitPrice) * 0.75);
-        orderCost += Number(it.quantity) * costPerUnit;
+        if (Number(it.failedQuantity || 0) > 0) hasFailedQty = true;
+        const effectiveQty = this.resolveDeliveredQuantity(it);
+        if (effectiveQty <= 0) return;
+
+        const isPromo = Boolean(it.isPromotion);
+        if (!isPromo) {
+          const lineGross = effectiveQty * (Number(it.unitPrice) || 0);
+          const lineDiscount = Math.min(lineGross, Number(it.discountAmount || 0));
+          orderGrossRevenue += lineGross;
+          orderLineDiscount += lineDiscount;
+        }
+
+        const { unitCost, source } = this.resolveItemUnitCost(it, lotCostMap, productCostMap);
+        if (source === 'LOT_ACTUAL') costSummary.actualLotLines += 1;
+        else if (source === 'PO_WEIGHTED_AVG') costSummary.poAvgLines += 1;
+        else costSummary.estimatedLines += 1;
+
+        const lineCost = effectiveQty * unitCost;
+        if (isPromo) {
+          orderPromoCogs += lineCost;
+        } else {
+          orderSalesCogs += lineCost;
+        }
       });
 
-      totalSalesRevenue += orderRevenue;
-      totalDirectCost += orderCost;
+      const invoiceDiscount = so.invoice ? Number(so.invoice.invoiceDiscountAmount || 0) : 0;
+      if (so.invoice && !hasFailedQty) {
+        // Doanh thu thuần trên báo cáo KQKD không bao gồm VAT thu hộ
+        orderGrossRevenue = Number(so.invoice.subtotal || orderGrossRevenue);
+        totalVatCollected += Number(so.invoice.vatAmount || 0);
+      }
+
+      const orderDiscount = orderLineDiscount + invoiceDiscount;
+      const orderNetRevenue = Math.max(0, orderGrossRevenue - orderDiscount);
+      const orderTotalCost = orderSalesCogs + orderPromoCogs;
+
+      totalGrossRevenue += orderGrossRevenue;
+      totalDiscounts += orderDiscount;
+      totalSalesRevenue += orderNetRevenue;
+      totalSalesCogs += orderSalesCogs;
+      totalPromoCogs += orderPromoCogs;
 
       if (monthlyData[month]) {
-        monthlyData[month].income += orderRevenue;
-        monthlyData[month].expense += orderCost;
+        monthlyData[month].grossIncome += orderGrossRevenue;
+        monthlyData[month].discounts += orderDiscount;
+        monthlyData[month].income += orderNetRevenue;
+        monthlyData[month].salesCogs += orderSalesCogs;
+        monthlyData[month].promoCogs += orderPromoCogs;
+        monthlyData[month].expense += orderTotalCost;
         monthlyData[month].netProfit = monthlyData[month].income - monthlyData[month].expense;
       }
 
-      const channel = (so.retailer as any)?.channel || 'Tiệm Tạp Hoá';
-      channelBreakdown[channel] = (channelBreakdown[channel] || 0) + orderRevenue;
+      const channel = this.classifyRetailerChannel(so.retailer);
+      channelBreakdown[channel] = (channelBreakdown[channel] || 0) + orderNetRevenue;
     });
+
+    const buildPeriodMetrics = (
+      rawGrossIncome: number,
+      rawDiscounts: number,
+      rawSalesCogs: number,
+      rawPromoCogs: number,
+    ) => {
+      const grossIncome = Math.round(rawGrossIncome);
+      const discounts = Math.round(rawDiscounts);
+      const income = Math.max(0, grossIncome - discounts);
+      const salesCogs = Math.round(rawSalesCogs);
+      const promoCogs = Math.round(rawPromoCogs);
+      const expense = salesCogs + promoCogs;
+      const netProfit = income - expense;
+      const profitMargin = income > 0 ? Number(((netProfit / income) * 100).toFixed(1)) : 0;
+      return { grossIncome, discounts, income, salesCogs, promoCogs, expense, netProfit, profitMargin };
+    };
 
     const periodicity = filters.periodicity || 'Theo Quý';
     let chartData: any[] = [];
@@ -521,14 +746,10 @@ export class ReportDataService {
     if (periodicity === 'Theo Tháng') {
       chartData = Object.keys(monthlyData).map((mStr) => {
         const m = Number(mStr);
-        const income = monthlyData[m].income;
-        const netProfitPeriod = monthlyData[m].netProfit;
+        const row = monthlyData[m];
         return {
           period: `Tháng ${m + 1}`,
-          income,
-          expense: monthlyData[m].expense,
-          netProfit: netProfitPeriod,
-          profitMargin: income > 0 ? Number(((netProfitPeriod / income) * 100).toFixed(1)) : 0,
+          ...buildPeriodMetrics(row.grossIncome, row.discounts, row.salesCogs, row.promoCogs),
         };
       });
     } else {
@@ -538,30 +759,37 @@ export class ReportDataService {
         { label: `Quý 3 (${fiscalYear})`, months: [6, 7, 8] },
         { label: `Quý 4 (${fiscalYear})`, months: [9, 10, 11] },
       ];
-      chartData = quarters.map((q) => {
-        const qIncome = q.months.reduce((sum, m) => sum + monthlyData[m].income, 0);
-        const qExpense = q.months.reduce((sum, m) => sum + monthlyData[m].expense, 0);
-        const qNetProfit = qIncome - qExpense;
-        return {
-          period: q.label,
-          income: qIncome,
-          expense: qExpense,
-          netProfit: qNetProfit,
-          profitMargin: qIncome > 0 ? Number(((qNetProfit / qIncome) * 100).toFixed(1)) : 0,
-        };
-      });
+      chartData = quarters.map((q) => ({
+        period: q.label,
+        ...buildPeriodMetrics(
+          q.months.reduce((sum, m) => sum + monthlyData[m].grossIncome, 0),
+          q.months.reduce((sum, m) => sum + monthlyData[m].discounts, 0),
+          q.months.reduce((sum, m) => sum + monthlyData[m].salesCogs, 0),
+          q.months.reduce((sum, m) => sum + monthlyData[m].promoCogs, 0),
+        ),
+      }));
     }
 
-    const netProfit = totalSalesRevenue - totalDirectCost;
+    const totalMetrics = buildPeriodMetrics(
+      totalGrossRevenue,
+      totalDiscounts,
+      totalSalesCogs,
+      totalPromoCogs,
+    );
 
     return {
       equation: {
-        totalIncome: totalSalesRevenue,
-        totalExpense: totalDirectCost,
-        totalDiscounts,
-        netProfit: netProfit,
-        profitMargin: totalSalesRevenue > 0 ? (netProfit / totalSalesRevenue) * 100 : 0,
+        grossIncome: totalMetrics.grossIncome,
+        totalDiscounts: totalMetrics.discounts,
+        totalIncome: totalMetrics.income,
+        salesCogs: totalMetrics.salesCogs,
+        promoCogs: totalMetrics.promoCogs,
+        totalExpense: totalMetrics.expense,
+        netProfit: totalMetrics.netProfit,
+        profitMargin: totalMetrics.profitMargin,
+        totalVatCollected: Math.round(totalVatCollected),
       },
+      costSummary,
       chartData,
       channelBreakdown,
       totalOrdersCount: salesOrders.length,
@@ -581,14 +809,14 @@ export class ReportDataService {
     });
 
     // Title
-    sheet.mergeCells('A1:E1');
+    sheet.mergeCells('A1:F1');
     const titleCell = sheet.getCell('A1');
     titleCell.value = `BÁO CÁO KẾT QUẢ KINH DOANH P&L - NĂM TÀI CHÍNH ${data.fiscalYear}`;
     titleCell.font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
     titleCell.fill = {
       type: 'pattern',
       pattern: 'solid',
-      fgColor: { argb: 'FF059669' },
+      fgColor: { argb: 'FF0066DA' },
     };
     titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
     sheet.getRow(1).height = 36;
@@ -597,30 +825,442 @@ export class ReportDataService {
     sheet.addRow(['CHỈ TIÊU TÀI CHÍNH', 'GIÁ TRỊ (VNĐ)']);
     sheet.getRow(2).font = { name: 'Arial', size: 10, bold: true };
 
-    sheet.addRow(['1. Tổng Doanh Thu (Total Income)', data.equation.totalIncome]);
-    sheet.addRow(['2. Tổng Giá Vốn & Chi Phí (Total Expense)', data.equation.totalExpense]);
-    sheet.addRow(['3. Lợi Nhuận Thuần (Net Profit)', data.equation.netProfit]);
-    sheet.addRow(['4. Tỷ Suất Lợi Nhuận (Profit Margin)', `${data.equation.profitMargin.toFixed(1)}%`]);
+    sheet.addRow(['1. Doanh Thu Bán Hàng (trước chiết khấu)', data.equation.grossIncome]);
+    sheet.addRow(['2. Chiết Khấu & Giảm Trừ Doanh Thu', data.equation.totalDiscounts]);
+    sheet.addRow(['3. Doanh Thu Thuần (Net Revenue)', data.equation.totalIncome]);
+    sheet.addRow(['4. Giá Vốn Hàng Bán (Sales COGS)', data.equation.salesCogs]);
+    sheet.addRow(['5. Giá Vốn Hàng Tặng Khuyến Mãi (FOC)', data.equation.promoCogs]);
+    sheet.addRow(['6. Tổng Giá Vốn (Total COGS)', data.equation.totalExpense]);
+    sheet.addRow(['7. Lợi Nhuận Gộp / Thuần (Net Profit)', data.equation.netProfit]);
+    sheet.addRow(['8. Tỷ Suất Lợi Nhuận (Profit Margin)', `${data.equation.profitMargin.toFixed(1)}%`]);
 
     // Trend table
     sheet.addRow([]);
-    sheet.addRow(['KỲ BÁO CÁO', 'DOANH THU (VNĐ)', 'GIÁ VỐN COGS (VNĐ)', 'LỢI NHUẬN THUẦN (VNĐ)']);
-    const headerRow = sheet.getRow(8);
+    sheet.addRow([
+      'KỲ BÁO CÁO',
+      'DOANH THU THUẦN (VNĐ)',
+      'CHIẾT KHẤU (VNĐ)',
+      'GIÁ VỐN COGS (VNĐ)',
+      'LỢI NHUẬN (VNĐ)',
+      'BIÊN LN (%)',
+    ]);
+    const headerRow = sheet.getRow(12);
     headerRow.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
     headerRow.eachCell((cell) => {
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF065F46' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF004CA3' } };
       cell.alignment = { vertical: 'middle', horizontal: 'center' };
     });
 
     data.chartData.forEach((item: any) => {
-      sheet.addRow([item.period, item.income, item.expense, item.netProfit]);
+      sheet.addRow([
+        item.period,
+        item.income,
+        item.discounts || 0,
+        item.expense,
+        item.netProfit,
+        `${item.profitMargin}%`,
+      ]);
     });
 
     sheet.columns.forEach((col) => {
-      col.width = 25;
+      col.width = 24;
     });
 
     return await workbook.xlsx.writeBuffer();
+  }
+
+  /**
+   * Lịch trình Vận hành DMS (Gantt):
+   * - PO nhập hàng (dự kiến ngày nhận từ PO / chuyến inbound / D+3)
+   * - Chuyến xe giao hàng bán (dự kiến giao xong D+1 khi tạo / xác nhận)
+   * - Đơn bán hàng chờ xếp chuyến (dự kiến D+1)
+   * - Lịch kiểm kê kho thực tế + tự động thêm lịch kiểm kê định kỳ đầu tháng (01-02)
+   */
+  async getOperationsGanttData(distributorId: string | number | bigint, filters: any = {}) {
+    const distId = BigInt(distributorId);
+    const now = new Date();
+
+    const toDateKey = (d: Date): string => {
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    };
+
+    const addDays = (d: Date, days: number): Date => {
+      const copy = new Date(d);
+      copy.setDate(copy.getDate() + days);
+      return copy;
+    };
+
+    const rawMonth = typeof filters.month === 'string' && /^\d{4}-\d{2}$/.test(filters.month)
+      ? filters.month
+      : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    const [yearNum, monthNum] = rawMonth.split('-').map(Number);
+    const monthStart = new Date(yearNum, monthNum - 1, 1);
+    const monthEnd = new Date(yearNum, monthNum, 0, 23, 59, 59, 999);
+    const daysInMonth = monthEnd.getDate();
+    const monthStartKey = toDateKey(monthStart);
+    const monthEndKey = toDateKey(monthEnd);
+    const todayKey = toDateKey(now);
+
+    const [purchaseOrders, deliveryTrips, unassignedSalesOrders, inventoryCounts, warehouses] =
+      await Promise.all([
+        this.prisma.purchaseOrder.findMany({
+          where: {
+            distributorId: distId,
+            status: { not: 'CANCELLED' },
+          },
+          include: {
+            supplier: true,
+            warehouse: true,
+            deliveryTrip: true,
+            items: true,
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 200,
+        }),
+        this.prisma.deliveryTrip.findMany({
+          where: {
+            distributorId: distId,
+            tripType: 'OUTBOUND',
+            status: { not: 'CANCELLED' },
+          },
+          include: {
+            driver: true,
+            warehouse: true,
+            salesOrders: {
+              include: { retailer: true },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 200,
+        }),
+        this.prisma.salesOrder.findMany({
+          where: {
+            distributorId: distId,
+            deliveryTripId: null,
+            status: { in: ['PENDING', 'SUBMITTED', 'ALLOCATED'] },
+          },
+          include: {
+            retailer: true,
+            warehouse: true,
+            items: true,
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 150,
+        }),
+        this.prisma.inventoryCount.findMany({
+          where: {
+            distributorId: distId,
+            status: { not: 'CANCELLED' },
+          },
+          include: {
+            warehouse: true,
+            _count: { select: { items: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 150,
+        }),
+        this.prisma.warehouse.findMany({
+          where: { distributorId: distId, status: true },
+          orderBy: { id: 'asc' },
+        }),
+      ]);
+
+    const tasks: any[] = [];
+
+    // 1. Purchase Orders (INBOUND)
+    for (const po of purchaseOrders) {
+      const startObj = new Date(po.createdAt);
+      const endRaw =
+        po.deliveryTrip?.expectedDeliveryDate ||
+        po.expectedDate ||
+        addDays(startObj, 3);
+      const endObj = new Date(endRaw) < startObj ? startObj : new Date(endRaw);
+
+      const startKey = toDateKey(startObj);
+      const endKey = toDateKey(endObj);
+
+      const totalOrderedQty = (po.items || []).reduce((s: number, it: any) => s + Number(it.quantity || 0), 0);
+      const totalReceivedQty = (po.items || []).reduce((s: number, it: any) => s + Number(it.quantityReceived || 0), 0);
+      const receivedPct = totalOrderedQty > 0 ? Math.min(100, Math.round((totalReceivedQty / totalOrderedQty) * 100)) : 0;
+
+      const progressMap: Record<string, number> = {
+        DRAFT: 15,
+        WAITING_RECEIVE: 45,
+        PARTIALLY_RECEIVED: Math.max(55, receivedPct),
+        COMPLETED: 100,
+      };
+      const statusLabelMap: Record<string, string> = {
+        DRAFT: 'Nháp PO',
+        WAITING_RECEIVE: 'Chờ hàng về',
+        PARTIALLY_RECEIVED: 'Đang nhập kho',
+        COMPLETED: 'Đã nhận đủ',
+      };
+
+      tasks.push({
+        id: `PO-${po.id.toString()}`,
+        entityId: po.id.toString(),
+        code: po.poCode,
+        type: 'PO_INBOUND',
+        typeLabel: 'Nhập hàng NCC (PO)',
+        title: `Nhận hàng ${po.supplier?.name || 'Nhà cung cấp'}`,
+        subtitle: `${po.warehouse?.name || 'Kho NPP'} · ${totalOrderedQty} ĐVT`,
+        status: po.status,
+        statusLabel: statusLabelMap[po.status] || po.status,
+        progress: progressMap[po.status] ?? 30,
+        color: '#059669',
+        startDate: startKey,
+        endDate: endKey,
+        assignee: po.warehouse?.name || 'Thủ kho',
+        isAutoMonthly: false,
+        linkPath: po.status === 'WAITING_RECEIVE' || po.status === 'PARTIALLY_RECEIVED'
+          ? '/purchase/receiving'
+          : '/purchase/purchase-orders',
+        meta: {
+          supplierName: po.supplier?.name || 'Chưa chọn NCC',
+          warehouseName: po.warehouse?.name || '',
+          totalOrderedQty,
+          totalReceivedQty,
+          tripCode: po.deliveryTrip?.tripCode || null,
+          notes: po.notes || '',
+        },
+      });
+    }
+
+    // 2. Outbound Delivery Trips (D+1 default when created/confirmed)
+    for (const trip of deliveryTrips) {
+      const startObj = new Date(trip.departureTime || trip.createdAt);
+      const fallbackDPlus1 = addDays(startObj, 1);
+      const endRaw = trip.completedTime || trip.expectedDeliveryDate || fallbackDPlus1;
+      const endObj = new Date(endRaw) < startObj ? fallbackDPlus1 : new Date(endRaw);
+
+      const startKey = toDateKey(startObj);
+      const endKey = toDateKey(endObj);
+
+      const progressMap: Record<string, number> = {
+        WAITING_CONFIRM: 20,
+        WAITING_SHIP: 45,
+        SHIPPING: 75,
+        WAITING_CLOSE: 90,
+        COMPLETED: 100,
+        CLOSED: 100,
+      };
+      const statusLabelMap: Record<string, string> = {
+        WAITING_CONFIRM: 'Chờ xác nhận xe',
+        WAITING_SHIP: 'Đã xác nhận · Chờ xuất',
+        SHIPPING: 'Đang giao hàng',
+        WAITING_CLOSE: 'Chờ đối soát COD',
+        COMPLETED: 'Giao xong',
+        CLOSED: 'Đã đóng chuyến',
+      };
+
+      const ordersCount = trip.salesOrders?.length || 0;
+      const driverName = trip.driver?.fullName || 'Chưa phân tài xế';
+
+      tasks.push({
+        id: `TRIP-${trip.id.toString()}`,
+        entityId: trip.id.toString(),
+        code: trip.tripCode,
+        type: 'DELIVERY_OUTBOUND',
+        typeLabel: 'Giao hàng bán (Chuyến xe)',
+        title: `Giao hàng ${ordersCount} đơn · ${driverName}`,
+        subtitle: `${trip.warehouse?.name || 'Kho NPP'}${trip.licensePlate ? ` · ${trip.licensePlate}` : ''}`,
+        status: trip.status,
+        statusLabel: statusLabelMap[trip.status] || trip.status,
+        progress: progressMap[trip.status] ?? 25,
+        color: '#0066da',
+        startDate: startKey,
+        endDate: endKey,
+        assignee: driverName,
+        isAutoMonthly: false,
+        linkPath: '/logistics/delivery-trips',
+        meta: {
+          driverName,
+          licensePlate: trip.licensePlate || '',
+          warehouseName: trip.warehouse?.name || '',
+          ordersCount,
+          currentWeightKg: Number(trip.currentWeightKg || 0),
+          maxWeightKg: Number(trip.maxWeightKg || 1500),
+          orderCodes: (trip.salesOrders || []).map((o: any) => o.orderCode),
+          notes: trip.notes || '',
+        },
+      });
+    }
+
+    // 3. Unassigned Sales Orders (need trip scheduling D+1)
+    for (const so of unassignedSalesOrders) {
+      const startObj = new Date(so.createdAt);
+      const endObj = addDays(startObj, 1);
+      const totalQty = (so.items || []).reduce((s: number, it: any) => s + Number(it.quantity || 0), 0);
+
+      const statusLabelMap: Record<string, string> = {
+        PENDING: 'Chờ duyệt đơn',
+        SUBMITTED: 'Đã gửi · Chờ phân bổ',
+        ALLOCATED: 'Đã phân bổ · Chờ xếp xe',
+      };
+      const progressMap: Record<string, number> = {
+        PENDING: 15,
+        SUBMITTED: 35,
+        ALLOCATED: 60,
+      };
+
+      tasks.push({
+        id: `SO-${so.id.toString()}`,
+        entityId: so.id.toString(),
+        code: so.orderCode,
+        type: 'SALES_UNASSIGNED',
+        typeLabel: 'Đơn bán chờ xếp chuyến',
+        title: `Đơn ${so.retailer?.name || 'Đại lý'} (Chờ lên xe)`,
+        subtitle: `${so.warehouse?.name || 'Kho NPP'} · ${totalQty} ĐVT`,
+        status: so.status,
+        statusLabel: statusLabelMap[so.status] || so.status,
+        progress: progressMap[so.status] ?? 20,
+        color: '#d97706',
+        startDate: toDateKey(startObj),
+        endDate: toDateKey(endObj),
+        assignee: so.warehouse?.name || 'Điều phối viên',
+        isAutoMonthly: false,
+        linkPath: so.status === 'ALLOCATED' ? '/logistics/delivery-trips' : '/sales/sales-orders',
+        meta: {
+          retailerName: so.retailer?.name || '',
+          warehouseName: so.warehouse?.name || '',
+          totalQty,
+          notes: so.deliveryNotes || '',
+        },
+      });
+    }
+
+    // 4. Actual Inventory Counts + Auto Start-of-Month Schedule (01 - 02)
+    const monthlyCoveredWarehouses = new Set<string>();
+
+    for (const cnt of inventoryCounts) {
+      const startObj = new Date(cnt.createdAt);
+      const endObj = addDays(startObj, 1);
+      const startKey = toDateKey(startObj);
+      const countMonth = startKey.slice(0, 7);
+
+      if (cnt.countType === 'MONTHLY' && countMonth === rawMonth && cnt.warehouseId) {
+        monthlyCoveredWarehouses.add(cnt.warehouseId.toString());
+      }
+
+      const progressMap: Record<string, number> = {
+        DRAFT: 30,
+        WAITING_APPROVAL: 75,
+        APPROVED: 100,
+        COMPLETED: 100,
+        REJECTED: 40,
+      };
+      const statusLabelMap: Record<string, string> = {
+        DRAFT: 'Đang kiểm đếm',
+        WAITING_APPROVAL: 'Chờ duyệt kiểm kê',
+        APPROVED: 'Đã duyệt cân đối',
+        COMPLETED: 'Hoàn tất kiểm kê',
+        REJECTED: 'Bị từ chối',
+      };
+
+      tasks.push({
+        id: `COUNT-${cnt.id.toString()}`,
+        entityId: cnt.id.toString(),
+        code: cnt.countCode,
+        type: 'INVENTORY_COUNT',
+        typeLabel: 'Kiểm kê kho',
+        title: `Kiểm kê ${cnt.countType === 'MONTHLY' ? 'định kỳ' : 'theo SKU'} · ${cnt.warehouse?.name || 'Kho NPP'}`,
+        subtitle: `${cnt._count?.items || 0} lô kiểm đếm`,
+        status: cnt.status,
+        statusLabel: statusLabelMap[cnt.status] || cnt.status,
+        progress: progressMap[cnt.status] ?? 30,
+        color: '#7c3aed',
+        startDate: startKey,
+        endDate: toDateKey(endObj),
+        assignee: cnt.warehouse?.name || 'Thủ kho',
+        isAutoMonthly: false,
+        linkPath: '/inventory/counts',
+        meta: {
+          warehouseId: cnt.warehouseId?.toString() || '',
+          warehouseName: cnt.warehouse?.name || '',
+          countType: cnt.countType,
+          notes: cnt.notes || '',
+        },
+      });
+    }
+
+    const salesWarehouses = warehouses.filter((w: any) => w.type === 'SALES');
+    const targetWarehouses = salesWarehouses.length > 0 ? salesWarehouses : warehouses.slice(0, 1);
+
+    for (const wh of targetWarehouses) {
+      if (monthlyCoveredWarehouses.has(wh.id.toString())) continue;
+
+      const autoStart = `${rawMonth}-01`;
+      const autoEnd = `${rawMonth}-02`;
+      const isOverdue = todayKey > autoEnd;
+
+      tasks.push({
+        id: `AUTO-COUNT-${rawMonth}-${wh.id.toString()}`,
+        entityId: null,
+        code: `KK-${rawMonth.replace('-', '')}-01`,
+        type: 'INVENTORY_COUNT',
+        typeLabel: 'Kiểm kê đầu tháng (Tự động)',
+        title: `Kiểm kê kho đầu tháng ${String(monthNum).padStart(2, '0')}/${yearNum} · ${wh.name}`,
+        subtitle: `Lịch định kỳ đầu tháng (01–02/${String(monthNum).padStart(2, '0')}) · Chưa lập phiếu`,
+        status: isOverdue ? 'OVERDUE' : 'SCHEDULED',
+        statusLabel: isOverdue ? 'Quá hạn đầu tháng · Cần lập phiếu' : 'Lịch định kỳ đầu tháng',
+        progress: 0,
+        color: '#7c3aed',
+        startDate: autoStart,
+        endDate: autoEnd,
+        assignee: wh.name,
+        isAutoMonthly: true,
+        linkPath: '/inventory/counts',
+        meta: {
+          warehouseId: wh.id.toString(),
+          warehouseName: wh.name,
+          countType: 'MONTHLY',
+          notes: `Lịch kiểm kê kho định kỳ đầu tháng ${String(monthNum).padStart(2, '0')}/${yearNum} cho ${wh.name}.`,
+        },
+      });
+    }
+
+    // Filter tasks overlapping viewed month [monthStartKey .. monthEndKey]
+    let visibleTasks = tasks.filter((t) => {
+      const overlapsMonth = t.startDate <= monthEndKey && t.endDate >= monthStartKey;
+      return overlapsMonth;
+    });
+
+    if (filters.type && filters.type !== 'ALL') {
+      visibleTasks = visibleTasks.filter((t) => t.type === filters.type);
+    }
+
+    const priorityOrder: Record<string, number> = {
+      INVENTORY_COUNT: 1,
+      PO_INBOUND: 2,
+      DELIVERY_OUTBOUND: 3,
+      SALES_UNASSIGNED: 4,
+    };
+
+    visibleTasks.sort((a, b) => {
+      if (a.startDate !== b.startDate) return a.startDate.localeCompare(b.startDate);
+      return (priorityOrder[a.type] || 9) - (priorityOrder[b.type] || 9);
+    });
+
+    return {
+      month: rawMonth,
+      monthLabel: `Tháng ${monthNum}/${yearNum}`,
+      daysInMonth,
+      monthStartDate: monthStartKey,
+      monthEndDate: monthEndKey,
+      todayStr: todayKey,
+      summary: {
+        total: visibleTasks.length,
+        poCount: visibleTasks.filter((t) => t.type === 'PO_INBOUND').length,
+        tripCount: visibleTasks.filter((t) => t.type === 'DELIVERY_OUTBOUND').length,
+        unassignedSoCount: visibleTasks.filter((t) => t.type === 'SALES_UNASSIGNED').length,
+        countTaskCount: visibleTasks.filter((t) => t.type === 'INVENTORY_COUNT').length,
+      },
+      tasks: visibleTasks,
+    };
   }
 }
 

@@ -1,321 +1,625 @@
-import { useState } from 'react';
-import { 
-  RotateCw, 
-  MoreHorizontal, 
-  Plus, 
-  X, 
-  Menu
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardCheck,
+  ExternalLink,
+  PackageCheck,
+  Plus,
+  RotateCw,
+  Search,
+  ShoppingBag,
+  Truck,
+  X,
 } from 'lucide-react';
+import { createInventoryCount, getOperationsGantt } from '../../../services/api';
+import { useNotification } from '../../../components/Common/NotificationProvider';
+import DmsSectionPanel from '../../../components/DmsUi/DmsSectionPanel';
 import './TaskGantt.css';
 
-const months = [
-  'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 
-  'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12', 'Tháng 1'
-];
+const WEEKDAY_SHORT = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 
-const ganttTasks = [
-  {
-    id: 'TRIP-2026-00043',
-    name: 'Chuyến xe giao hàng D+3 (Tuyến Bình Dương - Củ Chi)',
-    progress: 100,
-    color: '#4f46e5',
-    startMonthIndex: 4, // Tháng 9
-    durationMonths: 0.8,
-    row: 0
-  },
-  {
-    id: 'TRIP-2026-00041',
-    name: 'Nhận hàng Container NCC Masan Consumer (D+3)',
-    progress: 60,
-    color: '#059669',
-    startMonthIndex: 4.2,
-    durationMonths: 0.9,
-    row: 1
-  },
-  {
-    id: 'TRIP-2026-00046',
-    name: 'Giao hàng đợt 2: Kênh GT Tạp hóa Quận 12 & Hóc Môn',
-    progress: 40,
-    color: '#f59e0b',
-    startMonthIndex: 4.1,
-    durationMonths: 0.8,
-    row: 2
-  },
-  {
-    id: 'TRIP-2026-00044',
-    name: 'Đối soát công nợ & phiếu giao hàng (POD) Nhà phân phối',
-    progress: 80,
-    color: '#0284c7',
-    startMonthIndex: 3.6,
-    durationMonths: 1.4,
-    row: 3
-  },
-  {
-    id: 'TRIP-2026-00048',
-    name: 'Nhận lô hàng Tân Hiệp Phát (Trà Xanh & Nước Tăng Lực)',
-    progress: 50,
-    color: '#6366f1',
-    startMonthIndex: 4.8,
-    durationMonths: 0.9,
-    row: 4
-  },
-  {
-    id: 'TASK-2023-00045',
-    name: 'Purchase machinery',
-    progress: 100,
-    color: '#78350f',
-    startMonthIndex: 4.6,
-    durationMonths: 0.8,
-    row: 5
-  },
-  {
-    id: 'TASK-2023-00047',
-    name: 'Plant Painting',
-    progress: 100,
-    color: '#065f46',
-    startMonthIndex: 4.3,
-    durationMonths: 0.6,
-    row: 6
-  },
-  {
-    id: 'TASK-2023-00050',
-    name: 'Purchase assets',
-    progress: 30,
-    color: '#f59e0b',
-    startMonthIndex: 4.9,
-    durationMonths: 1.0,
-    row: 7
-  },
-  {
-    id: 'TASK-2023-00049',
-    name: 'Plan launch event',
-    progress: 20,
-    color: '#ec4899',
-    startMonthIndex: 6.8, // Late March - April
-    durationMonths: 1.2,
-    row: 8
-  },
-  {
-    id: 'TASK-2023-00053',
-    name: 'Map budget',
-    progress: 100,
-    color: '#1e3a8a',
-    startMonthIndex: 1.8, // Nov - Dec
-    durationMonths: 1.3,
-    row: 9
-  }
-];
-
-const TaskGantt = () => {
-  const [filters, setFilters] = useState({
-    id: '',
-    subject: '',
-    project: 'PROJ-0004',
-    status: 'All Statuses',
-    priority: 'Priority'
-  });
-
-  return (
-    <div className="gantt-page-layout">
-      {/* CỘT TRÁI: BỘ LỌC GANTT */}
-      <aside className="gantt-left-filters">
-        <div className="filter-group-block">
-          <label className="filter-block-title">Filter By</label>
-          <select className="filter-block-select">
-            <option>Assigned To</option>
-            <option>Nguyễn Văn An (NVBH001)</option>
-            <option>Phạm Văn Tài (NVGH001)</option>
-          </select>
-          <select className="filter-block-select" style={{ marginTop: '8px' }}>
-            <option>Created By</option>
-            <option>Administrator</option>
-          </select>
-        </div>
-
-        <div className="filter-group-block">
-          <label className="filter-block-title">Edit Filters</label>
-          <select className="filter-block-select">
-            <option>Tags</option>
-            <option>#Q1Delivery</option>
-            <option>#MasanGT</option>
-          </select>
-          <div className="filter-link-label">Show Tags</div>
-        </div>
-
-        <div className="filter-group-block">
-          <label className="filter-block-title">Save Filter</label>
-          <input 
-            type="text" 
-            placeholder="Filter Name" 
-            className="filter-block-input"
-          />
-        </div>
-      </aside>
-
-      {/* VÙNG CHÍNH: BẢNG GANTT */}
-      <main className="gantt-main-canvas">
-        {/* Top Header */}
-        <div className="gantt-top-toolbar">
-          <div className="gantt-title-wrap">
-            <Menu size={18} className="gantt-menu-icon" />
-            <h1 className="gantt-title">Task Gantt</h1>
-          </div>
-
-          <div className="gantt-actions-wrap">
-            <select className="gantt-view-select">
-              <option>Gantt View</option>
-              <option>Kanban View</option>
-              <option>List View</option>
-            </select>
-
-            <button type="button" className="gantt-icon-btn" title="Refresh">
-              <RotateCw size={15} />
-            </button>
-
-            <button type="button" className="gantt-icon-btn" title="More">
-              <MoreHorizontal size={15} />
-            </button>
-
-            <button type="button" className="gantt-primary-dark-btn">
-              <Plus size={15} />
-              <span>Add Task</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Horizontal Filter Bar */}
-        <div className="gantt-filter-bar">
-          <input 
-            type="text" 
-            placeholder="ID" 
-            className="gantt-filter-input"
-            value={filters.id}
-            onChange={(e) => setFilters({ ...filters, id: e.target.value })}
-          />
-
-          <input 
-            type="text" 
-            placeholder="Subject" 
-            className="gantt-filter-input"
-            value={filters.subject}
-            onChange={(e) => setFilters({ ...filters, subject: e.target.value })}
-          />
-
-          <input 
-            type="text" 
-            placeholder="Project" 
-            className="gantt-filter-input"
-            value={filters.project}
-            onChange={(e) => setFilters({ ...filters, project: e.target.value })}
-          />
-
-          <select 
-            className="gantt-filter-input select"
-            value={filters.status}
-            onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-          >
-            <option>Status</option>
-            <option>Open</option>
-            <option>Working</option>
-            <option>Completed</option>
-          </select>
-
-          <select 
-            className="gantt-filter-input select"
-            value={filters.priority}
-            onChange={(e) => setFilters({ ...filters, priority: e.target.value })}
-          >
-            <option>Priority</option>
-            <option>High</option>
-            <option>Medium</option>
-            <option>Low</option>
-          </select>
-
-          <div className="filter-pill-active" style={{ marginLeft: 'auto' }}>
-            <span>Filter</span>
-            <X size={13} className="filter-pill-close" />
-          </div>
-
-          <button type="button" className="gantt-secondary-btn">
-            <span>Last Updated On</span>
-          </button>
-        </div>
-
-        {/* Gantt Chart Matrix */}
-        <div className="gantt-chart-container">
-          {/* Header Months */}
-          <div className="gantt-timeline-header">
-            {months.map(m => (
-              <div key={m} className="gantt-month-cell">{m}</div>
-            ))}
-          </div>
-
-          {/* Timeline Grid & Task Bars */}
-          <div className="gantt-timeline-body">
-            {/* Background Grid Columns */}
-            <div className="gantt-grid-columns">
-              {months.map(m => (
-                <div key={m} className="gantt-grid-col"></div>
-              ))}
-            </div>
-
-            {/* SVG Dependency Connectors (Arrows connecting dependent tasks) */}
-            <svg className="gantt-dependencies-svg">
-              {/* Curve from Plant Preparation to Purchase assets */}
-              <path 
-                d="M 450 160 C 430 160, 430 330, 442 330" 
-                fill="none" 
-                stroke="#6b7280" 
-                strokeWidth="1.5" 
-                markerEnd="url(#arrow)"
-              />
-              <defs>
-                <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                  <path d="M 0 0 L 10 5 L 0 10 z" fill="#6b7280" />
-                </marker>
-              </defs>
-            </svg>
-
-            {/* Task Bars Overlay */}
-            <div className="gantt-tasks-layer">
-              {ganttTasks.map((t) => {
-                const leftPercent = (t.startMonthIndex / months.length) * 100;
-                const widthPercent = (t.durationMonths / months.length) * 100;
-                const topPx = t.row * 42 + 10;
-
-                return (
-                  <div 
-                    key={t.id} 
-                    className="gantt-task-row"
-                    style={{ top: `${topPx}px` }}
-                  >
-                    <div 
-                      className="gantt-task-bar"
-                      style={{ 
-                        left: `${leftPercent}%`, 
-                        width: `${widthPercent}%`,
-                        backgroundColor: t.color
-                      }}
-                      title={`${t.name} (${t.id}) - ${t.progress}%`}
-                    >
-                      <div className="gantt-task-inner-fill" style={{ width: `${t.progress}%` }}></div>
-                    </div>
-                    {/* Label placed next to the bar */}
-                    <span 
-                      className="gantt-task-label"
-                      style={{ left: `calc(${leftPercent + widthPercent}% + 10px)` }}
-                    >
-                      {t.name} ({t.id}) {t.progress === 100 ? '- 100%' : ''}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </main>
-    </div>
-  );
+const getCurrentMonthKey = () => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 };
 
-export default TaskGantt;
+const shiftMonthKey = (monthKey, delta) => {
+  const [y, m] = monthKey.split('-').map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+};
+
+const formatDisplayDate = (dateStr) => {
+  if (!dateStr || !dateStr.includes('-')) return dateStr || '—';
+  const [y, m, d] = dateStr.split('-');
+  return `${d}/${m}/${y}`;
+};
+
+const formatShortDate = (dateStr) => {
+  if (!dateStr || !dateStr.includes('-')) return dateStr || '';
+  const [, m, d] = dateStr.split('-');
+  return `${d}/${m}`;
+};
+
+const computeBarPlacement = (task, monthStartDate, monthEndDate, daysInMonth) => {
+  const [sy, sm, sd] = task.startDate.split('-').map(Number);
+  const [ey, em, ed] = task.endDate.split('-').map(Number);
+  const [msy, msm] = monthStartDate.split('-').map(Number);
+
+  const monthIdx = msy * 12 + (msm - 1);
+  const startMonthIdx = sy * 12 + (sm - 1);
+  const endMonthIdx = ey * 12 + (em - 1);
+
+  const clampedStartDay = startMonthIdx < monthIdx ? 1 : sd;
+  const clampedEndDay = endMonthIdx > monthIdx ? daysInMonth : ed;
+
+  const startDay = Math.max(1, Math.min(daysInMonth, clampedStartDay));
+  const endDay = Math.max(startDay, Math.min(daysInMonth, clampedEndDay));
+
+  const leftPct = ((startDay - 1) / daysInMonth) * 100;
+  const spanDays = endDay - startDay + 1;
+  const widthPct = (spanDays / daysInMonth) * 100;
+
+  return {
+    leftPct,
+    widthPct,
+    startsBefore: startMonthIdx < monthIdx,
+    endsAfter: endMonthIdx > monthIdx,
+  };
+};
+
+const TYPE_OPTIONS = [
+  { key: 'ALL', label: 'Tất cả kế hoạch' },
+  { key: 'PO_INBOUND', label: 'Nhập hàng NCC (PO)' },
+  { key: 'DELIVERY_OUTBOUND', label: 'Giao hàng bán (D+1)' },
+  { key: 'SALES_UNASSIGNED', label: 'Đơn chờ xếp chuyến' },
+  { key: 'INVENTORY_COUNT', label: 'Kiểm kê đầu tháng' },
+];
+
+export default function TaskGantt() {
+  const navigate = useNavigate();
+  const { notify } = useNotification();
+
+  const [month, setMonth] = useState(getCurrentMonthKey);
+  const [typeFilter, setTypeFilter] = useState('ALL');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [creatingCount, setCreatingCount] = useState(false);
+  const [error, setError] = useState('');
+  const [ganttData, setGanttData] = useState({
+    month: getCurrentMonthKey(),
+    monthLabel: '',
+    daysInMonth: 30,
+    monthStartDate: '',
+    monthEndDate: '',
+    todayStr: '',
+    summary: { total: 0, poCount: 0, tripCount: 0, unassignedSoCount: 0, countTaskCount: 0 },
+    tasks: [],
+  });
+  const [selectedTask, setSelectedTask] = useState(null);
+
+  const fetchGantt = useCallback(async (signal) => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await getOperationsGantt({ month, type: typeFilter }, signal);
+      setGanttData(res);
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        setError(err.message || 'Không thể tải dữ liệu biểu đồ tiến độ');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [month, typeFilter]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchGantt(controller.signal);
+    return () => controller.abort();
+  }, [fetchGantt]);
+
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchGantt();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [fetchGantt]);
+
+  const dayColumns = useMemo(() => {
+    const [y, m] = (ganttData.month || month).split('-').map(Number);
+    const totalDays = ganttData.daysInMonth || 30;
+    const cols = [];
+    for (let d = 1; d <= totalDays; d++) {
+      const dt = new Date(y, m - 1, d);
+      const dayOfWeek = dt.getDay();
+      const dateKey = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      cols.push({
+        day: d,
+        label: String(d).padStart(2, '0'),
+        weekday: WEEKDAY_SHORT[dayOfWeek],
+        isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
+        isToday: dateKey === ganttData.todayStr,
+        dateKey,
+      });
+    }
+    return cols;
+  }, [ganttData.month, ganttData.daysInMonth, ganttData.todayStr, month]);
+
+  const todayLeftPct = useMemo(() => {
+    const idx = dayColumns.findIndex((c) => c.isToday);
+    if (idx < 0) return null;
+    return ((idx + 0.5) / dayColumns.length) * 100;
+  }, [dayColumns]);
+
+  const filteredTasks = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return ganttData.tasks || [];
+    return (ganttData.tasks || []).filter((t) =>
+      [t.code, t.title, t.subtitle, t.assignee, t.statusLabel, t.typeLabel]
+        .filter(Boolean)
+        .some((field) => field.toLowerCase().includes(q)),
+    );
+  }, [ganttData.tasks, searchTerm]);
+
+  const handleQuickCreateMonthlyCount = async (task) => {
+    if (!task?.meta?.warehouseId) return;
+    try {
+      setCreatingCount(true);
+      await createInventoryCount(
+        {
+          warehouseId: Number(task.meta.warehouseId),
+          countType: 'MONTHLY',
+          notes: task.meta.notes || `Kiểm kê kho định kỳ đầu tháng (${ganttData.monthLabel})`,
+        },
+        1,
+      );
+      notify?.('Đã khởi tạo phiếu kiểm kê kho đầu tháng!', 'success');
+      setSelectedTask(null);
+      await fetchGantt();
+    } catch (err) {
+      notify?.(err.message || 'Không thể khởi tạo phiếu kiểm kê', 'error');
+    } finally {
+      setCreatingCount(false);
+    }
+  };
+
+  const summary = ganttData.summary || {};
+
+  return (
+    <div className="gantt-dms-page">
+      {/* Page Title & Quick Actions */}
+      <div className="dms-page-title-bar">
+        <div>
+          <h1>Biểu đồ Tiến độ Vận hành (Gantt)</h1>
+          <p className="dms-page-subtitle">
+            Đồng bộ thời gian thực lịch nhận hàng PO, chuyến xe giao hàng bán (mặc định D+1), đơn chờ xếp chuyến và lịch kiểm kê kho đầu tháng.
+          </p>
+        </div>
+
+        <div className="gantt-head-actions">
+          <button
+            type="button"
+            className="dms-btn dms-btn-outline"
+            onClick={() => navigate('/purchase/purchase-orders')}
+          >
+            <Plus size={14} />
+            <span>Đặt hàng PO</span>
+          </button>
+          <button
+            type="button"
+            className="dms-btn dms-btn-blue"
+            onClick={() => navigate('/logistics/delivery-trips')}
+          >
+            <Truck size={14} />
+            <span>Điều phối chuyến xe</span>
+          </button>
+          <button
+            type="button"
+            className="dms-btn dms-btn-outline"
+            onClick={() => fetchGantt()}
+            disabled={loading}
+            title="Tải lại tiến độ mới nhất"
+          >
+            <RotateCw size={14} className={loading ? 'gantt-spin' : ''} />
+            <span>Làm mới</span>
+          </button>
+        </div>
+      </div>
+
+      {/* KPI Filter Strip */}
+      <div className="gantt-kpi-grid">
+        <button
+          type="button"
+          className={`gantt-kpi-card ${typeFilter === 'ALL' ? 'is-active' : ''}`}
+          onClick={() => setTypeFilter('ALL')}
+        >
+          <div className="gantt-kpi-icon all">
+            <Calendar size={18} />
+          </div>
+          <div>
+            <div className="gantt-kpi-label">Tổng hạng mục tháng</div>
+            <div className="gantt-kpi-value">{summary.total || 0}</div>
+          </div>
+        </button>
+
+        <button
+          type="button"
+          className={`gantt-kpi-card ${typeFilter === 'PO_INBOUND' ? 'is-active' : ''}`}
+          onClick={() => setTypeFilter('PO_INBOUND')}
+        >
+          <div className="gantt-kpi-icon po">
+            <PackageCheck size={18} />
+          </div>
+          <div>
+            <div className="gantt-kpi-label">Nhập hàng NCC (PO)</div>
+            <div className="gantt-kpi-value">{summary.poCount || 0}</div>
+          </div>
+        </button>
+
+        <button
+          type="button"
+          className={`gantt-kpi-card ${typeFilter === 'DELIVERY_OUTBOUND' ? 'is-active' : ''}`}
+          onClick={() => setTypeFilter('DELIVERY_OUTBOUND')}
+        >
+          <div className="gantt-kpi-icon trip">
+            <Truck size={18} />
+          </div>
+          <div>
+            <div className="gantt-kpi-label">Chuyến xe giao (D+1)</div>
+            <div className="gantt-kpi-value">{summary.tripCount || 0}</div>
+          </div>
+        </button>
+
+        <button
+          type="button"
+          className={`gantt-kpi-card ${typeFilter === 'SALES_UNASSIGNED' ? 'is-active' : ''}`}
+          onClick={() => setTypeFilter('SALES_UNASSIGNED')}
+        >
+          <div className="gantt-kpi-icon so">
+            <ShoppingBag size={18} />
+          </div>
+          <div>
+            <div className="gantt-kpi-label">Đơn chờ xếp chuyến</div>
+            <div className="gantt-kpi-value">{summary.unassignedSoCount || 0}</div>
+          </div>
+        </button>
+
+        <button
+          type="button"
+          className={`gantt-kpi-card ${typeFilter === 'INVENTORY_COUNT' ? 'is-active' : ''}`}
+          onClick={() => setTypeFilter('INVENTORY_COUNT')}
+        >
+          <div className="gantt-kpi-icon count">
+            <ClipboardCheck size={18} />
+          </div>
+          <div>
+            <div className="gantt-kpi-label">Kiểm kê đầu tháng</div>
+            <div className="gantt-kpi-value">{summary.countTaskCount || 0}</div>
+          </div>
+        </button>
+      </div>
+
+      {/* Main Gantt Panel */}
+      <DmsSectionPanel
+        title={`Lịch trình vận hành · ${ganttData.monthLabel || month} (${filteredTasks.length} hạng mục)`}
+        noPadding
+        actions={
+          <div className="gantt-panel-legend">
+            <span className="legend-dot-item"><i style={{ background: '#059669' }} /> Nhập PO</span>
+            <span className="legend-dot-item"><i style={{ background: '#0066da' }} /> Chuyến giao hàng</span>
+            <span className="legend-dot-item"><i style={{ background: '#d97706' }} /> Chờ xếp xe</span>
+            <span className="legend-dot-item"><i style={{ background: '#7c3aed' }} /> Kiểm kê đầu tháng</span>
+          </div>
+        }
+      >
+        {/* Filter & Month Navigation Bar */}
+        <div className="gantt-toolbar-row">
+          <div className="gantt-month-nav">
+            <button
+              type="button"
+              className="gantt-nav-btn"
+              onClick={() => setMonth((m) => shiftMonthKey(m, -1))}
+              title="Tháng trước"
+            >
+              <ChevronLeft size={15} />
+            </button>
+            <input
+              type="month"
+              className="dms-input gantt-month-input"
+              value={month}
+              onChange={(e) => e.target.value && setMonth(e.target.value)}
+            />
+            <button
+              type="button"
+              className="gantt-nav-btn"
+              onClick={() => setMonth((m) => shiftMonthKey(m, 1))}
+              title="Tháng sau"
+            >
+              <ChevronRight size={15} />
+            </button>
+            <button
+              type="button"
+              className="dms-btn dms-btn-outline gantt-today-btn"
+              onClick={() => setMonth(getCurrentMonthKey())}
+            >
+              Tháng hiện tại
+            </button>
+          </div>
+
+          <div className="gantt-search-filters">
+            <select
+              className="dms-select"
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+            >
+              {TYPE_OPTIONS.map((opt) => (
+                <option key={opt.key} value={opt.key}>{opt.label}</option>
+              ))}
+            </select>
+
+            <div className="gantt-search-box">
+              <Search size={14} className="gantt-search-ico" />
+              <input
+                type="text"
+                className="dms-input gantt-search-input"
+                placeholder="Tìm mã PO, TRIP, SO, tài xế, kho..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  className="gantt-clear-search"
+                  onClick={() => setSearchTerm('')}
+                >
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {error && (
+          <div className="gantt-error-banner">
+            {error}
+          </div>
+        )}
+
+        {/* Split Gantt Table + Timeline */}
+        <div className="gantt-split-wrapper">
+          {/* Left Fixed Task Column */}
+          <div className="gantt-left-pane">
+            <div className="gantt-left-head">
+              <span>Chứng từ &amp; Công việc</span>
+              <span>Tiến độ</span>
+            </div>
+
+            {loading ? (
+              <div className="gantt-left-empty">Đang tải lịch trình vận hành...</div>
+            ) : filteredTasks.length === 0 ? (
+              <div className="gantt-left-empty">Không có lịch trình phù hợp trong tháng này.</div>
+            ) : (
+              filteredTasks.map((task) => (
+                <div
+                  key={task.id}
+                  className={`gantt-left-row ${selectedTask?.id === task.id ? 'is-selected' : ''}`}
+                  onClick={() => setSelectedTask(task)}
+                >
+                  <div className="gantt-row-main">
+                    <div className="gantt-row-top">
+                      <span className="gantt-code-tag" style={{ borderColor: task.color, color: task.color }}>
+                        {task.code}
+                      </span>
+                      <span className="gantt-date-range">
+                        {formatShortDate(task.startDate)} → {formatShortDate(task.endDate)}
+                      </span>
+                    </div>
+                    <div className="gantt-row-title" title={task.title}>
+                      {task.title}
+                    </div>
+                  </div>
+                  <div className="gantt-row-status-col">
+                    <span className={`gantt-status-pill type-${task.type.toLowerCase()} ${task.status === 'OVERDUE' ? 'is-overdue' : ''}`}>
+                      {task.statusLabel}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Right Day-by-Day Timeline Grid */}
+          <div className="gantt-right-pane">
+            <div
+              className="gantt-timeline-canvas"
+              style={{ minWidth: `${dayColumns.length * 36}px` }}
+            >
+              {/* Day Headers */}
+              <div
+                className="gantt-days-header"
+                style={{ gridTemplateColumns: `repeat(${dayColumns.length}, minmax(36px, 1fr))` }}
+              >
+                {dayColumns.map((col) => (
+                  <div
+                    key={col.dateKey}
+                    className={`gantt-day-cell ${col.isWeekend ? 'is-weekend' : ''} ${col.isToday ? 'is-today' : ''}`}
+                  >
+                    <span className="gantt-day-num">{col.label}</span>
+                    <span className="gantt-day-wd">{col.weekday}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Rows + Background Grid + Today Marker */}
+              <div className="gantt-rows-area">
+                <div
+                  className="gantt-bg-grid"
+                  style={{ gridTemplateColumns: `repeat(${dayColumns.length}, minmax(36px, 1fr))` }}
+                >
+                  {dayColumns.map((col) => (
+                    <div
+                      key={col.dateKey}
+                      className={`gantt-bg-col ${col.isWeekend ? 'is-weekend' : ''} ${col.isToday ? 'is-today' : ''}`}
+                    />
+                  ))}
+                </div>
+
+                {todayLeftPct !== null && (
+                  <div className="gantt-today-line" style={{ left: `${todayLeftPct}%` }}>
+                    <span className="gantt-today-badge">Hôm nay</span>
+                  </div>
+                )}
+
+                {!loading && filteredTasks.length === 0 ? (
+                  <div className="gantt-right-empty" />
+                ) : (
+                  filteredTasks.map((task) => {
+                    const { leftPct, widthPct, startsBefore, endsAfter } = computeBarPlacement(
+                      task,
+                      ganttData.monthStartDate,
+                      ganttData.monthEndDate,
+                      dayColumns.length,
+                    );
+
+                    return (
+                      <div
+                        key={task.id}
+                        className={`gantt-timeline-row ${selectedTask?.id === task.id ? 'is-selected' : ''}`}
+                        onClick={() => setSelectedTask(task)}
+                      >
+                        <div
+                          className={`gantt-bar-item ${task.isAutoMonthly ? 'is-dashed' : ''} ${task.status === 'OVERDUE' ? 'is-overdue' : ''}`}
+                          style={{
+                            left: `${leftPct}%`,
+                            width: `${widthPct}%`,
+                            backgroundColor: task.isAutoMonthly ? '#f3e8ff' : task.color,
+                            borderColor: task.color,
+                            color: task.isAutoMonthly ? '#6d28d9' : '#ffffff',
+                          }}
+                          title={`${task.code}: ${task.title} (${formatDisplayDate(task.startDate)} → ${formatDisplayDate(task.endDate)})`}
+                        >
+                          {!task.isAutoMonthly && (
+                            <div
+                              className="gantt-bar-progress"
+                              style={{ width: `${task.progress}%` }}
+                            />
+                          )}
+                          <span className="gantt-bar-text">
+                            {startsBefore ? '◄ ' : ''}
+                            {task.code}
+                            {task.progress > 0 ? ` (${task.progress}%)` : ''}
+                            {endsAfter ? ' ►' : ''}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </DmsSectionPanel>
+
+      {/* Detail Modal for Selected Schedule Item */}
+      {selectedTask && (
+        <div className="gantt-modal-backdrop" onClick={() => setSelectedTask(null)}>
+          <div className="gantt-detail-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="gantt-detail-head" style={{ borderTopColor: selectedTask.color }}>
+              <div>
+                <span className="gantt-detail-type" style={{ color: selectedTask.color }}>
+                  {selectedTask.typeLabel}
+                </span>
+                <h3>{selectedTask.code} · {selectedTask.title}</h3>
+              </div>
+              <button type="button" className="gantt-close-btn" onClick={() => setSelectedTask(null)}>
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="gantt-detail-body">
+              <div className="gantt-detail-grid">
+                <div className="gantt-detail-item">
+                  <span className="lbl">Ngày bắt đầu</span>
+                  <span className="val">{formatDisplayDate(selectedTask.startDate)}</span>
+                </div>
+                <div className="gantt-detail-item">
+                  <span className="lbl">Ngày dự kiến hoàn tất</span>
+                  <span className="val">{formatDisplayDate(selectedTask.endDate)}</span>
+                </div>
+                <div className="gantt-detail-item">
+                  <span className="lbl">Trạng thái</span>
+                  <span className="val">{selectedTask.statusLabel}</span>
+                </div>
+                <div className="gantt-detail-item">
+                  <span className="lbl">Phụ trách / Kho</span>
+                  <span className="val">{selectedTask.assignee || '—'}</span>
+                </div>
+                <div className="gantt-detail-item">
+                  <span className="lbl">Tiến độ</span>
+                  <span className="val">{selectedTask.progress}%</span>
+                </div>
+                <div className="gantt-detail-item">
+                  <span className="lbl">Thông tin thêm</span>
+                  <span className="val">{selectedTask.subtitle || '—'}</span>
+                </div>
+              </div>
+
+              {selectedTask.meta?.orderCodes?.length > 0 && (
+                <div className="gantt-detail-orders">
+                  <span className="lbl">Đơn hàng trên chuyến:</span>
+                  <div className="gantt-order-chips">
+                    {selectedTask.meta.orderCodes.map((oc) => (
+                      <span key={oc} className="gantt-order-chip">{oc}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedTask.meta?.notes && (
+                <div className="gantt-detail-notes">
+                  <span className="lbl">Ghi chú:</span>
+                  <p>{selectedTask.meta.notes}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="gantt-detail-foot">
+              {selectedTask.isAutoMonthly && (
+                <button
+                  type="button"
+                  className="dms-btn dms-btn-blue"
+                  disabled={creatingCount}
+                  onClick={() => handleQuickCreateMonthlyCount(selectedTask)}
+                >
+                  <ClipboardCheck size={14} />
+                  <span>{creatingCount ? 'Đang tạo phiếu...' : 'Khởi tạo phiếu kiểm kê đầu tháng'}</span>
+                </button>
+              )}
+              <button
+                type="button"
+                className="dms-btn dms-btn-outline"
+                onClick={() => navigate(selectedTask.linkPath)}
+              >
+                <ExternalLink size={14} />
+                <span>Mở trang chứng từ</span>
+              </button>
+              <button
+                type="button"
+                className="dms-btn dms-btn-outline"
+                onClick={() => setSelectedTask(null)}
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

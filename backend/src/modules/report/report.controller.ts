@@ -240,4 +240,10 @@ export class ReportController {
     );
     return res.send(buffer);
   }
+
+  @Get('operations-gantt')
+  async getOperationsGantt(@Query() query: any) {
+    const distributorId = query.distributorId || 1;
+    return this.reportService.getOperationsGanttData(distributorId, query);
+  }
 }

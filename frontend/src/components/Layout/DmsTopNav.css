@@ -29,20 +29,20 @@
   position: sticky;
   top: 0;
   z-index: 120;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.14);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
 }
 
-/* TẦNG 1: TOP UTILITY BAR */
+/* TẦNG 1: TOP UTILITY BAR (TRẮNG SẠCH KIOTVIET STYLE) */
 .dms-utility-bar {
-  height: 38px;
-  background-color: #1f354d;
-  color: #ffffff;
+  height: 44px;
+  background-color: #ffffff;
+  color: #1e293b;
   padding: 0 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .dms-utility-left {
@@ -56,27 +56,25 @@
   display: inline-flex;
   align-items: center;
   gap: 9px;
-  color: #ffffff;
+  color: #0f172a;
   text-decoration: none;
   min-width: 0;
 }
 
-.dms-brand-badge {
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
-  background-color: #2b5b8c;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
+.dms-brand-logo {
+  height: 28px;
+  width: auto;
+  max-width: 36px;
+  object-fit: contain;
+  display: block;
   flex-shrink: 0;
 }
 
 .dms-operator-name {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.35px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #0b2c52;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -84,66 +82,49 @@
 
 .dms-role-chip {
   font-size: 11px;
-  font-weight: 500;
-  background-color: rgba(255, 255, 255, 0.12);
-  color: #dbeafe;
-  padding: 2px 7px;
-  border-radius: 0;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-weight: 600;
+  background-color: #eef5fd;
+  color: #0066da;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid #c9dff8;
   white-space: nowrap;
 }
 
 .dms-utility-right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .dms-quick-search-btn {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: #e2e8f0;
-  padding: 4px 10px;
-  border-radius: 0;
+  background-color: #f4f6f9;
+  border: 1px solid #dbe2ea;
+  color: #475569;
+  padding: 5px 10px;
+  border-radius: 5px;
   font-size: 12px;
   cursor: pointer;
-  transition: background-color 140ms ease;
+  transition: background-color 140ms ease, border-color 140ms ease;
 }
 
 .dms-quick-search-btn:hover {
-  background-color: rgba(255, 255, 255, 0.18);
-  color: #ffffff;
+  background-color: #eaf0f7;
+  border-color: #0066da;
+  color: #0f172a;
 }
 
 .dms-quick-search-btn kbd {
   font-family: inherit;
   font-size: 10.5px;
   padding: 1px 5px;
-  border-radius: 0;
-  background: rgba(15, 23, 42, 0.45);
-  color: #cbd5e1;
-}
-
-.dms-shop-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background-color: #244c78;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  color: #ffffff;
-  padding: 4px 10px;
-  border-radius: 0;
-  font-size: 12px;
-  font-weight: 500;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.dms-shop-pill:hover {
-  background-color: #2d5d8f;
+  border-radius: 3px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #475569;
 }
 
 .dms-util-dropdown-wrap {
@@ -154,10 +135,10 @@
   position: relative;
   background: transparent;
   border: 1px solid transparent;
-  color: #e2e8f0;
-  width: 28px;
-  height: 28px;
-  border-radius: 4px;
+  color: #475569;
+  width: 30px;
+  height: 30px;
+  border-radius: 5px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -165,8 +146,8 @@
 }
 
 .dms-util-icon-btn:hover {
-  background-color: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
+  background-color: #f1f5f9;
+  color: #0066da;
 }
 
 .dms-notif-dot {
@@ -176,8 +157,8 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background-color: #f59e0b;
-  border: 1.5px solid #152b44;
+  background-color: #0066da;
+  border: 1.5px solid #ffffff;
 }
 
 .dms-util-text-btn {
@@ -186,62 +167,66 @@
   gap: 4px;
   background: transparent;
   border: none;
-  color: #e2e8f0;
-  font-size: 12px;
+  color: #334155;
+  font-size: 12.5px;
   font-weight: 500;
-  padding: 4px 6px;
-  border-radius: 4px;
+  padding: 5px 8px;
+  border-radius: 5px;
   cursor: pointer;
 }
 
 .dms-util-text-btn:hover {
-  background-color: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
+  background-color: #f1f5f9;
+  color: #0066da;
 }
 
 .dms-user-trigger {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  color: #ffffff;
-  padding: 3px 8px 3px 4px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
+  background: #f4f7fb;
+  border: 1px solid #dbe4ef;
+  color: #0f172a;
+  padding: 3px 9px 3px 4px;
+  border-radius: 5px;
+  font-size: 12.5px;
+  font-weight: 500;
   cursor: pointer;
 }
 
 .dms-user-trigger:hover {
-  background: rgba(255, 255, 255, 0.16);
+  background: #eaf1fb;
+  border-color: #b7d2f2;
 }
 
 .dms-user-avatar {
-  width: 22px;
-  height: 22px;
-  border-radius: 3px;
-  background-color: #2b5b8c;
-  color: #ffffff;
-  font-size: 11px;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  background-color: #dcebfd;
+  color: #0066da;
+  font-size: 11.5px;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
-/* TẦNG 2: HORIZONTAL MODULE MENU BAR */
+/* TẦNG 2: HORIZONTAL MODULE MENU BAR (#0066DA ĐỒNG NHẤT) */
 .dms-module-menubar {
-  background-color: #2b4560;
-  border-bottom: 2px solid #1f354d;
-  padding: 0 14px;
+  background-color: #0066da;
+  padding: 4px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .dms-module-menubar-inner {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 2px;
+  gap: 3px;
 }
 
 .dms-menu-group {
@@ -251,35 +236,34 @@
 .dms-menu-trigger {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   background: transparent;
   border: none;
-  color: #e2e8f0;
-  font-size: 11.5px;
+  color: #ffffff;
+  font-size: 12.5px;
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.25px;
-  padding: 8px 10px;
+  text-transform: none;
+  letter-spacing: 0;
+  padding: 6px 11px;
+  border-radius: 5px;
   cursor: pointer;
   white-space: nowrap;
-  border-bottom: 2px solid transparent;
-  transition: background-color 120ms ease, color 120ms ease;
+  transition: background-color 120ms ease;
 }
 
 .dms-menu-trigger:hover,
 .dms-menu-trigger.open {
-  background-color: #337ab7;
+  background-color: rgba(255, 255, 255, 0.16);
   color: #ffffff;
 }
 
 .dms-menu-trigger.active {
-  background-color: #23476b;
+  background-color: #004ca3;
   color: #ffffff;
-  border-bottom-color: #7cc0ff;
 }
 
 .dms-menu-caret {
-  color: #93c5fd;
+  color: rgba(255, 255, 255, 0.8);
   transition: transform 140ms ease;
 }
 
@@ -288,17 +272,38 @@
   color: #ffffff;
 }
 
+.dms-shop-cta-white {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #ffffff;
+  color: #0066da;
+  padding: 6px 14px;
+  border-radius: 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  transition: background-color 140ms ease;
+}
+
+.dms-shop-cta-white:hover {
+  background-color: #f0f6ff;
+}
+
 .dms-submenu-dropdown {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 4px);
   left: 0;
   min-width: 245px;
   background-color: #ffffff;
   border: 1px solid #cbd5e1;
-  border-top: 2px solid #2b5b8c;
-  border-radius: 0;
+  border-top: 2px solid #0066da;
+  border-radius: 5px;
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.14);
-  padding: 3px 0;
+  padding: 4px 0;
   z-index: 200;
 }
 
@@ -318,13 +323,13 @@
 }
 
 .dms-submenu-item:hover {
-  background-color: #eef4fa;
-  color: #1b3a5c;
+  background-color: #eef5fd;
+  color: #0066da;
 }
 
 .dms-submenu-item.active {
-  background-color: #e0ecf8;
-  color: #1b3a5c;
+  background-color: #e6f0fc;
+  color: #0066da;
   font-weight: 700;
 }
 
@@ -373,8 +378,8 @@
 .dms-panel-badge {
   font-size: 11px;
   font-weight: 600;
-  background-color: #e0ecf8;
-  color: #1b3a5c;
+  background-color: #eef5fd;
+  color: #0066da;
   padding: 2px 7px;
   border-radius: 999px;
 }
@@ -447,7 +452,7 @@
 .dms-user-panel-role {
   font-size: 11px;
   font-weight: 700;
-  color: #2b5b8c;
+  color: #0066da;
   margin-top: 2px;
 }
 
@@ -562,8 +567,8 @@
 .dms-search-result-type {
   font-size: 11px;
   font-weight: 600;
-  color: #2b5b8c;
-  background-color: #e8f0f8;
+  color: #0066da;
+  background-color: #eef5fd;
   padding: 2px 8px;
   border-radius: 3px;
 }
@@ -576,7 +581,7 @@
 }
 
 .dms-modal-navy-head {
-  background-color: #152b44;
+  background-color: #0066da;
   color: #ffffff;
   padding: 11px 16px;
   font-size: 13px;
@@ -615,7 +620,7 @@
   width: 44px;
   height: 44px;
   border-radius: 6px;
-  background-color: #2b5b8c;
+  background-color: #0066da;
   color: #ffffff;
   font-size: 18px;
   font-weight: 700;
@@ -655,7 +660,7 @@
 
 .dms-profile-val.is-role {
   font-weight: 700;
-  color: #2b5b8c;
+  color: #0066da;
 }
 
 .dms-modal-foot {

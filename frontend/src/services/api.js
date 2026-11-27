@@ -464,6 +464,22 @@ export const exportProfitLossExcel = (filters = {}) => {
   window.open(`${API_URL}/reports/profit-and-loss/export?${queryParams}`, '_blank');
 };
 
+export const getOperationsGantt = async (filters = {}, signal) => {
+  const cleanFilters = {};
+  Object.keys(filters).forEach((k) => {
+    if (filters[k] !== undefined && filters[k] !== null && filters[k] !== '') {
+      cleanFilters[k] = filters[k];
+    }
+  });
+  const queryParams = new URLSearchParams(cleanFilters).toString();
+  const response = await fetch(`${API_URL}/reports/operations-gantt?${queryParams}`, { signal });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || data.error || 'Lỗi khi tải biểu đồ tiến độ vận hành');
+  }
+  return data;
+};
+
 // --- PHÂN LUỒNG BÁN HÀNG (SALES ROUTES) ---
 
 export const getSalesRoutes = async (filters = {}) => {

@@ -36,9 +36,9 @@ import {
 import './RPT057.css';
 
 const DIMENSION_CHART_META = {
-  product: { label: 'Sản phẩm (SKU)', color: '#2b5b8c' },
-  retailer: { label: 'Khách hàng / Đại lý', color: '#059669' },
-  vnbh: { label: 'Nhân viên Bán hàng', color: '#152b44' },
+  product: { label: 'Sản phẩm (SKU)', color: '#0066da' },
+  retailer: { label: 'Khách hàng / Đại lý', color: '#3c6e63' },
+  vnbh: { label: 'Nhân viên Bán hàng', color: '#004ca3' },
 };
 
 const Rpt057BarTooltip = ({ active, payload }) => {

@@ -43,7 +43,7 @@ const Rpt061DailyTooltip = ({ active, payload, label }) => {
       <div className="chart-tooltip-title">Ngày {label}</div>
       <div className="chart-tooltip-row">
         <span className="chart-tooltip-label">
-          <span className="chart-tooltip-dot" style={{ backgroundColor: '#1a73e8' }} />
+          <span className="chart-tooltip-dot" style={{ backgroundColor: '#0066da' }} />
           Doanh số bán
         </span>
         <span className="chart-tooltip-val">{formatVnd(row.revenue)}</span>

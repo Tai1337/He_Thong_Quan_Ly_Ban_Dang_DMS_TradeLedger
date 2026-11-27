@@ -1,9 +1,9 @@
 .dms-doc-shell {
   background-color: #ffffff;
   border: 1px solid #cbd5e1;
-  border-radius: 0;
+  border-radius: 6px;
   overflow: hidden;
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -16,7 +16,7 @@
 }
 
 .dms-doc-header {
-  background: linear-gradient(90deg, #162d47 0%, #23466e 100%);
+  background: #0066da;
   color: #ffffff;
   padding: 9px 14px;
   display: flex;
@@ -107,7 +107,7 @@
 
 .dms-doc-meta-val.is-highlight {
   font-weight: 700;
-  color: #1b3a5c;
+  color: #0066da;
 }
 
 .dms-doc-body {
@@ -132,7 +132,7 @@
 .dms-doc-subhead {
   font-size: 13px;
   font-weight: 700;
-  color: #2b5b8c;
+  color: #0066da;
   margin: 0 0 8px 0;
 }
 

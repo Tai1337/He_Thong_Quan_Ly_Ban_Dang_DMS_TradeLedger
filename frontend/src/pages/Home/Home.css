@@ -8,8 +8,8 @@
 .dms-home-welcome {
   background-color: #ffffff;
   border: 1px solid #d5dee8;
-  border-left: 3px solid #2b5b8c;
-  border-radius: 0;
+  border-left: 3px solid #0066da;
+  border-radius: 5px;
   padding: 12px 16px;
   display: flex;
   align-items: center;
@@ -115,8 +115,8 @@
   padding: 12px 14px;
   background-color: #ffffff;
   border: 1px solid #d5dee8;
-  border-top: 3px solid #337ab7;
-  border-radius: 0;
+  border-top: 3px solid #0066da;
+  border-radius: 5px;
   text-decoration: none;
   color: inherit;
   transition: background-color 140ms ease, border-color 140ms ease;
@@ -124,14 +124,14 @@
 
 .dms-module-tile:hover {
   background-color: #fefaf0;
-  border-color: #337ab7;
-  box-shadow: 0 3px 10px rgba(51, 122, 183, 0.08);
+  border-color: #0066da;
+  box-shadow: 0 3px 10px rgba(0, 102, 218, 0.08);
 }
 
 .dms-module-tile.accent-navy,
 .dms-module-tile.accent-green,
 .dms-module-tile.accent-amber {
-  border-top-color: #337ab7;
+  border-top-color: #0066da;
 }
 
 .dms-tile-top {
@@ -144,10 +144,10 @@
 .dms-quick-icon {
   width: 32px;
   height: 32px;
-  border-radius: 0;
-  background-color: #f1f4f8;
-  color: #1f3a56;
-  border: 1px solid #d5dee8;
+  border-radius: 4px;
+  background-color: #eef5fd;
+  color: #0066da;
+  border: 1px solid #d5e5f7;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -183,7 +183,7 @@
   gap: 5px;
   font-size: 12.5px;
   font-weight: 500;
-  color: #2b5b8c;
+  color: #0066da;
 }
 
 /* Workflow */
@@ -193,11 +193,11 @@
   gap: 5px;
   font-size: 11.5px;
   font-weight: 500;
-  color: #2b5b8c;
-  background-color: #eef4fa;
-  border: 1px solid #bfd1e5;
+  color: #0066da;
+  background-color: #eef5fd;
+  border: 1px solid #c9dff8;
   padding: 2px 8px;
-  border-radius: 0;
+  border-radius: 4px;
 }
 
 .dms-workflow-grid {
@@ -209,7 +209,7 @@
 .dms-workflow-card {
   background-color: #f8fafc;
   border: 1px solid #d5dee8;
-  border-radius: 0;
+  border-radius: 5px;
   padding: 10px 12px;
 }
 
@@ -224,9 +224,9 @@
   font-weight: 600;
   text-transform: uppercase;
   color: #ffffff;
-  background-color: #2b5b8c;
+  background-color: #0066da;
   padding: 2px 8px;
-  border-radius: 0;
+  border-radius: 4px;
   margin-bottom: 6px;
 }
 
@@ -258,7 +258,7 @@
   padding: 9px 12px;
   background-color: #ffffff;
   border: 1px solid #d5dee8;
-  border-radius: 0;
+  border-radius: 5px;
   text-decoration: none;
   color: inherit;
   transition: background-color 140ms ease, border-color 140ms ease;

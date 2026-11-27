@@ -36,12 +36,18 @@ export default function CreateTripModal({ isOpen, onClose, onSuccess, initialOrd
   const [driverFilterTab, setDriverFilterTab] = useState('ALL'); // 'ALL' | 'AVAILABLE' | 'BUSY'
   const driverDropdownRef = useRef(null);
 
+  const getTomorrowDateStr = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  };
+
   const [formData, setFormData] = useState({
     warehouseId: '',
     driverId: '',
     licensePlate: '',
     maxWeightKg: 1500,
-    expectedDeliveryDate: new Date().toISOString().slice(0, 10),
+    expectedDeliveryDate: getTomorrowDateStr(),
     notes: ''
   });
 

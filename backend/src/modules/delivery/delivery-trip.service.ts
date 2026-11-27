@@ -14,6 +14,12 @@ const DEFAULT_PRODUCT_WEIGHT = 10.0; // Mặc định 10kg/thùng nếu sản ph
 
 const formatNumber = (num: any): number => Number(num || 0);
 
+const getDefaultDPlus1Date = (baseDate: Date = new Date()): Date => {
+  const d = new Date(baseDate);
+  d.setDate(d.getDate() + 1);
+  return d;
+};
+
 // Helper sinh mã chuyến xe
 const generateTripCode = (): string => {
   const now = new Date();
@@ -578,7 +584,7 @@ export class DeliveryTripService {
       licensePlate: licensePlate ? licensePlate.trim().toUpperCase() : null,
       maxWeightKg: maxWeight,
       currentWeightKg: 0,
-      expectedDeliveryDate: expectedDeliveryDate ? new Date(expectedDeliveryDate) : new Date(),
+      expectedDeliveryDate: expectedDeliveryDate ? new Date(expectedDeliveryDate) : getDefaultDPlus1Date(),
       status: 'WAITING_CONFIRM',
       notes: notes ? notes.trim() : null,
     });
@@ -936,6 +942,9 @@ export class DeliveryTripService {
         if (trip.salesOrders.length === 0) {
           throw new Error('Chuyến xe chưa có đơn hàng nào, vui lòng xếp đơn trước khi xác nhận xe');
         }
+        if (!trip.expectedDeliveryDate) {
+          updateData.expectedDeliveryDate = getDefaultDPlus1Date(new Date());
+        }
       }
 
       if (toStatus === 'SHIPPING') {
@@ -943,6 +952,9 @@ export class DeliveryTripService {
           throw new Error('Chuyến xe chưa có đơn hàng nào, không thể xuất bến');
         }
         updateData.departureTime = new Date();
+        if (!trip.expectedDeliveryDate) {
+          updateData.expectedDeliveryDate = getDefaultDPlus1Date(updateData.departureTime);
+        }
 
         for (const order of trip.salesOrders) {
           if (order.status === 'ALLOCATED') {

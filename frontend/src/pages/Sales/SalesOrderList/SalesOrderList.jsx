@@ -93,10 +93,18 @@ const SalesOrderList = () => {
   const [showVnbhDropdown, setShowVnbhDropdown] = useState(false);
   const [showRetailerDropdown, setShowRetailerDropdown] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const vnbhDropdownRef = useRef(null);
+  const retailerDropdownRef = useRef(null);
   const statusDropdownRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
+      if (vnbhDropdownRef.current && !vnbhDropdownRef.current.contains(event.target)) {
+        setShowVnbhDropdown(false);
+      }
+      if (retailerDropdownRef.current && !retailerDropdownRef.current.contains(event.target)) {
+        setShowRetailerDropdown(false);
+      }
       if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target)) {
         setShowStatusDropdown(false);
       }
@@ -362,7 +370,7 @@ const SalesOrderList = () => {
             </div>
 
             {/* Hàng 2 */}
-            <div className="filter-item filter-col-4" style={{ position: 'relative' }}>
+            <div className="filter-item filter-col-4" style={{ position: 'relative' }} ref={vnbhDropdownRef}>
               <input 
                 type="text" 
                 placeholder="Mã hoặc Tên VNBH" 
@@ -404,7 +412,7 @@ const SalesOrderList = () => {
               )}
             </div>
 
-            <div className="filter-item filter-col-4" style={{ position: 'relative' }}>
+            <div className="filter-item filter-col-4" style={{ position: 'relative' }} ref={retailerDropdownRef}>
               <input 
                 type="text" 
                 placeholder="Mã hoặc Tên Cửa hàng / Đại lý" 
@@ -438,7 +446,11 @@ const SalesOrderList = () => {
               <button 
                 type="button"
                 className="btn-status-multiselect"
-                onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+                onClick={() => {
+                  setShowVnbhDropdown(false);
+                  setShowRetailerDropdown(false);
+                  setShowStatusDropdown((prev) => !prev);
+                }}
               >
                 <span className="status-multiselect-text">
                   {selectedStatusList.length === 0 

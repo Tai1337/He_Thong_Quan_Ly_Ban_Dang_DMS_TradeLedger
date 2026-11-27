@@ -10,7 +10,7 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: 12px;
-  border-bottom: 4px solid #337ab7;
+  border-bottom: 4px solid #0066da;
   min-height: 32px;
 }
 
@@ -18,14 +18,14 @@
   position: relative;
   display: inline-flex;
   align-items: center;
-  background: linear-gradient(180deg, #428bca 0%, #337ab7 100%);
+  background: #0066da;
   color: #ffffff;
   font-size: 11.5px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.3px;
   padding: 5px 24px 5px 12px;
-  border-top-left-radius: 0;
+  border-top-left-radius: 4px;
   clip-path: polygon(0 0, calc(100% - 13px) 0, 100% 100%, 0 100%);
   white-space: nowrap;
 }
@@ -42,8 +42,10 @@
   background-color: #ffffff;
   border: 1px solid #d1d8e0;
   border-top: none;
+  border-radius: 0 0 5px 5px;
   padding: 10px 12px;
-  box-shadow: none;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  overflow: visible;
 }
 
 .dms-section-body.no-padding {
@@ -96,6 +98,6 @@
 
 .dms-input:focus,
 .dms-select:focus {
-  border-color: #2b5b8c;
+  border-color: #0066da;
   box-shadow: 0 0 0 2px rgba(43, 91, 140, 0.14);
 }
