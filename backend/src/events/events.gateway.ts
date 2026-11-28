@@ -19,6 +19,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   server: Server;
 
   private activeSockets: Map<string, string> = new Map();
+  private userSocketMap: Map<string, string> = new Map();
 
   handleConnection(client: Socket) {
     // client connected
@@ -31,13 +32,30 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
         break;
       }
     }
+    for (const [userId, socketId] of this.userSocketMap.entries()) {
+      if (socketId === client.id) {
+        this.userSocketMap.delete(userId);
+        break;
+      }
+    }
   }
 
   @SubscribeMessage('register')
-  handleRegister(client: Socket, identity: string) {
-    if (identity) {
-      const key = identity.trim().toLowerCase();
+  handleRegister(client: Socket, payload: string | { username?: string; userId?: string | number }) {
+    if (typeof payload === 'string') {
+      if (payload) {
+        const key = payload.trim().toLowerCase();
+        this.activeSockets.set(key, client.id);
+      }
+      return;
+    }
+
+    if (payload?.username) {
+      const key = payload.username.trim().toLowerCase();
       this.activeSockets.set(key, client.id);
+    }
+    if (payload?.userId !== undefined && payload?.userId !== null) {
+      this.userSocketMap.set(String(payload.userId), client.id);
     }
   }
 
@@ -56,6 +74,13 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
         clientSocket.disconnect(true);
       }
       this.activeSockets.delete(key);
+    }
+  }
+
+  emitToUser(userId: string | number, event: string, data: any) {
+    const socketId = this.userSocketMap.get(String(userId));
+    if (socketId && this.server) {
+      this.server.to(socketId).emit(event, data);
     }
   }
 

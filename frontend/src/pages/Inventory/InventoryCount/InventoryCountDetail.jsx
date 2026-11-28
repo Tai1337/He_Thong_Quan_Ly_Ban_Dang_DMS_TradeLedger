@@ -35,6 +35,7 @@ import {
   exportInventoryCountExcel
 } from '../../../services/api';
 import { useNotification } from '../../../components/Common/NotificationProvider';
+import { printInventoryCount } from '../../../utils/printInventoryCount';
 import './InventoryCountDetail.css';
 
 const PRESET_REASONS = [
@@ -493,7 +494,7 @@ const InventoryCountDetail = () => {
             </button>
           )}
 
-          <button className="btn-action-print" onClick={() => window.print()}>
+          <button className="btn-action-print" onClick={() => printInventoryCount(count, itemsData)}>
             <Printer size={16} />
             <span>In Phiếu</span>
           </button>

@@ -14,6 +14,7 @@ import { ReportModule } from './modules/report/report.module';
 import { ShopModule } from './modules/shop/shop.module';
 import { InvoiceModule } from './modules/invoice/invoice.module';
 import { SalesRouteModule } from './modules/sales-route/sales-route.module';
+import { NotificationModule } from './modules/notification/notification.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { BigIntInterceptor } from './common/interceptors/bigint.interceptor';
@@ -38,6 +39,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
     ShopModule,
     InvoiceModule,
     SalesRouteModule,
+    NotificationModule,
   ],
   providers: [
     {

@@ -359,8 +359,8 @@ export class InventoryCountRepository {
       throw new NotFoundException('Không tìm thấy phiếu kiểm kê');
     }
 
-    if (count.status === DocStatus.COMPLETED || count.status === DocStatus.APPROVED) {
-      throw new BadRequestException('Không thể chỉnh sửa phiếu kiểm kê đã được duyệt/hoàn tất');
+    if (count.status !== DocStatus.DRAFT && count.status !== DocStatus.REJECTED) {
+      throw new BadRequestException('Chỉ được chỉnh sửa phiếu kiểm kê ở trạng thái Nháp hoặc Bị từ chối');
     }
 
     return this.prisma.$transaction(async (tx) => {

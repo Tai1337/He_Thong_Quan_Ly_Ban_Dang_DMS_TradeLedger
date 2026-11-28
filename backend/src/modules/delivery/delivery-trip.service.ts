@@ -1,5 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { NotificationType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { NotificationService } from '../notification/notification.service';
 import prisma from '../../prisma/prisma.client';
 import {
   DeliveryTripRepository,
@@ -106,6 +108,7 @@ export class DeliveryTripService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly deliveryTripRepo: DeliveryTripRepository,
+    @Optional() private readonly notificationService?: NotificationService,
   ) {}
 
   /**
@@ -917,7 +920,7 @@ export class DeliveryTripService {
    * 7. Cập nhật trạng thái chuyến xe
    */
   async updateTripStatus({ tripId, distributorId = 1, toStatus, changedById = null, notes = '' }: UpdateTripStatusParams) {
-    return this.prismaService.$transaction(async (tx: any) => {
+    const result = await this.prismaService.$transaction(async (tx: any) => {
       const trip = await tx.deliveryTrip.findFirst({
         where: {
           id: BigInt(tripId),
@@ -1049,8 +1052,35 @@ export class DeliveryTripService {
         success: true,
         message: `Đã chuyển trạng thái chuyến xe sang ${toStatus}`,
         tripStatus: updated.status,
+        tripCode: trip.tripCode,
       };
     });
+
+    if (this.notificationService) {
+      if (toStatus === 'WAITING_SHIP') {
+        await this.notificationService.notifyRoleUsers(distributorId, ['WAREHOUSE_KEEPER'], {
+          type: NotificationType.STOCK_EXPORT_REQUESTED,
+          title: 'Yêu cầu xuất kho mới',
+          body: `Chuyến xe ${result.tripCode} đã sẵn sàng, vui lòng chuẩn bị hàng và xác nhận xuất kho.`,
+          senderId: changedById,
+          referenceId: tripId,
+          refType: 'delivery_trip',
+          navigateTo: `/warehouse/delivery/${tripId}`,
+        });
+      } else if (toStatus === 'SHIPPING' || toStatus === 'COMPLETED') {
+        await this.notificationService.notifyRoleUsers(distributorId, ['ADMIN'], {
+          type: NotificationType.STOCK_EXPORT_COMPLETED,
+          title: toStatus === 'SHIPPING' ? 'Kho đã xuất hàng lên xe' : 'Chuyến xe đã hoàn tất xuất/giao',
+          body: `Chuyến xe ${result.tripCode} đã chuyển sang trạng thái ${toStatus}.`,
+          senderId: changedById,
+          referenceId: tripId,
+          refType: 'delivery_trip',
+          navigateTo: `/logistics/delivery-trips/${tripId}`,
+        });
+      }
+    }
+
+    return result;
   }
 
   /**

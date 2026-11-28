@@ -1,0 +1,127 @@
+.wh-notif-page {
+  padding: 24px 28px;
+  background: #f8fafc;
+  min-height: calc(100vh - 60px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.wh-notif-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.wh-notif-header h1 {
+  margin: 0 0 4px 0;
+  font-size: 20px;
+  color: #0b3d70;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wh-notif-header p {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.wh-notif-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.wh-filter-btn {
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.wh-filter-btn.active {
+  background: #0b3d70;
+  color: #ffffff;
+  border-color: #0b3d70;
+}
+
+.wh-markall-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid #93c5fd;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.wh-notif-list-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.wh-notif-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.wh-notif-row:last-child {
+  border-bottom: none;
+}
+
+.wh-notif-row:hover {
+  background: #f8fafc;
+}
+
+.wh-notif-row.unread {
+  background: #eff6ff;
+}
+
+.wh-notif-dot-col {
+  width: 14px;
+  padding-top: 5px;
+}
+
+.wh-notif-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 3px;
+}
+
+.wh-notif-body {
+  font-size: 13px;
+  color: #475569;
+  margin-bottom: 4px;
+}
+
+.wh-notif-time {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.wh-notif-empty {
+  padding: 36px;
+  text-align: center;
+  color: #64748b;
+}
+

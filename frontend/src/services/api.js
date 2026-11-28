@@ -1,5 +1,13 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
+const getAuthHeaders = (extra = {}) => {
+  const token = localStorage.getItem('access_token');
+  return {
+    ...extra,
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+};
+
 export const login = async (email, password) => {
   const response = await fetch(`${API_URL}/login`, {
     method: 'POST',
@@ -881,10 +889,12 @@ export const closeDeliveryTrip = async (tripId, payload) => {
 // --- KIỂM KÊ KHO (INVENTORY COUNT) ---
 
 export const getWarehouseSkus = async (warehouseId, distributorId = 1) => {
-  const response = await fetch(`${API_URL}/inventory/counts/warehouse-skus?warehouseId=${warehouseId}&distributorId=${distributorId}`);
+  const response = await fetch(`${API_URL}/inventory/counts/warehouse-skus?warehouseId=${warehouseId}&distributorId=${distributorId}`, {
+    headers: getAuthHeaders(),
+  });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || 'Lỗi khi tải danh sách sản phẩm trong kho');
+    throw new Error(data.error || data.message || 'Lỗi khi tải danh sách sản phẩm trong kho');
   }
   return data;
 };
@@ -897,19 +907,23 @@ export const getInventoryCounts = async (filters = {}) => {
     }
   });
   const queryParams = new URLSearchParams(cleanFilters).toString();
-  const response = await fetch(`${API_URL}/inventory/counts?${queryParams}`);
+  const response = await fetch(`${API_URL}/inventory/counts?${queryParams}`, {
+    headers: getAuthHeaders(),
+  });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || 'Lỗi khi tải danh sách phiếu kiểm kê');
+    throw new Error(data.error || data.message || 'Lỗi khi tải danh sách phiếu kiểm kê');
   }
   return data;
 };
 
 export const getInventoryCountById = async (id, distributorId = 1) => {
-  const response = await fetch(`${API_URL}/inventory/counts/${id}?distributorId=${distributorId}`);
+  const response = await fetch(`${API_URL}/inventory/counts/${id}?distributorId=${distributorId}`, {
+    headers: getAuthHeaders(),
+  });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || 'Lỗi khi tải chi tiết phiếu kiểm kê');
+    throw new Error(data.error || data.message || 'Lỗi khi tải chi tiết phiếu kiểm kê');
   }
   return data;
 };
@@ -917,12 +931,12 @@ export const getInventoryCountById = async (id, distributorId = 1) => {
 export const createInventoryCount = async (payload, distributorId = 1) => {
   const response = await fetch(`${API_URL}/inventory/counts?distributorId=${distributorId}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(payload)
   });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || 'Lỗi khi tạo phiếu kiểm kê mới');
+    throw new Error(data.error || data.message || 'Lỗi khi tạo phiếu kiểm kê mới');
   }
   return data;
 };
@@ -930,12 +944,12 @@ export const createInventoryCount = async (payload, distributorId = 1) => {
 export const updateInventoryCountItems = async (id, payload, distributorId = 1) => {
   const response = await fetch(`${API_URL}/inventory/counts/${id}/items?distributorId=${distributorId}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(payload)
   });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || 'Lỗi khi lưu kết quả kiểm kê');
+    throw new Error(data.error || data.message || 'Lỗi khi lưu kết quả kiểm kê');
   }
   return data;
 };
@@ -943,11 +957,11 @@ export const updateInventoryCountItems = async (id, payload, distributorId = 1) 
 export const submitInventoryCount = async (id, distributorId = 1) => {
   const response = await fetch(`${API_URL}/inventory/counts/${id}/submit?distributorId=${distributorId}`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' }
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' })
   });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || 'Lỗi khi gửi duyệt phiếu kiểm kê');
+    throw new Error(data.error || data.message || 'Lỗi khi gửi duyệt phiếu kiểm kê');
   }
   return data;
 };
@@ -955,12 +969,12 @@ export const submitInventoryCount = async (id, distributorId = 1) => {
 export const approveInventoryCount = async (id, payload = {}, distributorId = 1) => {
   const response = await fetch(`${API_URL}/inventory/counts/${id}/approve?distributorId=${distributorId}`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(payload)
   });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || 'Lỗi khi phê duyệt & cân kho');
+    throw new Error(data.error || data.message || 'Lỗi khi phê duyệt & cân kho');
   }
   return data;
 };
@@ -968,12 +982,12 @@ export const approveInventoryCount = async (id, payload = {}, distributorId = 1)
 export const rejectInventoryCount = async (id, reason = '', distributorId = 1) => {
   const response = await fetch(`${API_URL}/inventory/counts/${id}/reject?distributorId=${distributorId}`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ reason })
   });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || 'Lỗi khi từ chối duyệt phiếu kiểm kê');
+    throw new Error(data.error || data.message || 'Lỗi khi từ chối duyệt phiếu kiểm kê');
   }
   return data;
 };
@@ -981,17 +995,31 @@ export const rejectInventoryCount = async (id, reason = '', distributorId = 1) =
 export const cancelInventoryCount = async (id, distributorId = 1) => {
   const response = await fetch(`${API_URL}/inventory/counts/${id}/cancel?distributorId=${distributorId}`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' }
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' })
   });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || 'Lỗi khi hủy phiếu kiểm kê');
+    throw new Error(data.error || data.message || 'Lỗi khi hủy phiếu kiểm kê');
   }
   return data;
 };
 
-export const exportInventoryCountExcel = (id, distributorId = 1) => {
-  window.open(`${API_URL}/inventory/counts/${id}/export?distributorId=${distributorId}`, '_blank');
+export const exportInventoryCountExcel = async (id, distributorId = 1) => {
+  const response = await fetch(`${API_URL}/inventory/counts/${id}/export?distributorId=${distributorId}`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    throw new Error('Không thể xuất file Excel phiếu kiểm kê');
+  }
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `BienBanKiemKe_${id}.xlsx`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
 };
 
 // ==========================================
@@ -1342,6 +1370,63 @@ export const evaluateOrderPromotions = async (payload) => {
   const data = await response.json();
   if (!response.ok) {
     throw new Error(data.error || data.message || 'Lỗi khi tính toán khuyến mãi');
+  }
+  return data;
+};
+
+// ==========================================
+// --- NOTIFICATIONS (THÔNG BÁO HỆ THỐNG) ---
+// ==========================================
+
+export const getNotifications = async (params = {}) => {
+  const clean = {};
+  Object.keys(params).forEach((k) => {
+    if (params[k] !== undefined && params[k] !== null && params[k] !== '') {
+      clean[k] = params[k];
+    }
+  });
+  const query = new URLSearchParams(clean).toString();
+  const response = await fetch(`${API_URL}/notifications?${query}`, {
+    headers: getAuthHeaders(),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || data.message || 'Lỗi khi tải thông báo');
+  }
+  return data;
+};
+
+export const getUnreadNotificationCount = async () => {
+  const response = await fetch(`${API_URL}/notifications/unread-count`, {
+    headers: getAuthHeaders(),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || data.message || 'Lỗi khi tải số thông báo chưa đọc');
+  }
+  return data;
+};
+
+export const markNotificationRead = async (id) => {
+  const response = await fetch(`${API_URL}/notifications/${id}/read`, {
+    method: 'PATCH',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || data.message || 'Lỗi khi đánh dấu đã đọc');
+  }
+  return data;
+};
+
+export const markAllNotificationsRead = async () => {
+  const response = await fetch(`${API_URL}/notifications/read-all`, {
+    method: 'PATCH',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || data.message || 'Lỗi khi đánh dấu tất cả đã đọc');
   }
   return data;
 };

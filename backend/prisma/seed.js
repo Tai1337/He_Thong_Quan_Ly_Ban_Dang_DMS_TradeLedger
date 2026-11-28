@@ -290,11 +290,25 @@ async function main() {
   }
   console.log("✓ Đã khởi tạo Delivery Trips");
 
-  // 9. Lấy 5 sản phẩm đầu tiên từ kho
-  const products = await prisma.product.findMany({ take: 6 });
+  // 9. Lấy 6 sản phẩm đầu tiên từ kho (nếu chưa có thì tạo dữ liệu sản phẩm mẫu)
+  let products = await prisma.product.findMany({ take: 6 });
   if (products.length === 0) {
-    console.log("⚠️ Chưa có sản phẩm, vui lòng chạy import_inventory.js trước!");
-    return;
+    const sampleProducts = [
+      { sku: 'SKU-NUOC-001', name: 'Trà Xanh Không Độ 455ml (Thùng 24 chai)', unit: 'THÙNG', retailUnit: 'CHAI', conversionRate: 24, basePrice: 185000 },
+      { sku: 'SKU-NUOC-002', name: 'Nước Tăng Lực Number 1 330ml (Thùng 24 lon)', unit: 'THÙNG', retailUnit: 'LON', conversionRate: 24, basePrice: 210000 },
+      { sku: 'SKU-SUA-003', name: 'Sữa Tươi Vinamilk Ít Đường 180ml (Thùng 48 hộp)', unit: 'THÙNG', retailUnit: 'HỘP', conversionRate: 48, basePrice: 320000 },
+      { sku: 'SKU-MI-004', name: 'Mì Omachi Xốt Bò Hầm (Thùng 30 gói)', unit: 'THÙNG', retailUnit: 'GÓI', conversionRate: 30, basePrice: 240000 },
+      { sku: 'SKU-GIAT-005', name: 'Nước Giặt OMO Matic Cửa Trước 3.6kg (Thùng 4 túi)', unit: 'THÙNG', retailUnit: 'TÚI', conversionRate: 4, basePrice: 680000 },
+      { sku: 'SKU-CAFE-006', name: 'Cà Phê Sữa Đá G7 3in1 (Thùng 24 hộp)', unit: 'THÙNG', retailUnit: 'HỘP', conversionRate: 24, basePrice: 540000 },
+    ];
+    for (const sp of sampleProducts) {
+      await prisma.product.upsert({
+        where: { sku: sp.sku },
+        update: {},
+        create: { ...sp, status: true },
+      });
+    }
+    products = await prisma.product.findMany({ take: 6 });
   }
 
   // Đảm bảo các lô GOOD có HSD hợp lệ trong tương lai
@@ -305,6 +319,49 @@ async function main() {
 
   // Reset đơn hàng cũ để tạo mới đồng bộ
   await prisma.salesOrder.deleteMany();
+
+  // 9b. Tạo lô hàng & tồn kho mẫu cho KHO-TEST để phục vụ kiểm kê và xuất kho
+  for (let i = 0; i < products.length; i++) {
+    const prod = products[i];
+    const lotNumber = `LOT-TEST-${String(i + 1).padStart(2, '0')}`;
+    const lot = await prisma.stockLot.upsert({
+      where: {
+        productId_warehouseId_lotNumber: {
+          productId: prod.id,
+          warehouseId: warehouse.id,
+          lotNumber,
+        },
+      },
+      update: {
+        status: 'GOOD',
+        expiryDate: new Date('2027-12-31T00:00:00Z'),
+      },
+      create: {
+        productId: prod.id,
+        warehouseId: warehouse.id,
+        lotNumber,
+        manufactureDate: new Date('2026-01-15T00:00:00Z'),
+        expiryDate: new Date('2027-12-31T00:00:00Z'),
+        status: 'GOOD',
+        locationCode: `A1-0${i + 1}`,
+        locationName: `Kệ A1 - Ô 0${i + 1}`,
+      },
+    });
+
+    await prisma.stockBalance.upsert({
+      where: { lotId: lot.id },
+      update: {
+        quantityOnHand: 100,
+        quantityReserved: 0,
+      },
+      create: {
+        lotId: lot.id,
+        quantityOnHand: 100,
+        quantityReserved: 0,
+      },
+    });
+  }
+  console.log(`✓ Đã khởi tạo ${products.length} lô hàng & tồn kho mẫu cho ${warehouse.code}`);
 
   // 10. Tạo các Sales Orders với nhiều trạng thái
   const ordersToSeed = [

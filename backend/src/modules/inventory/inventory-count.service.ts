@@ -1,14 +1,18 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Optional } from '@nestjs/common';
 import { InventoryCountRepository } from './inventory-count.repository';
 import { CreateInventoryCountDto } from './dto/create-inventory-count.dto';
 import { UpdateCountItemsDto } from './dto/update-count-items.dto';
 import { QueryCountDto } from './dto/query-count.dto';
-import { CountType, DocStatus } from '@prisma/client';
+import { CountType, DocStatus, NotificationType } from '@prisma/client';
+import { NotificationService } from '../notification/notification.service';
 import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class InventoryCountService {
-  constructor(private readonly countRepo: InventoryCountRepository) {}
+  constructor(
+    private readonly countRepo: InventoryCountRepository,
+    @Optional() private readonly notificationService?: NotificationService,
+  ) {}
 
   /**
    * Danh sách phiếu kiểm kê
@@ -80,7 +84,7 @@ export class InventoryCountService {
       };
     });
 
-    return this.countRepo.createCount({
+    const created = await this.countRepo.createCount({
       countCode,
       distributorId: BigInt(distributorId),
       warehouseId: BigInt(dto.warehouseId),
@@ -89,6 +93,20 @@ export class InventoryCountService {
       createdById: dto.createdById ? BigInt(dto.createdById) : undefined,
       items: itemsToCreate,
     });
+
+    if (this.notificationService) {
+      await this.notificationService.notifyRoleUsers(distributorId, ['WAREHOUSE_KEEPER'], {
+        type: NotificationType.STOCKTAKE_ASSIGNED,
+        title: 'Yêu cầu kiểm kê mới',
+        body: `Phiếu kiểm kê ${created.countCode} đã được tạo và giao cho bộ phận kho.`,
+        senderId: dto.createdById || null,
+        referenceId: created.id,
+        refType: 'inventory_count',
+        navigateTo: `/warehouse/stocktake/${created.id}`,
+      });
+    }
+
+    return created;
   }
 
   /**
@@ -101,14 +119,14 @@ export class InventoryCountService {
   /**
    * Gửi duyệt phiếu kiểm kê
    */
-  async submitCount(id: string | number, distributorId: string | number) {
+  async submitCount(id: string | number, distributorId: string | number, userId?: string | number) {
     const count = await this.countRepo.findCountById(id, distributorId);
     if (!count) {
       throw new NotFoundException('Không tìm thấy phiếu kiểm kê');
     }
 
-    if (count.status !== DocStatus.DRAFT) {
-      throw new BadRequestException('Chỉ phiếu ở trạng thái Nháp (DRAFT) mới có thể gửi duyệt');
+    if (count.status !== DocStatus.DRAFT && count.status !== DocStatus.REJECTED) {
+      throw new BadRequestException('Chỉ phiếu ở trạng thái Nháp hoặc Bị từ chối mới có thể gửi duyệt');
     }
 
     // Kiểm tra xem đã nhập số lượng thực tế cho tất cả các dòng chưa
@@ -131,21 +149,63 @@ export class InventoryCountService {
       );
     }
 
-    return this.countRepo.updateStatus(id, distributorId, DocStatus.WAITING_APPROVAL);
+    const updated = await this.countRepo.updateStatus(id, distributorId, DocStatus.WAITING_APPROVAL);
+
+    if (this.notificationService) {
+      await this.notificationService.notifyRoleUsers(distributorId, ['ADMIN'], {
+        type: NotificationType.STOCKTAKE_SUBMITTED,
+        title: 'Phiếu kiểm kê chờ phê duyệt',
+        body: `Thủ kho đã hoàn thành và gửi duyệt phiếu kiểm kê ${count.countCode}.`,
+        senderId: userId || null,
+        referenceId: count.id,
+        refType: 'inventory_count',
+        navigateTo: `/inventory/counts/${count.id}`,
+      });
+    }
+
+    return updated;
   }
 
   /**
    * Phê duyệt & Cân kho tự động
    */
   async approveCount(id: string | number, distributorId: string | number, userId?: string | number) {
-    return this.countRepo.approveAndReconcileCount(id, distributorId, userId);
+    const result = await this.countRepo.approveAndReconcileCount(id, distributorId, userId);
+
+    if (this.notificationService && result?.count) {
+      await this.notificationService.notifyRoleUsers(distributorId, ['WAREHOUSE_KEEPER'], {
+        type: NotificationType.STOCKTAKE_APPROVED,
+        title: 'Phiếu kiểm kê đã được duyệt',
+        body: `Phiếu kiểm kê ${result.count.countCode} đã được Admin phê duyệt và cân kho.`,
+        senderId: userId || null,
+        referenceId: result.count.id,
+        refType: 'inventory_count',
+        navigateTo: `/warehouse/stocktake/${result.count.id}`,
+      });
+    }
+
+    return result;
   }
 
   /**
    * Từ chối duyệt
    */
-  async rejectCount(id: string | number, distributorId: string | number, reason: string) {
-    return this.countRepo.updateStatus(id, distributorId, DocStatus.REJECTED, reason);
+  async rejectCount(id: string | number, distributorId: string | number, reason: string, userId?: string | number) {
+    const updated = await this.countRepo.updateStatus(id, distributorId, DocStatus.REJECTED, reason);
+
+    if (this.notificationService) {
+      await this.notificationService.notifyRoleUsers(distributorId, ['WAREHOUSE_KEEPER'], {
+        type: NotificationType.STOCKTAKE_REJECTED,
+        title: 'Phiếu kiểm kê bị từ chối',
+        body: `Phiếu kiểm kê ${updated.countCode} bị từ chối. Lý do: ${reason || 'Vui lòng kiểm tra lại số liệu.'}`,
+        senderId: userId || null,
+        referenceId: updated.id,
+        refType: 'inventory_count',
+        navigateTo: `/warehouse/stocktake/${updated.id}`,
+      });
+    }
+
+    return updated;
   }
 
   /**

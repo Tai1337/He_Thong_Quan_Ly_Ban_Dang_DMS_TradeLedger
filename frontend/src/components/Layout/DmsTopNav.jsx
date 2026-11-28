@@ -32,7 +32,13 @@ import {
   Calendar,
   Settings,
 } from 'lucide-react';
-import { changePassword } from '../../services/api';
+import {
+  changePassword,
+  getNotifications,
+  getUnreadNotificationCount,
+  markNotificationRead,
+  markAllNotificationsRead,
+} from '../../services/api';
 import { hasPermission } from '../../utils/authPermission';
 import './DmsTopNav.css';
 
@@ -42,6 +48,17 @@ const TOP_NAV_GROUPS = [
     label: 'Trang chủ',
     path: '/',
     items: [],
+  },
+  {
+    id: 'warehouse',
+    label: 'Thủ kho',
+    requiredRole: 'WAREHOUSE_KEEPER',
+    items: [
+      { label: 'Dashboard Thủ kho', path: '/warehouse', icon: Home },
+      { label: 'Phiếu kiểm kê của tôi', path: '/warehouse/stocktake', icon: ClipboardCheck },
+      { label: 'Yêu cầu xuất kho', path: '/warehouse/delivery', icon: Truck },
+      { label: 'Thông báo', path: '/warehouse/notifications', icon: Bell },
+    ],
   },
   {
     id: 'system',
@@ -103,6 +120,7 @@ const TOP_NAV_GROUPS = [
   {
     id: 'routes',
     label: 'Tuyến bán hàng',
+    requiredPermission: 'sales_orders:view',
     items: [
       { label: 'Lập tuyến bán hàng (MCP)', path: '/operations/calendar', icon: Calendar },
       { label: 'Biểu đồ tiến độ công việc', path: '/operations/gantt', icon: Layers },
@@ -181,9 +199,22 @@ export default function DmsTopNav({ user, onLogout }) {
   const closeMenuTimeout = useRef(null);
   const navContainerRef = useRef(null);
 
+  const [dbNotifications, setDbNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
   const visibleGroups = useMemo(() => {
+    const isWarehouseStaff = currentUser?.roleCode === 'WAREHOUSE_KEEPER';
     return TOP_NAV_GROUPS
-      .filter((group) => !group.requiredPermission || hasPermission(currentUser, group.requiredPermission))
+      .filter((group) => {
+        if (group.id === 'home' && isWarehouseStaff) return false;
+        if (group.requiredRole) {
+          return currentUser?.roleCode === group.requiredRole;
+        }
+        if (group.requiredPermission) {
+          return hasPermission(currentUser, group.requiredPermission);
+        }
+        return true;
+      })
       .map((group) => ({
         ...group,
         visibleItems: (group.items || []).filter(
@@ -192,6 +223,40 @@ export default function DmsTopNav({ user, onLogout }) {
       }))
       .filter((group) => group.id === 'home' || group.visibleItems.length > 0);
   }, [currentUser]);
+
+  const fetchTopNotifications = async () => {
+    if (!currentUser) return;
+    try {
+      const [listRes, countRes] = await Promise.all([
+        getNotifications({ limit: 8 }),
+        getUnreadNotificationCount(),
+      ]);
+      setDbNotifications(listRes?.data || []);
+      setUnreadCount(countRes?.unreadCount ?? listRes?.unreadCount ?? 0);
+    } catch {
+      // ignore polling error
+    }
+  };
+
+  useEffect(() => {
+    if (!currentUser) return;
+    fetchTopNotifications();
+    const timer = setInterval(fetchTopNotifications, 30000);
+    const onRealtimeNotif = (e) => {
+      const incoming = e.detail;
+      if (incoming) {
+        setDbNotifications((prev) => [incoming, ...prev].slice(0, 8));
+        setUnreadCount((prev) => prev + 1);
+      } else {
+        fetchTopNotifications();
+      }
+    };
+    window.addEventListener('dms:notification', onRealtimeNotif);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('dms:notification', onRealtimeNotif);
+    };
+  }, [currentUser?.id]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -226,35 +291,33 @@ export default function DmsTopNav({ user, onLogout }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const notifications = [
-    {
-      id: 1,
-      title: 'Đơn hàng mới từ Web Khách hàng',
-      desc: 'Đơn hàng trực tuyến đang chờ Kế toán xác nhận & phân bổ.',
-      time: '10 phút trước',
-      icon: TrendingUp,
-      color: '#0066da',
-      path: '/sales/sales-orders',
-    },
-    {
-      id: 2,
-      title: 'Biên bản kiểm kê chờ phê duyệt',
-      desc: 'Đợt kiểm kê kho NPP cần ký duyệt cân đối tồn kho.',
-      time: '1 giờ trước',
-      icon: CheckSquare,
-      color: '#7c3aed',
-      path: '/inventory/counts',
-    },
-    {
-      id: 3,
-      title: 'Chuyến xe nhập kho NCC đến hạn',
-      desc: 'Chuyến xe nhập kho đang chờ thủ kho kiểm đếm nhận hàng.',
-      time: 'Hôm nay',
-      icon: Truck,
-      color: '#059669',
-      path: '/purchase/receiving',
-    },
-  ];
+  const handleNotifClick = async (n) => {
+    setIsNotifOpen(false);
+    try {
+      if (!n.isRead) {
+        await markNotificationRead(n.id);
+        setDbNotifications((prev) =>
+          prev.map((item) => (item.id === n.id ? { ...item, isRead: true } : item)),
+        );
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      }
+    } catch {
+      // ignore error
+    }
+    if (n.navigateTo) {
+      navigate(n.navigateTo);
+    }
+  };
+
+  const handleMarkAllTopRead = async () => {
+    try {
+      await markAllNotificationsRead();
+      setDbNotifications((prev) => prev.map((item) => ({ ...item, isRead: true })));
+      setUnreadCount(0);
+    } catch {
+      // ignore error
+    }
+  };
 
   const filteredQuickLinks = QUICK_LINKS.filter(
     (item) =>
@@ -351,38 +414,59 @@ export default function DmsTopNav({ user, onLogout }) {
               }}
             >
               <Bell size={15} />
-              <span className="dms-notif-dot" />
+              {unreadCount > 0 && <span className="dms-notif-dot" />}
             </button>
 
             {isNotifOpen && (
               <div className="dms-dropdown-panel dms-notif-panel">
                 <div className="dms-panel-header">
                   <h4>Thông báo hệ thống</h4>
-                  <span className="dms-panel-badge">{notifications.length} mới</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span className="dms-panel-badge">{unreadCount} mới</span>
+                    {unreadCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleMarkAllTopRead}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#2563eb',
+                          fontSize: 11,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Đọc hết
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="dms-panel-list">
-                  {notifications.map((n) => {
-                    const Icon = n.icon;
-                    return (
+                  {dbNotifications.length === 0 ? (
+                    <div style={{ padding: '16px', textAlign: 'center', fontSize: 12, color: '#64748b' }}>
+                      Không có thông báo nào
+                    </div>
+                  ) : (
+                    dbNotifications.map((n) => (
                       <div
                         key={n.id}
                         className="dms-notif-item"
-                        onClick={() => {
-                          setIsNotifOpen(false);
-                          navigate(n.path);
-                        }}
+                        style={!n.isRead ? { backgroundColor: '#eff6ff' } : undefined}
+                        onClick={() => handleNotifClick(n)}
                       >
-                        <div className="dms-notif-icon" style={{ backgroundColor: `${n.color}18`, color: n.color }}>
-                          <Icon size={15} />
+                        <div className="dms-notif-icon" style={{ backgroundColor: '#0066da18', color: '#0066da' }}>
+                          <Bell size={15} />
                         </div>
                         <div className="dms-notif-content">
                           <span className="dms-notif-title">{n.title}</span>
-                          <span className="dms-notif-desc">{n.desc}</span>
-                          <span className="dms-notif-time">{n.time}</span>
+                          <span className="dms-notif-desc">{n.body}</span>
+                          <span className="dms-notif-time">
+                            {new Date(n.createdAt).toLocaleString('vi-VN')}
+                          </span>
                         </div>
                       </div>
-                    );
-                  })}
+                    ))
+                  )}
                 </div>
               </div>
             )}

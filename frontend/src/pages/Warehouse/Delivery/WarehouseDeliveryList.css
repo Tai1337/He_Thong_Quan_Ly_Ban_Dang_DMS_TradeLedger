@@ -1,0 +1,38 @@
+.wh-delivery-list-page {
+  padding: 24px 28px;
+  background-color: #f8fafc;
+  min-height: calc(100vh - 60px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.wh-trip-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-waiting-ship {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.badge-shipping {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.badge-completed {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.badge-draft {
+  background: #f1f5f9;
+  color: #475569;
+}
+

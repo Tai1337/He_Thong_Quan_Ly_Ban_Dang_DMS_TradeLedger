@@ -29,8 +29,47 @@ import UserManagement from './pages/Admin/UserManagement/UserManagement';
 import PromotionList from './pages/Promotions/PromotionList';
 import Layout from './components/Layout/Layout';
 import ErrorBoundary from './components/Common/ErrorBoundary';
-import { NotificationProvider } from './components/Common/NotificationProvider';
+import ProtectedRoute from './components/Common/ProtectedRoute';
+import { NotificationProvider, useNotification } from './components/Common/NotificationProvider';
+import WarehouseDashboard from './pages/Warehouse/WarehouseDashboard';
+import WarehouseStocktakeList from './pages/Warehouse/Stocktake/WarehouseStocktakeList';
+import WarehouseStocktakeDetail from './pages/Warehouse/Stocktake/WarehouseStocktakeDetail';
+import WarehouseDeliveryList from './pages/Warehouse/Delivery/WarehouseDeliveryList';
+import WarehouseDeliveryDetail from './pages/Warehouse/Delivery/WarehouseDeliveryDetail';
+import WarehouseNotifications from './pages/Warehouse/WarehouseNotifications';
 import './index.css';
+
+function RealtimeSocketBridge({ user, onForceLogout }) {
+  const { notify } = useNotification();
+
+  useEffect(() => {
+    let socket;
+    if (user) {
+      socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001');
+      socket.emit('register', {
+        username: user.email || user.username,
+        userId: user.id,
+      });
+
+      socket.on('FORCE_LOGOUT', (data) => {
+        alert(data.reason);
+        onForceLogout();
+      });
+
+      socket.on('notification', (data) => {
+        window.dispatchEvent(new CustomEvent('dms:notification', { detail: data }));
+        if (data?.title) {
+          notify.info(`${data.title}: ${data.body || ''}`);
+        }
+      });
+    }
+    return () => {
+      if (socket) socket.disconnect();
+    };
+  }, [user]);
+
+  return null;
+}
 
 function App() {
   const [user, setUser] = useState(() => {
@@ -49,24 +88,9 @@ function App() {
     localStorage.removeItem('access_token');
   };
 
-  useEffect(() => {
-    let socket;
-    if (user) {
-      socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001');
-      socket.emit('register', user.email);
-
-      socket.on('FORCE_LOGOUT', (data) => {
-        alert(data.reason);
-        handleLogout();
-      });
-    }
-    return () => {
-      if (socket) socket.disconnect();
-    };
-  }, [user]);
-
   return (
     <NotificationProvider>
+      <RealtimeSocketBridge user={user} onForceLogout={handleLogout} />
       <BrowserRouter>
         <ErrorBoundary>
           <Routes>
@@ -76,15 +100,25 @@ function App() {
 
         <Route 
           path="/login" 
-          element={!user ? <Login onLogin={handleLogin} /> : <Navigate to="/" />} 
+          element={
+            !user ? (
+              <Login onLogin={handleLogin} />
+            ) : (
+              <Navigate to={user.roleCode === 'WAREHOUSE_KEEPER' ? '/warehouse' : '/'} replace />
+            )
+          } 
         />
         <Route 
           path="/" 
           element={
             user ? (
-              <Layout user={user} onLogout={handleLogout}>
-                <Home user={user} />
-              </Layout>
+              user.roleCode === 'WAREHOUSE_KEEPER' ? (
+                <Navigate to="/warehouse" replace />
+              ) : (
+                <Layout user={user} onLogout={handleLogout}>
+                  <Home user={user} />
+                </Layout>
+              )
             ) : (
               <Navigate to="/login" />
             )
@@ -389,6 +423,67 @@ function App() {
               <Navigate to="/login" />
             )
           } 
+        />
+        {/* Warehouse Staff Routes */}
+        <Route
+          path="/warehouse"
+          element={
+            <ProtectedRoute user={user} allowedRoles={['WAREHOUSE_KEEPER', 'ADMIN']}>
+              <Layout user={user} onLogout={handleLogout}>
+                <WarehouseDashboard user={user} />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/warehouse/stocktake"
+          element={
+            <ProtectedRoute user={user} allowedRoles={['WAREHOUSE_KEEPER', 'ADMIN']}>
+              <Layout user={user} onLogout={handleLogout}>
+                <WarehouseStocktakeList user={user} />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/warehouse/stocktake/:id"
+          element={
+            <ProtectedRoute user={user} allowedRoles={['WAREHOUSE_KEEPER', 'ADMIN']}>
+              <Layout user={user} onLogout={handleLogout}>
+                <WarehouseStocktakeDetail user={user} />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/warehouse/delivery"
+          element={
+            <ProtectedRoute user={user} allowedRoles={['WAREHOUSE_KEEPER', 'ADMIN']}>
+              <Layout user={user} onLogout={handleLogout}>
+                <WarehouseDeliveryList user={user} />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/warehouse/delivery/:id"
+          element={
+            <ProtectedRoute user={user} allowedRoles={['WAREHOUSE_KEEPER', 'ADMIN']}>
+              <Layout user={user} onLogout={handleLogout}>
+                <WarehouseDeliveryDetail user={user} />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/warehouse/notifications"
+          element={
+            <ProtectedRoute user={user} allowedRoles={['WAREHOUSE_KEEPER', 'ADMIN']}>
+              <Layout user={user} onLogout={handleLogout}>
+                <WarehouseNotifications user={user} />
+              </Layout>
+            </ProtectedRoute>
+          }
         />
         {/* Catch-all route: Redirect everything else to Home (which then checks login) */}
         <Route path="*" element={<Navigate to="/" replace />} />

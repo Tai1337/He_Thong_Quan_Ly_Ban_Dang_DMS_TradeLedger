@@ -232,6 +232,8 @@ model User {
   poStatusHistories       PurchaseOrderStatusHistory[]
   expensesCreated         Expense[]              @relation("ExpensesCreated")
   salesRoutes             SalesRoute[]
+  notificationsReceived   Notification[] @relation("NotificationReceiver")
+  notificationsSent       Notification[] @relation("NotificationSender")
 
   @@map("users")
 }
@@ -1010,6 +1012,38 @@ model SalesRouteStop {
 
   @@index([routeId, weekday, visitOrder])
   @@map("sales_route_stops")
+}
+
+enum NotificationType {
+  STOCKTAKE_ASSIGNED
+  STOCKTAKE_SUBMITTED
+  STOCKTAKE_APPROVED
+  STOCKTAKE_REJECTED
+  STOCK_EXPORT_REQUESTED
+  STOCK_EXPORT_COMPLETED
+}
+
+/// Thông báo hệ thống dùng chung cho Admin và Thủ kho
+model Notification {
+  id          BigInt           @id @default(autoincrement())
+  type        NotificationType
+  title       String           @db.VarChar(200)
+  body        String           @db.Text
+  receiverId  BigInt           @map("receiver_id")
+  senderId    BigInt?          @map("sender_id")
+  referenceId BigInt?          @map("reference_id")
+  refType     String?          @db.VarChar(50) @map("ref_type")
+  navigateTo  String?          @db.VarChar(255) @map("navigate_to")
+  isRead      Boolean          @default(false) @map("is_read")
+  readAt      DateTime?        @map("read_at")
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  receiver User  @relation("NotificationReceiver", fields: [receiverId], references: [id])
+  sender   User? @relation("NotificationSender", fields: [senderId], references: [id])
+
+  @@index([receiverId, isRead])
+  @@index([createdAt])
+  @@map("notifications")
 }
 
 
